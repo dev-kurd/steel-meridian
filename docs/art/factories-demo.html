@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tank Factories — 2.5D Vector Assets</title>
+<style>
+  :root { --bg:#161c2a; --panel:#1f2738; --line:#2f3a52; --ink:#e7e3d6; --mute:#9aa3b8; --gold:#e2b45c; --green:#5cc23d; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:radial-gradient(1200px 700px at 50% 30%, #222b40, var(--bg)); color:var(--ink); font:14px/1.45 "Segoe UI", system-ui, sans-serif; min-height:100vh; }
+  header { padding:22px 28px 6px; display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+  h1 { margin:0; font:700 22px/1.1 Impact, "Arial Black", sans-serif; letter-spacing:1.5px; color:var(--gold); text-transform:uppercase; }
+  header span { color:var(--mute); }
+  main { display:grid; grid-template-columns: minmax(0,1fr) 300px; gap:20px; padding:12px 28px 28px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .stage { background:repeating-linear-gradient(45deg, #1a2131 0 14px, #1c2334 14px 28px); border:1px solid var(--line); border-radius:10px; padding:10px; position:relative;
+           position:sticky; top:12px; align-self:start; height:calc(100vh - 110px); min-height:420px; display:flex; align-items:center; justify-content:center; }
+  @media (max-width: 900px) { .stage { position:relative; height:70vh; } }
+  .stage .tag { position:absolute; left:14px; top:12px; background:rgba(0,0,0,.45); border:1px solid var(--line); padding:4px 10px; border-radius:20px; font-size:12px; color:var(--mute); }
+  .stage .tag b { color:var(--gold); }
+  .stage { overflow:hidden; touch-action:none; cursor:grab; }
+  .stage.dragging { cursor:grabbing; }
+  #slot { width:100%; height:100%; display:flex; align-items:center; justify-content:center; transform-origin:0 0; will-change:transform; }
+  .zoombar { position:absolute; right:12px; top:12px; z-index:2; display:flex; gap:4px; align-items:center; background:rgba(0,0,0,.45); border:1px solid var(--line); border-radius:20px; padding:3px; }
+  .zoombar button { all:unset; cursor:pointer; width:28px; height:28px; border-radius:50%; text-align:center; line-height:28px; font-size:16px; color:var(--ink); }
+  .zoombar button:hover { background:#2f3a52; }
+  .zoombar span { font-size:12px; color:var(--mute); min-width:42px; text-align:center; }
+  #slot svg { width:100%; height:100%; max-width:980px; }
+  aside { display:flex; flex-direction:column; gap:14px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px; }
+  .card h3 { margin:0 0 10px; font-size:12px; letter-spacing:1.2px; text-transform:uppercase; color:var(--mute); font-weight:600; }
+  .maps { display:grid; gap:6px; }
+  .maps button, .btn { all:unset; cursor:pointer; padding:9px 12px; border-radius:7px; border:1px solid var(--line); background:#263049; display:flex; justify-content:space-between; align-items:center; }
+  .maps button:hover, .btn:hover { border-color:var(--gold); }
+  .maps button.on { background:#3a3220; border-color:var(--gold); color:#ffe2a0; }
+  .maps small { color:var(--mute); }
+  .lines { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .lines .btn { justify-content:center; flex-direction:column; gap:2px; text-align:center; }
+  .lines .btn[disabled] { opacity:.4; cursor:not-allowed; border-style:dashed; }
+  .lines .btn .st { font-size:11px; color:var(--mute); }
+  .row { display:flex; gap:6px; margin-top:8px; }
+  .row .btn { flex:1; justify-content:center; }
+  .btn.primary { background:#2f5a24; border-color:#4f8f3a; }
+  .toggle { display:flex; align-items:center; gap:8px; margin-top:10px; color:var(--mute); cursor:pointer; user-select:none; }
+  .team { display:flex; gap:6px; }
+  .team i { width:24px; height:24px; border-radius:50%; cursor:pointer; border:2px solid transparent; }
+  .team i.on { border-color:#fff; }
+  #log { font:12px/1.5 ui-monospace, Consolas, monospace; color:#b8c2d6; max-height:120px; overflow:auto; }
+  code { background:#141a27; padding:1px 5px; border-radius:4px; color:#ffd88a; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">Heavy Tank Factory</h1>
+  <span id="subtitle"></span>
+</header>
+<main>
+  <section class="stage">
+    <div class="zoombar"><button id="zOut" title="Zoom out">−</button><span id="zVal">100%</span><button id="zIn" title="Zoom in">+</button><button id="zReset" title="Reset view" style="font-size:13px">⟲</button></div>
+    <div class="tag">Active lines: <b id="lineTag">3</b> / <span id="maxTag">3</span></div>
+    <div id="slot"></div>
+  </section>
+  <aside>
+    <div class="card">
+      <h3>Building</h3>
+      <div class="lines" id="kindBtns" style="grid-template-columns:1fr 1fr 1fr">
+        <div class="btn" data-k="light">Light</div><div class="btn" data-k="medium">Medium</div><div class="btn" data-k="heavy">Heavy</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Map (sets production lines)</h3>
+      <div class="maps" id="maps"></div>
+    </div>
+    <div class="card">
+      <h3 id="prodTitle">Produce heavy tank</h3>
+      <div class="lines" id="lineBtns"></div>
+      <div class="row"><div class="btn primary" id="all">Produce on all lines</div></div>
+      <label class="toggle"><input type="checkbox" id="auto"> Auto production loop</label>
+    </div>
+    <div class="card">
+      <h3>Owner &amp; health</h3>
+      <div class="lines" id="ownBtns" style="grid-template-columns:1fr 1fr">
+        <div class="btn" data-c="1">Captured</div><div class="btn" data-c="0">Not captured</div>
+      </div>
+      <div style="margin-top:10px;display:flex;align-items:center;gap:8px">
+        <input type="range" id="hp" min="0" max="100" value="100" style="flex:1">
+        <b id="hpv" style="width:44px;text-align:right">100%</b>
+      </div>
+      <div class="lines" id="hpBtns" style="margin-top:8px">
+        <div class="btn" data-h="100">Intact</div><div class="btn" data-h="45">≤ 50%</div><div class="btn" data-h="15">&lt; 20%</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Upgrade level</h3>
+      <div class="lines" id="lvBtns" style="grid-template-columns:repeat(4,1fr)">
+        <div class="btn" data-v="0">Base</div><div class="btn" data-v="1">L1</div><div class="btn" data-v="2">L2</div><div class="btn" data-v="3">L3</div>
+      </div>
+      <div class="row"><div class="btn primary" id="upBtn">Upgrade ▲</div></div>
+      <div id="lvInfo" style="margin-top:8px;color:var(--mute);font-size:12px"></div>
+    </div>
+    <div class="card">
+      <h3>Facing (rotation)</h3>
+      <div class="lines" id="faceBtns" style="grid-template-columns:repeat(4,1fr)"></div>
+      <div class="row"><div class="btn" id="rotL">⟲ Rotate left</div><div class="btn" id="rotR">Rotate right ⟳</div></div>
+    </div>
+    <div class="card">
+      <h3>Team colour</h3>
+      <div class="team" id="team"></div>
+    </div>
+    <div class="card">
+      <h3>Export</h3>
+      <div class="row" style="margin-top:0"><div class="btn" id="dl">Copy SVG snapshot</div></div>
+    </div>
+    <div class="card"><h3>Events</h3><div id="log"></div></div>
+  </aside>
+</main>
+<!-- Serve the game folder over http (see README) and open docs/art/factories-demo.html -->
+<script src="../../assets/buildings/tank-factories/tank-factories.js"></script>
+<script>
+  const slot = document.getElementById('slot');
+  const logEl = document.getElementById('log');
+  const log = m => { logEl.innerHTML = `<div>${new Date().toLocaleTimeString()} · ${m}</div>` + logEl.innerHTML; };
+  let team = '#33d17a';
+  const KINDS = {
+    heavy: { api: HeavyFactory, name: 'Heavy Tank Factory', unit: 'Heavy tank', sub: '3 gates · 6 turbine fans · control tower · 4 facings · team colours',
+      maps: [['Map A: Steel Valley', 3], ['Map B: Red Canyon', 2], ['Map C: Frozen Pass', 1]] },
+    light: { api: LightFactory, name: 'Light Tank Factory', unit: 'Light tank', sub: '1 gate · faceted hangar roof with skylights · 2 fans · control booth + radar · 4 facings',
+      maps: [['Any map', 1]] },
+    medium: { api: MediumFactory, name: 'Medium Tank Factory', unit: 'Medium tank', sub: '2 gates · 4 turbine fans · armoured spine + sensor dome · radiator fins · 4 facings',
+      maps: [['Map A: Steel Valley', 2], ['Map B: Red Canyon', 1]] },
+  };
+  let kind = 'heavy', factory = null;
+  function build(k, keep) {
+    const prev = factory ? { facing: factory.facing, captured: factory.captured, health: factory.health, level: factory.level } : {};
+    if (factory) factory.destroy();
+    kind = k; const K = KINDS[k];
+    factory = K.api.create(slot, Object.assign({ lines: K.maps[0][1], team, onTankOut: i => log(`${K.unit} rolled out on line ${i + 1}`) }, keep ? prev : {}));
+    document.getElementById('title').textContent = K.name;
+    document.getElementById('subtitle').textContent = '2.5D isometric vector asset · ' + K.sub;
+    document.getElementById('maxTag').textContent = K.api.dims.GX.length;
+    document.getElementById('prodTitle').textContent = 'Produce ' + K.unit.toLowerCase();
+    document.getElementById('maps').innerHTML = K.maps.map((m, i) => `<button data-l="${m[1]}" class="${i ? '' : 'on'}">${m[0]} <small>${m[1]} line${m[1] > 1 ? 's' : ''}</small></button>`).join('');
+    document.querySelectorAll('#kindBtns .btn').forEach(b => b.style.cssText = b.dataset.k === k ? 'background:#3a3220;border-color:#e2b45c;color:#ffe2a0' : '');
+  }
+  build('heavy');
+
+  const lineBtns = document.getElementById('lineBtns');
+  function renderLineBtns() {
+    lineBtns.innerHTML = '';
+    lineBtns.style.gridTemplateColumns = `repeat(${KINDS[kind].api.dims.GX.length},1fr)`;
+    for (let i = 0; i < KINDS[kind].api.dims.GX.length; i++) {
+      const locked = factory.isLocked(i);
+      const b = document.createElement('div');
+      b.className = 'btn'; if (locked) b.setAttribute('disabled', '');
+      b.innerHTML = `<b>Line ${i + 1}</b><span class="st">${locked ? 'disabled' : 'gate ' + (factory.gateOfLine(i) + 1) + ' of ' + factory.maxLines}</span>`;
+      b.onclick = () => { if (!locked) produce(i); };
+      lineBtns.appendChild(b);
+    }
+    document.getElementById('lineTag').textContent = factory.lines;
+  }
+  function produce(i) {
+    log(`Line ${i + 1}: order queued`);
+    factory.produce(i).then(ok => ok && log(`Line ${i + 1}: gate closed, line idle`));
+  }
+  renderLineBtns();
+  document.getElementById('kindBtns').onclick = e => {
+    const b = e.target.closest('.btn'); if (!b || b.dataset.k === kind) return;
+    build(b.dataset.k, true); renderLineBtns(); if (typeof markLv === 'function') markLv(); if (typeof renderFace === 'function') renderFace(); if (typeof markOwn === 'function') markOwn();
+    log(`Showing ${KINDS[kind].name}`);
+  };
+
+  document.getElementById('maps').onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    document.querySelectorAll('#maps button').forEach(x => x.classList.toggle('on', x === b));
+    factory.setLines(+b.dataset.l); renderLineBtns();
+    log(`Loaded ${b.firstChild.textContent.trim()} → ${b.dataset.l} production line(s)`);
+  };
+  document.getElementById('all').onclick = () => { for (let i = 0; i < factory.lines; i++) produce(i); };
+
+  let autoT = null;
+  document.getElementById('auto').onchange = e => {
+    clearInterval(autoT);
+    if (e.target.checked) {
+      const tick = () => { for (let i = 0; i < factory.lines; i++) if (!factory.isBusy(i) && Math.random() < .5) produce(i); };
+      tick(); autoT = setInterval(tick, 1800);
+    }
+  };
+
+  const teamEl = document.getElementById('team');
+  ['#33d17a', '#3b82f6', '#e5484d', '#f5a524', '#a855f7', '#22d3ee'].forEach(c => {
+    const i = document.createElement('i'); i.style.background = c; if (c === team) i.className = 'on';
+    i.onclick = () => { team = c; teamEl.querySelectorAll('i').forEach(x => x.classList.toggle('on', x === i)); factory.setTeam(c); renderLineBtns(); };
+    teamEl.appendChild(i);
+  });
+
+  const ownBtns = document.getElementById('ownBtns');
+  const markOwn = () => ownBtns.querySelectorAll('.btn').forEach(b => b.style.cssText = (+b.dataset.c === (factory.captured ? 1 : 0)) ? 'background:#3a3220;border-color:#e2b45c;color:#ffe2a0' : '');
+  ownBtns.onclick = e => { const b = e.target.closest('.btn'); if (!b) return; factory.setCaptured(b.dataset.c === '1'); markOwn(); log(factory.captured ? 'Factory captured' : 'Factory is neutral (not captured)'); };
+  markOwn();
+  const hp = document.getElementById('hp'), hpv = document.getElementById('hpv');
+  const setHp = v => { hp.value = v; hpv.textContent = v + '%'; const lv = factory.damageLevel; factory.setHealth(v / 100); if (factory.damageLevel !== lv) log(['Factory repaired', 'Factory damaged (≤ 50%)', 'Factory critical (< 20%)'][factory.damageLevel]); };
+  hp.oninput = () => setHp(+hp.value);
+  document.getElementById('hpBtns').onclick = e => { const b = e.target.closest('.btn'); if (b) setHp(+b.dataset.h); };
+
+  const LV_STATS = [['—', '—'], ['+10%', '+15%'], ['+20%', '+30%'], ['+30%', '+50%']];
+  const lvBtns = document.getElementById('lvBtns');
+  function markLv() {
+    lvBtns.querySelectorAll('.btn').forEach(b => b.style.cssText = (+b.dataset.v === factory.level) ? 'background:#3a3220;border-color:#e2b45c;color:#ffe2a0' : '');
+    const s = LV_STATS[factory.level];
+    document.getElementById('lvInfo').innerHTML = factory.level ? `Production speed <b>${s[0]}</b> · Health <b>${s[1]}</b> (animation ×${factory.speed.toFixed(1)})` : 'Base factory, no upgrades';
+    document.getElementById('upBtn').style.opacity = factory.level >= 3 ? '.4' : '1';
+  }
+  lvBtns.onclick = e => { const b = e.target.closest('.btn'); if (!b) return; factory.setLevel(+b.dataset.v); markLv(); log(`Upgrade level ${factory.level}`); };
+  document.getElementById('upBtn').onclick = () => { if (factory.level >= 3) return; factory.setLevel(factory.level + 1); markLv(); log(`Upgraded to level ${factory.level}`); };
+  markLv();
+
+  // ---- zoom & pan (wheel / pinch to zoom at the pointer, drag to pan, buttons)
+  const stage = document.querySelector('.stage');
+  const view = { s: 1, x: 0, y: 0 };
+  const applyView = () => { slot.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.s})`; document.getElementById('zVal').textContent = Math.round(view.s * 100) + '%'; };
+  function zoomAt(f, cx, cy) {   // cx, cy relative to the stage
+    const s = Math.max(0.5, Math.min(6, view.s * f)); const k = s / view.s;
+    view.x = cx - (cx - view.x) * k; view.y = cy - (cy - view.y) * k; view.s = s; applyView();
+  }
+  const center = () => { const r = stage.getBoundingClientRect(); return [r.width / 2, r.height / 2]; };
+  stage.addEventListener('wheel', e => { e.preventDefault(); const r = stage.getBoundingClientRect(); zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  const ptrs = new Map(); let pinch = null;
+  stage.addEventListener('pointerdown', e => { if (e.target.closest('.zoombar')) return; stage.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]); stage.classList.add('dragging'); });
+  stage.addEventListener('pointermove', e => {
+    if (!ptrs.has(e.pointerId)) return;
+    const prev = ptrs.get(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+    if (ptrs.size === 2) {
+      const [a, b] = [...ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]), r = stage.getBoundingClientRect();
+      if (pinch) zoomAt(d / pinch, (a[0] + b[0]) / 2 - r.left, (a[1] + b[1]) / 2 - r.top);
+      pinch = d;
+    } else { view.x += e.clientX - prev[0]; view.y += e.clientY - prev[1]; applyView(); }
+  });
+  const endPtr = e => { ptrs.delete(e.pointerId); pinch = null; if (!ptrs.size) stage.classList.remove('dragging'); };
+  stage.addEventListener('pointerup', endPtr); stage.addEventListener('pointercancel', endPtr);
+  stage.addEventListener('dblclick', e => { if (e.target.closest('.zoombar')) return; const r = stage.getBoundingClientRect(); zoomAt(2, e.clientX - r.left, e.clientY - r.top); });
+  document.getElementById('zIn').onclick = () => zoomAt(1.25, ...center());
+  document.getElementById('zOut').onclick = () => zoomAt(0.8, ...center());
+  document.getElementById('zReset').onclick = () => { view.s = 1; view.x = 0; view.y = 0; applyView(); };
+
+  const faceBtns = document.getElementById('faceBtns');
+  function renderFace() {
+    faceBtns.innerHTML = '';
+    [0, 90, 180, 270].forEach((deg, k) => {
+      const b = document.createElement('div'); b.className = 'btn'; b.textContent = deg + '°';
+      if (factory.facing === k) b.style.cssText = 'background:#3a3220;border-color:#e2b45c;color:#ffe2a0';
+      b.onclick = () => { factory.setFacing(k); renderFace(); log(`Facing set to ${deg}°`); };
+      faceBtns.appendChild(b);
+    });
+  }
+  renderFace();
+  document.getElementById('rotL').onclick = () => { factory.rotate(-1); renderFace(); };
+  document.getElementById('rotR').onclick = () => { factory.rotate(1); renderFace(); };
+
+  document.getElementById('dl').onclick = async e => {
+    const b = e.currentTarget;
+    try { await navigator.clipboard.writeText(factory.toSVGString()); b.textContent = 'Copied! Paste into a .svg file'; }
+    catch (err) { b.textContent = 'Copy blocked by browser'; }
+    setTimeout(() => b.textContent = 'Copy SVG snapshot', 2200);
+  };
+</script>
+</body>
+</html>

@@ -599,7 +599,7 @@ function segBox(a, c, b, hx, hy) {
   for (let i = 0; i < 4; i++) { if (P[i] === 0) { if (Q[i] <= 0) return false; } else { const t = Q[i] / P[i]; if (P[i] < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; } } }
   return t1 - t0 > 1e-6;
 }
-// The map's paths know nothing of structures. Small ones are simply brushed past; a Heavy Factory is long, so a path that would
+// The map's paths know nothing of structures. Small ones are simply brushed past; a tank factory is long, so a path that would
 // cross it is led round its corners instead of into its wall.
 function boxRound(p, sx, sy) {
   if (!p.length) return p;
@@ -1103,7 +1103,7 @@ function usePower(ti, k, x, y) {
 
 /* ---------- simulation ---------- */
 function tryMove(u, nx, ny) {
-  if (u.exit) return; // driving out of a Heavy Factory: nothing pushes it
+  if (u.exit) return; // driving out of a tank factory: nothing pushes it
   const m = G.map; nx = clamp(nx, 8, m.WW - 8); ny = clamp(ny, 8, m.WH - 8);
   if (u.T.air || !passAt(u.x, u.y)) { u.x = nx; u.y = ny; return; }
   for (const b of G.blds) {
@@ -1231,7 +1231,7 @@ function updBld(b, dt) {
   if (tm && b.hp > 0 && b.k !== 'pad' && b.hp < maxHp(b) * .35 && rnd() < dt * 6 && visAt(b.x, b.y)) { const px = b.x + (rnd() - .5) * b.T.r, py = b.y + (rnd() - .5) * b.T.r; part('smoke', px, py, (rnd() - .5) * 8, (rnd() - .5) * 8, 1.5, 7, null, 26, BH[b.k] * .7); if (rnd() < .5) part('fire', px, py, 0, 0, .4, 7, null, 26, BH[b.k] * .6); }
   // tank factory: every unlocked line builds its own model; lines running together each work a little slower
   if (b.lines) {
-    if (hfOn(b)) { if (b.T === BT.factory) b.T = HFT || (HFT = Object.assign({}, BT.factory, { r: 62, box: [77, 47] })); hfUpd(b, dt); }
+    if (hfOn(b)) { if (b.T.hfFt !== b.ft) b.T = hfT(b); hfUpd(b, dt); }
     if (tm && b.k === 'factory' && b.hp > 0 && !(G.noProd && b.team === 0)) {
       let run = 0; for (const ln of b.lines) if (ln.paid) run++;
       const rate = buildRate(b) * LINE_SHARE[run];
@@ -1241,7 +1241,7 @@ function updBld(b, dt) {
         ln.pt += dt * rate;
         if (ln.pt >= UT[ln.k].time) {
           ln.paid = false; ln.pt = 0; tm.count++;
-          const gi = hfOn(b) ? b.lines.indexOf(ln) : -1, ex = gi >= 0 ? hfLane(b, gi) : null, out = ex && passAt(ex.x, ex.y1); // a Heavy Factory's tanks drive out of their own gate
+          const gi = hfOn(b) ? hfGate(b, b.lines.indexOf(ln)) : -1, ex = gi >= 0 && !hfBusy(hfGates(b)[gi]) ? hfLane(b, gi) : null, out = ex && passAt(ex.x, ex.y1); // a factory's tanks drive out of their own gate
           const u = mkUnit(ln.k, b.team, out ? ex.x : b.x + (rnd() - .5) * 16, out ? ex.y0 : b.y + b.T.r * .8), r = b.rally || { x: b.x + (rnd() - .5) * 90, y: b.y + b.T.r + 60 + rnd() * 40 }, rx = r.x + (rnd() - .5) * 30, ry = r.y + (rnd() - .5) * 30;
           if (out) { u.a = u.ta = Math.PI / 2; u.exit = { b, i: gi, x: ex.x, y1: ex.y1, yd: ex.yd, rx, ry, v: 0 }; hfGates(b)[gi].u = u; } else orderMove([u], rx, ry);
           if (b.team === 0) sfx('ready', b.x, b.y);
@@ -1750,18 +1750,30 @@ function bldVars(b) {
     ready: !!pw && pw[b.k === 'laser' ? 'laser' : 'sortie'] <= 0, firing: b.k === 'laser' && G.beams.some(q => q.src === b && q.t > 0) };
 }
 function bldShadow(b) { if (hfOn(b) && b.hf && b.hf.pic.top) return hfShadow(b); drawModel(ASSETS.models['buildings/' + b.k], b.x, b.y, bldVars(b), true); }
-/* ---------- Heavy Tank Factory ----------
-   Its model (assets/buildings/heavy-factory/heavy-factory.js, global HeavyFactory) is a self-animating SVG. One copy per factory
-   runs off-screen and is copied into pictures: the ground plate, the structure (redrawn several times a second for its fans,
-   radar and smoke) and one pair of door leaves. The game itself moves the doors and the tank every frame: a finished tank is a
-   real unit that starts inside its bay and drives out through the gate, cut off where the walls hide it.
+/* ---------- Tank Factories (Light, Medium, Heavy) ----------
+   Their models (assets/buildings/tank-factories/tank-factories.js, global TankFactories) are self-animating SVGs. One copy per
+   factory runs off-screen and is copied into pictures: the ground plate, the structure (redrawn several times a second for its
+   fans, radar, smoke and fire) and one pair of door leaves. The game itself moves the doors and the tank every frame: a finished
+   tank is a real unit that starts inside its bay and drives out through the gate, cut off where the walls hide it.
+   The model draws team colour, the neutral grey of an uncaptured factory, damage below 50% and 20% health, and the upgrade
+   level (stars and bigger fans) by itself. Lines are numbered over the gates that run (a Heavy Factory with one line uses its
+   centre gate); when a factory has more open lines than gates, lines share gates.
    The model's 30-degree projection is stretched to the map's 2:1 one. Model point (mx, my, mz) is world (b.x + (mx - W/2) * K,
    b.y + (my - D/2) * K) at height mz * K * .75. */
-const HF = { g: null, list: [], K: .5, RES: 1, MS: 50, OPEN: .9, SPD: 30, IN: 122, OUT: 246 }; // K: model units to world pixels. RES: picture pixels per model unit. MS: milliseconds between pictures of the structure. OPEN: seconds a door takes. SPD: speed of a tank leaving. IN, OUT: where it starts and stops (model y)
-let HFT = null; // a Heavy Factory is larger than the other factories and is walked round as a box
-const hfOn = b => b.k === 'factory' && b.ft === 2 && typeof HeavyFactory !== 'undefined';
-const hfGates = b => b.gates || (b.gates = [0, 1, 2].map(() => ({ door: 0, u: null }))); // door: 0 shut … 1 open. u: the tank driving out
-function hfLane(b, i) { const d = HeavyFactory.dims, y = m => b.y + (m - d.D / 2) * HF.K; return { x: b.x + (d.GX[i] - d.W / 2) * HF.K, y0: y(HF.IN), y1: y(HF.OUT), yd: y(d.D) }; } // the way out of gate i, on the map
+const HF = { g: null, list: [], dims: [], K: .5, RES: 1, MS: 50, OPEN: .9, SPD: 30, OUT: 66 }; // K: model units to world pixels. RES: picture pixels per model unit. MS: milliseconds between pictures of the structure. OPEN: seconds a door takes. SPD: speed of a tank leaving. OUT: where it stops, in model units past the gate wall
+const HF_KIND = ['light', 'medium', 'heavy'], HFT = []; // HFT: each kind's footprint; a factory is walked round as a box
+const hfOn = b => b.k === 'factory' && b.ft >= 0 && b.ft <= 2 && typeof TankFactories !== 'undefined';
+const hfDims = b => HF.dims[b.ft] || (HF.dims[b.ft] = TankFactories.dims(HF_KIND[b.ft]));
+function hfT(b) { // the factory's stats with its own size
+  if (HFT[b.ft]) return HFT[b.ft];
+  const d = hfDims(b), f = d.FOOT, hx = Math.max(d.W / 2 - f[0], f[1] - d.W / 2) * HF.K + 2, hy = Math.max(d.D / 2 - f[2], f[3] - d.D / 2) * HF.K + 2;
+  return HFT[b.ft] = Object.assign({}, BT.factory, { r: Math.round(Math.sqrt(hx * hy)) + 2, box: [Math.round(hx), Math.round(hy)], hfFt: b.ft });
+}
+const hfGates = b => b.gates || (b.gates = [0, 1, 2].map(() => ({ door: 0, u: null }))); // per gate. door: 0 shut … 1 open. u: the tank driving out
+function hfAct(b) { const d = hfDims(b), n = clamp(b.lines.filter(l => l.open).length, 1, d.GX.length); return d.ORDER.slice(0, n).sort((p, q) => p - q); } // the gates that run, left to right
+function hfGate(b, i) { const a = hfAct(b); return a[i % a.length]; } // the gate open line i drives out of
+const hfBusy = g => !!(g.u && !g.u.dead && g.u.exit && !g.u.exit.clear); // a tank is still in the gateway
+function hfLane(b, i) { const d = hfDims(b), y = m => b.y + (m - d.D / 2) * HF.K; return { x: b.x + (d.GX[i] - d.W / 2) * HF.K, y0: y(d.TANK_START), y1: y(d.D + HF.OUT), yd: y(d.D) }; } // the way out of gate i, on the map
 // pushes a point out of a box-shaped structure, sliding it towards the nearer corner so units go round
 function boxOut(b, x, y, m) {
   const hx = b.T.box[0] + m, hy = b.T.box[1] + m, dx = x - b.x, dy = y - b.y; if (dx >= hx || dx <= -hx || dy >= hy || dy <= -hy) return null;
@@ -1769,13 +1781,10 @@ function boxOut(b, x, y, m) {
   return px < py ? [b.x + (dx < 0 ? -hx : hx), y + (dy < 0 ? -px : px)] : [x + (dx < 0 ? -py : py), b.y + (dy < 0 ? -hy : hy)];
 }
 function hfUpd(b, dt) { // doors: open just before a tank is finished, shut once its tail is clear
-  const gs = hfGates(b), live = b.hp > 0 && b.team >= 0; let run = 0; for (const ln of b.lines) if (ln.paid) run++;
+  const gs = hfGates(b), live = b.hp > 0 && b.team >= 0, want = []; let run = 0; for (const ln of b.lines) if (ln.paid) run++;
   const rate = live ? buildRate(b) * LINE_SHARE[run] : 1;
-  b.lines.forEach((ln, i) => {
-    const g = gs[i]; if (g.u && (g.u.dead || !g.u.exit)) g.u = null;
-    const want = g.u ? !g.u.exit.clear : live && ln.paid && (UT[ln.k].time - ln.pt) / rate <= HF.OPEN + .1;
-    g.door = clamp(g.door + (want ? dt : -dt) / HF.OPEN, 0, 1);
-  });
+  b.lines.forEach((ln, i) => { if (live && ln.open && ln.paid && (UT[ln.k].time - ln.pt) / rate <= HF.OPEN + .1) want[hfGate(b, i)] = true; });
+  gs.forEach((g, i) => { if (g.u && (g.u.dead || !g.u.exit)) g.u = null; g.door = clamp(g.door + (hfBusy(g) || want[i] ? dt : -dt) / HF.OPEN, 0, 1); });
 }
 function hfDrive(u, dt) { // a new tank drives straight out of its bay, then goes to the rally point
   const e = u.exit, g = e.b.gates && e.b.gates[e.i];
@@ -1786,7 +1795,7 @@ function hfDrive(u, dt) { // a new tank drives straight out of its bay, then goe
 function hfPic(v, key, keep, prep, done) { // a picture of the model's parts that keep() accepts
   const el = v.f.element.cloneNode(true), gen = v.gen, w = Math.ceil(+el.getAttribute('width')), h = Math.ceil(+el.getAttribute('height'));
   for (const p of el.querySelectorAll('[data-part]')) if (!keep(p.getAttribute('data-part'))) p.remove();
-  if (key !== 'top') el.querySelector('.smoke').remove(); if (prep) prep(el);
+  if (key !== 'top') { el.querySelector('.smoke').remove(); el.querySelector('.fx').remove(); } if (prep) prep(el);
   const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(el)], { type: 'image/svg+xml' })), im = new Image();
   im.onload = () => {
     URL.revokeObjectURL(url); if (done) done(); if (gen !== v.gen) return;
@@ -1797,20 +1806,31 @@ function hfPic(v, key, keep, prep, done) { // a picture of the model's parts tha
 }
 function hfLamps(b, v, el) { // a working gate: amber warning lamps and a lit strip, as in the model's own cycle
   if (!b.gates || b.hp <= 0) return; const blink = Math.sin(performance.now() / 100) > 0;
-  b.gates.forEach((g, i) => {
-    if (i >= v.lines || !(g.door > 0 || g.u)) return;
+  for (const i of v.act) {
+    const g = b.gates[i]; if (!(g.door > 0 || g.u)) continue;
     for (const l of el.querySelectorAll('[data-lamp="' + i + '"]')) l.setAttribute('fill', blink ? '#ffb020' : '#5a3a00');
     for (const l of el.querySelectorAll('[data-bar="' + i + '"]')) l.setAttribute('opacity', blink ? '1' : '.3');
     for (const l of el.querySelectorAll('[data-strip="' + i + '"]')) l.setAttribute('opacity', '1');
-  });
+  }
 }
 function hfSync(b) { // the factory's model and pictures, kept up to date
   if (HF.g !== G) { for (const q of HF.list) q.f.destroy(); HF.list = []; HF.g = G; } // a new battle: stop the old models
-  const team = (b.team >= 0 ? TEAMC[b.team] : NEUT).c, lines = Math.max(1, b.lines.filter(l => l.open).length), wreck = b.hp <= 0; let v = b.hf;
-  if (!v) { v = b.hf = { team, lines, pic: {}, gen: 0, busy: 0, at: 0, need: true }; v.f = HeavyFactory.create(document.createElement('div'), { lines, facing: 0, team, scale: HF.RES, fadeOutTank: true }); HF.list.push(v); }
-  else if (!wreck && (team !== v.team || lines !== v.lines)) { if (team !== v.team) v.f.setTeam(v.team = team); if (lines !== v.lines) v.f.setLines(v.lines = lines); v.gen++; v.need = true; v.busy = 0; } // locked lines keep their gates sealed
+  const captured = b.team >= 0, team = (captured ? TEAMC[b.team] : NEUT).c, lines = hfAct(b).length, level = Math.min(3, b.lvl || 0), wreck = b.hp <= 0, health = clamp(b.hp / maxHp(b), 0, 1);
+  let v = b.hf;
+  if (v && v.ft !== b.ft) { v.f.destroy(); HF.list.splice(HF.list.indexOf(v), 1); v = null; }
+  if (!v) { v = b.hf = { ft: b.ft, team, lines, captured, level, pic: {}, gen: 0, busy: 0, at: 0, need: true }; v.f = TankFactories.create(HF_KIND[b.ft], document.createElement('div'), { lines, facing: 0, team, captured, health, level, scale: HF.RES, fadeOutTank: true }); HF.list.push(v); }
+  else if (!wreck) { // a wreck keeps its last picture
+    let ch = false, dl = v.f.damageLevel;
+    if (team !== v.team) { v.f.setTeam(v.team = team); ch = true; }
+    if (lines !== v.lines) { v.f.setLines(v.lines = lines); ch = true; } // locked lines keep their gates shut and powered off
+    if (captured !== v.captured) { v.f.setCaptured(v.captured = captured); ch = true; }
+    if (level !== v.level) { v.f.setLevel(v.level = level); ch = true; } // plays the model's upgrade effect
+    v.f.setHealth(health); if (v.f.damageLevel !== dl) ch = true; // damaged at 50%, burning below 20%
+    if (ch) { v.gen++; v.need = true; v.busy = 0; }
+  }
+  v.act = Array.from({ length: v.lines }, (_, k) => v.f.gateOfLine(k));
   const now = performance.now();
-  if (v.need) { v.need = false; v.at = 0; hfPic(v, 'gnd', id => id === 'pad'); hfPic(v, 'dl', id => id === 'doorL0'); hfPic(v, 'dr', id => id === 'doorR0'); }
+  if (v.need) { v.need = false; v.at = 0; const g0 = v.g0 = v.act[0]; hfPic(v, 'gnd', id => id === 'pad'); hfPic(v, 'dl', id => id === 'doorL' + g0); hfPic(v, 'dr', id => id === 'doorR' + g0); }
   if (!v.busy && (!v.at || (!wreck && !G.paused && now - v.at > HF.MS))) { v.at = now; v.busy = 1; hfPic(v, 'top', id => id !== 'pad' && !/^(door|tank)/.test(id), el => hfLamps(b, v, el), () => { v.busy = 0; }); } // a wreck or a paused game keeps its last picture
   return v;
 }
@@ -1819,20 +1839,20 @@ function hfBlit(b, v, c, dx) { // dx: moved along the model's x axis, in model u
   ctx.drawImage(c, ix(b.x, b.y) - v.ax * sx + o * .75, iy(b.x, b.y) - v.ay * sy + o * .375, c.width * sx, c.height * sy);
 }
 function hfPath(b, pts) { // an outline given in model coordinates
-  const d = HeavyFactory.dims; ctx.beginPath();
+  const d = hfDims(b); ctx.beginPath();
   pts.forEach((q, i) => { const x = b.x + (q[0] - d.W / 2) * HF.K, y = b.y + (q[1] - d.D / 2) * HF.K, X = ix(x, y), Y = iy(x, y) - q[2] * HF.K * .75; if (i) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); }); ctx.closePath();
 }
 function hfGround(b) { const v = hfSync(b); if (!v.pic.gnd) return; tI(); if (b.hp <= 0) ctx.filter = 'grayscale(1) brightness(.9) contrast(.85)'; hfBlit(b, v, v.pic.gnd); ctx.filter = 'none'; } // the plate it stands on, under everything
-function hfShadow(b) { shade(b.x, b.y, 0, 34, () => { ctx.beginPath(); ctx.rect(-75, -45, 150, 90); }, .07); }
+function hfShadow(b) { const t = hfT(b), w = t.box[0] - 2, h = t.box[1] - 2; shade(b.x, b.y, 0, hfDims(b).H * HF.K * .75, () => { ctx.beginPath(); ctx.rect(-w, -h, w * 2, h * 2); }, .07); }
 function drawHeavy(b) { // false until the pictures are ready
   const v = hfSync(b), P = v.pic; if (!P.top || !P.dl || !P.dr || !P.gnd) return false;
-  const d = HeavyFactory.dims, GW = d.GW, GH = d.GH, D = d.D, gs = hfGates(b), wreck = b.hp <= 0, grey = 'grayscale(1) brightness(.9) contrast(.85)';
+  const d = hfDims(b), GW = d.GW, GH = d.GH, D = d.D, gs = hfGates(b), wreck = b.hp <= 0, grey = 'grayscale(1) brightness(.9) contrast(.85)';
   tI(); if (wreck) ctx.filter = grey; hfBlit(b, v, P.top); ctx.filter = 'none';
-  for (let i = 0; i < v.lines; i++) {
+  for (const i of v.act) {
     const g = gs[i], gx = d.GX[i], u = g.u;
     if (g.door < 1) { // the two leaves slide apart into the walls; only what shows through the gateway is drawn
       ctx.save(); tI(); hfPath(b, [[gx - GW, D - 1, 0], [gx - GW, D - 1, GH - 7], [gx + GW, D + 6, GH], [gx + GW, D + 6, 7]]); ctx.clip(); if (wreck) ctx.filter = grey;
-      hfBlit(b, v, P.dl, gx - d.GX[0] - GW * g.door); hfBlit(b, v, P.dr, gx - d.GX[0] + GW * g.door); ctx.restore();
+      hfBlit(b, v, P.dl, gx - d.GX[v.g0] - GW * g.door); hfBlit(b, v, P.dr, gx - d.GX[v.g0] + GW * g.door); ctx.restore();
     }
     if (u && u.exit && !u.dead && seen(u)) { // the tank: inside the bay it shows only through the gateway, under the lintel
       const B = 600, p = D + 6; ctx.save(); tI(); hfPath(b, [[gx + GW, p, GH], [gx - B, p, GH], [gx - B, p, -B], [gx + B, p, -B], [gx + B, p, 0], [gx + GW, p, 0]]); ctx.clip();
@@ -1947,7 +1967,7 @@ function render() {
   const vx0 = cix - W / 2 / z - 90, vx1 = cix + W / 2 / z + 90, vy0 = ciy - H / 2 / z - 60, vy1 = ciy + H / 2 / z + 110;
   const on = e => { const X = ix(e.x, e.y), Y = iy(e.x, e.y); return X > vx0 && X < vx1 && Y > vy0 && Y < vy1; };
   drawWater(m, now, vx0, vx1, vy0, vy1); tI();
-  const hfs = []; for (const b of G.blds) if (hfOn(b)) { const X = ix(b.x, b.y), Y = iy(b.x, b.y); if (X > vx0 - 110 && X < vx1 + 110 && Y > vy0 - 60 && Y < vy1 + 110) { b.hfF = now; hfs.push(b); hfGround(b); } } tI(); // Heavy Factories in view: their ground plates go under everything
+  const hfs = []; for (const b of G.blds) if (hfOn(b)) { const X = ix(b.x, b.y), Y = iy(b.x, b.y); if (X > vx0 - 110 && X < vx1 + 110 && Y > vy0 - 60 && Y < vy1 + 110) { b.hfF = now; hfs.push(b); hfGround(b); } } tI(); // tank factories in view: their ground plates go under everything
   // water shimmer
   ctx.fillStyle = '#dff4ff';
   for (const q of m.glints) { if (q.X < vx0 || q.X > vx1 || q.Y < vy0 || q.Y > vy1) continue; const al = Math.sin(now * 1.4 + q.ph); if (al < .2) continue; ctx.globalAlpha = (al - .2) * .3; ctx.fillRect(q.X + Math.sin(now * .6 + q.ph) * 4, q.Y, q.w, 1.2); }

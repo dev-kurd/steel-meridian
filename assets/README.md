@@ -15,10 +15,12 @@ asset, create its folder and add its name to `manifest.json`.
 | `ui/icons/<name>/` | `icon.svg` | button icons |
 | `ui/cursors/<name>/` | `cursor.svg` | mouse cursors; `data-hot` is the hot spot |
 
-`buildings/heavy-factory/heavy-factory.js` is different: it is a self-animating SVG model (global `HeavyFactory`, loaded by a
-script tag in `index.html`) used for Heavy tank factories. The game runs it off-screen and copies pictures of it into the map
-(ground plate, structure, door leaves). The doors and the tanks are moved by the game itself: the model's own placeholder
-tank is not used; the real unit starts inside its bay and drives out through the gate. Light and Medium factories still use `buildings/factory/model.svg`. Its style guide and demo are in `docs/art/`.
+`buildings/tank-factories/tank-factories.js` is different: it holds the Light, Medium and Heavy Tank Factories as
+self-animating SVG models (global `TankFactories`, loaded by a script tag in `index.html`). The game runs one copy per factory
+off-screen and copies pictures of it into the map (ground plate, structure, door leaves). The doors and the tanks are moved by
+the game itself: a finished tank is a real unit that starts inside its bay and drives out through its gate. The model draws team
+colour, the grey of an uncaptured factory, damage (50% and 20% health) and the upgrade level (stars and bigger fans) by itself.
+`buildings/factory/model.svg` is only used if that file fails to load. Style guide and demo: `docs/art/`.
 
 Terrain, water and the large clouds are not here: they are textures generated from noise for each map.
 

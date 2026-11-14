@@ -28,7 +28,7 @@ Opening `index.html` directly by double-click does not work: a page opened from 
 | `assets/` | All art, one folder per asset. Start with `assets/README.md` |
 | `sounds/` | Sound effects and announcer voice. See `sounds/README.txt` for sources and licences |
 | `music/` | Put `theme.mp3` here to replace the built-in score |
-| `docs/art/` | Art style guide and the Heavy Factory demo |
+| `docs/art/` | Art style guide and the Tank Factories demo |
 | `docs/report/` | Asset inventory report (PDF) and the page it is printed from |
 | `tools/` | Build scripts: the Windows exe, the PDF report, the announcer voice |
 
