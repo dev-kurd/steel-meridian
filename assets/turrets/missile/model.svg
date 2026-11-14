@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -30 60 60" width="240" height="240" data-kind="sm-model">
+  <title>Missile Turret</title>
+  <polygon points="17.1,0 8.55,14.809 -8.55,14.809 -17.1,0 -8.55,-14.809 8.55,-14.809" data-z="7" fill="none" stroke="#ffcf5a" stroke-width="2.2" data-if="L&gt;1"/>
+  <circle cx="0" cy="0" r="11.16" data-z="6;12" fill="#1d5c9c" data-fill="tc.d" data-scale="(.62+.07*L)/.62"/>
+  <circle cx="0" cy="0" r="14.4" data-z="12" fill="none" stroke="#b5dcff" data-stroke="tc.l" stroke-width="3" stroke-dasharray="7 4" data-if="L&gt;0"/>
+  <g data-rot="ta">
+    <rect x="-8" y="-9" width="20" height="18" rx="3" data-z="13;19" fill="#1d5c9c" data-fill="tc.d"/>
+    <rect x="-8" y="-9" width="20" height="18" rx="3" data-z="20" fill="#42a5ff" data-fill="tc.c" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+    <circle cx="8" cy="-5" r="2.6" data-z="20" fill="#14181c"/>
+    <circle cx="8" cy="-5" r="1.2" data-z="20" fill="#c94a3a"/>
+    <circle cx="8" cy="5" r="2.6" data-z="20" fill="#14181c"/>
+    <circle cx="8" cy="5" r="1.2" data-z="20" fill="#c94a3a"/>
+    <circle cx="2" cy="-5" r="2.6" data-z="20" fill="#14181c"/>
+    <circle cx="2" cy="-5" r="1.2" data-z="20" fill="#c94a3a"/>
+    <circle cx="2" cy="5" r="2.6" data-z="20" fill="#14181c"/>
+    <circle cx="2" cy="5" r="1.2" data-z="20" fill="#c94a3a"/>
+  </g>
+</svg>

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-54 -54 108 108" width="432" height="432" data-kind="sm-model">
+  <title>Foundry</title>
+  <rect x="-36" y="-25.2" width="72" height="50.4" rx="4" class="shadow" data-shadow="cast" data-z="30" fill="rgba(0,0,0,0.085)"/>
+  <rect x="-36" y="-25.2" width="72" height="50.4" rx="4" data-z="2" fill="none" stroke="#b9c6d3" stroke-width="4" stroke-dasharray="9 3" data-if="fort"/>
+  <rect x="-36" y="-25.2" width="72" height="50.4" rx="4" data-z="0;4" fill="#171c22"/>
+  <rect x="-36" y="-25.2" width="72" height="50.4" rx="4" data-z="6" fill="none" stroke="rgba(255," data-stroke="live?'rgba(255,'+(130+(.6+.4*sin(t*5))*60|0)+',50,.95)':'#333'" stroke-width="3.2" stroke-dasharray="10 12"/>
+  <rect x="-36" y="-25.2" width="72" height="50.4" rx="4" data-z="8;14" fill="#171c22"/>
+  <rect x="-36" y="-25.2" width="72" height="50.4" rx="4" data-z="16;18" fill="#42a5ff" data-fill="tc.c"/>
+  <rect x="-36" y="-25.2" width="72" height="50.4" rx="4" data-z="20;26" fill="#232a31"/>
+  <rect x="-36" y="-25.2" width="72" height="50.4" rx="4" data-z="26" fill="#454038" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+  <rect x="-32" y="-21.2" width="64" height="4" data-z="26" fill="rgba(0,0,0,.25)"/>
+  <rect x="3.6" y="-18" width="14.4" height="16.2" rx="2" data-z="26" fill="rgba(255,150,60," data-fill="'rgba(255,150,60,'+(.35+(.6+.4*sin(t*5))*.4)+')'" data-if="live"/>
+  <g transform="translate(-16.2 -1.8)" data-rot="live?t*1.2:0">
+    <polygon points="9.36,0 11.413,3.708 7.572,5.502 7.053,9.708 2.892,8.902 0,12 -2.892,8.902 -7.053,9.708 -7.572,5.502 -11.413,3.708 -9.36,0 -11.413,-3.708 -7.572,-5.502 -7.053,-9.708 -2.892,-8.902 0,-12 2.892,-8.902 7.053,-9.708 7.572,-5.502 11.413,-3.708" data-z="26" fill="#8a8f96"/>
+    <circle cx="0" cy="0" r="4.2" data-z="26" fill="#2b3036"/>
+  </g>
+  <g transform="translate(-1.2 10.8)" data-rot="live?t*-1.8:0">
+    <polygon points="6.24,0 7.608,2.472 5.048,3.668 4.702,6.472 1.928,5.935 0,8 -1.928,5.935 -4.702,6.472 -5.048,3.668 -7.608,2.472 -6.24,0 -7.608,-2.472 -5.048,-3.668 -4.702,-6.472 -1.928,-5.935 0,-8 1.928,-5.935 4.702,-6.472 5.048,-3.668 7.608,-2.472" data-z="26" fill="#8a8f96"/>
+    <circle cx="0" cy="0" r="2.8" data-z="26" fill="#2b3036"/>
+  </g>
+  <circle cx="24.48" cy="-14.4" r="4.5" data-z="26;42" fill="#2a2420"/>
+  <circle cx="24.48" cy="-14.4" r="4.5" data-z="44" fill="#5a5048" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+  <circle cx="24.48" cy="-14.4" class="glow" r="6" data-z="46" data-glow="O" data-alpha=".5+(.6+.4*sin(t*5))*.4" fill="#ffaa3c" data-if="live"/>
+  <circle cx="24.48" cy="-14.4" r="1.5" class="anchor" id="smoke1" fill="none" stroke="#ff00ff" stroke-width="0.5"/>
+  <circle cx="24.48" cy="3.6" r="4.5" data-z="26;42" fill="#2a2420"/>
+  <circle cx="24.48" cy="3.6" r="4.5" data-z="44" fill="#5a5048" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+  <circle cx="24.48" cy="3.6" class="glow" r="6" data-z="46" data-glow="O" data-alpha=".5+(.6+.4*sin(t*5))*.4" fill="#ffaa3c" data-if="live"/>
+  <circle cx="24.48" cy="3.6" r="1.5" class="anchor" id="smoke2" fill="none" stroke="#ff00ff" stroke-width="0.5"/>
+</svg>

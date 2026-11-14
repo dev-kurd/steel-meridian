@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -30 60 60" width="240" height="240" data-kind="sm-model">
+  <title>Light Skyguard air defence</title>
+  <g data-rot="a">
+    <rect x="-13" y="-9.5" width="26" height="19" rx="3" class="shadow" data-shadow="flat" data-off="1.5;-.5" fill="rgba(0,0,0,0.28)"/>
+    <rect x="-13" y="-9.5" width="26" height="19" rx="3" class="shadow" data-shadow="cast" data-z="8" fill="rgba(0,0,0,0.1)"/>
+  </g>
+  <g data-rot="ta">
+    <g class="shadow" data-shadow="cast" data-z="14" fill="rgba(0,0,0,0.08)">
+      <rect x="0" y="-1.5" width="22.2" height="3"/>
+      <circle cx="0" cy="0" r="6.2"/>
+    </g>
+  </g>
+  <g data-rot="a">
+    <g class="solid" data-z="0;4" fill="#12161a">
+      <rect x="-13" y="-9.5" width="26" height="5" rx="2.6"/>
+      <rect x="-13" y="4.5" width="26" height="5" rx="2.6"/>
+    </g>
+    <g class="solid" data-z="5" fill="#272d34">
+      <rect x="-13" y="-9.5" width="26" height="5" rx="2.6"/>
+      <rect x="-13" y="4.5" width="26" height="5" rx="2.6"/>
+    </g>
+    <line x1="-12" y1="-7" x2="13" y2="-7" data-z="5" fill="none" stroke="rgba(0,0,0,.55)" stroke-width="5" stroke-dasharray="1 2.5" data-dashoffset=".5-odo%3.5"/>
+    <line x1="-12" y1="7" x2="13" y2="7" data-z="5" fill="none" stroke="rgba(0,0,0,.55)" stroke-width="5" stroke-dasharray="1 2.5" data-dashoffset=".5-odo%3.5"/>
+    <g data-if="cos(a-PI/2)+sin(a-PI/2)&gt;=.2">
+      <circle cx="-10" cy="-9.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="-10" cy="-9.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+      <circle cx="-3.333" cy="-9.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="-3.333" cy="-9.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+      <circle cx="3.333" cy="-9.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="3.333" cy="-9.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+      <circle cx="10" cy="-9.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="10" cy="-9.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+    </g>
+    <g data-if="cos(a+PI/2)+sin(a+PI/2)&gt;=.2">
+      <circle cx="-10" cy="9.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="-10" cy="9.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+      <circle cx="-3.333" cy="9.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="-3.333" cy="9.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+      <circle cx="3.333" cy="9.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="3.333" cy="9.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+      <circle cx="10" cy="9.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="10" cy="9.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+    </g>
+    <rect x="-11.8" y="-7.4" width="23.4" height="14.8" rx="2" data-z="5;6" fill="#1d5c9c" data-fill="tc.d"/>
+    <rect x="-11" y="-5.7" width="22" height="11.4" rx="2.2" class="taper" data-z="6;9" data-taper="-10.3 -5.1 17.4 10.2 2.2" fill="#1d5c9c" data-fill="tc.d" data-top-fill="tc.c"/>
+    <rect x="-8.4" y="-3.1" width="1" height="6.2" data-z="9" fill="rgba(0,0,0,.4)"/>
+    <rect x="-6.4" y="-3.1" width="1" height="6.2" data-z="9" fill="rgba(0,0,0,.4)"/>
+    <rect x="-4.4" y="-3.1" width="1" height="6.2" data-z="9" fill="rgba(0,0,0,.4)"/>
+    <rect x="-3.12" y="-4.6" width="1.6" height="9.2" data-z="9" fill="#b5dcff" data-fill="tc.l" opacity="0.5"/>
+    <circle cx="10.4" cy="-4.5" r="1" data-z="6.4" fill="#fff3c4"/>
+    <circle cx="10.4" cy="4.5" r="1" data-z="6.4" fill="#fff3c4"/>
+  </g>
+  <g data-rot="ta">
+    <circle cx="0" cy="0" r="5.332" class="taper" data-z="9;13" data-taper="4.032" fill="#1d5c9c" data-fill="tc.d" data-top-fill="tc.m"/>
+    <rect x="-3.2" y="-7.132" width="6" height="3" rx="1" data-z="10;13" fill="#1d5c9c" data-fill="tc.d"/>
+    <line x1="1.5" y1="-6.832" x2="12.5" y2="-6.832" class="tube" data-z="11;16" stroke="#1c2127" stroke-width="1"/>
+    <rect x="-3.2" y="4.132" width="6" height="3" rx="1" data-z="10;13" fill="#1d5c9c" data-fill="tc.d"/>
+    <line x1="1.5" y1="6.832" x2="12.5" y2="6.832" class="tube" data-z="11;16" stroke="#1c2127" stroke-width="1"/>
+    <line x1="-2.933" y1="0" x2="-2.933" y2="0" class="strut" data-z="13;18" stroke="#aab4be" stroke-width="1"/>
+    <g transform="translate(-2.933 0)" data-rot="t*3+id-ta">
+      <rect x="-3.4" y="-1" width="6.8" height="2" data-z="18" fill="#cfd7de"/>
+    </g>
+  </g>
+  <g data-rot="ta">
+    <circle cx="15.5" cy="0" class="glow" r="8" data-z="16" data-glow="W" opacity="1" fill="#fff0b4" data-if="flash&gt;0"/>
+  </g>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-24 -24 48 48" width="192" height="192" data-kind="sm-model">
+  <title>Falcon sortie fighter</title>
+  <g data-rot="a" data-lift="72">
+    <polygon points="17,0 -11,12 -7,2.5 -13,2.5 -13,-2.5 -7,-2.5 -11,-12" class="shadow" data-shadow="flat" data-off="0;0" data-z="72" fill="rgba(0,0,0,0.24)"/>
+    <polygon points="17,0 -11,12 -7,2.5 -13,2.5 -13,-2.5 -7,-2.5 -11,-12" data-z="0;2" fill="#1d5c9c" data-fill="tc.d"/>
+    <polygon points="17,0 -11,12 -7,2.5 -13,2.5 -13,-2.5 -7,-2.5 -11,-12" data-z="3" fill="#42a5ff" data-fill="tc.c" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+    <rect x="-9" y="-1.2" width="20" height="2.4" data-z="3" fill="#b5dcff" data-fill="tc.l"/>
+    <ellipse cx="6" cy="0" rx="4" ry="2" data-z="3" fill="#12202c"/>
+    <rect x="-12" y="-1" width="5" height="2" data-z="3" fill="#1d5c9c" data-fill="tc.d"/>
+    <circle cx="-15" cy="0" class="glow" r="6" data-r="6+rnd()*2" data-z="2" data-glow="O" opacity="0.9" fill="#ffaa3c"/>
+    <g data-rot="ta-a">
+      <circle cx="16" cy="0" class="glow" r="8" data-z="2" data-glow="W" opacity="1" fill="#fff0b4" data-if="flash&gt;0"/>
+    </g>
+  </g>
+</svg>

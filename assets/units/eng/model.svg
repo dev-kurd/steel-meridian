@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-22 -22 44 44" width="176" height="176" data-kind="sm-model">
+  <title>Engineer</title>
+  <g data-rot="a">
+    <rect x="-11" y="-7" width="22" height="14" rx="3" class="shadow" data-shadow="flat" data-off="1.5;-.5" fill="rgba(0,0,0,0.28)"/>
+    <rect x="-11" y="-7" width="22" height="14" rx="3" class="shadow" data-shadow="cast" data-z="8" fill="rgba(0,0,0,0.1)"/>
+  </g>
+  <g data-rot="ta">
+    <circle cx="0" cy="0" r="5" class="shadow" data-shadow="cast" data-z="12" fill="rgba(0,0,0,0.09)"/>
+  </g>
+  <g data-rot="a">
+    <g class="solid" data-z="0;4" fill="#101317">
+      <rect x="-9" y="-8.5" width="5.5" height="3" rx="1.2"/>
+      <rect x="-9" y="5.5" width="5.5" height="3" rx="1.2"/>
+      <rect x="5" y="-8.5" width="5.5" height="3" rx="1.2"/>
+      <rect x="5" y="5.5" width="5.5" height="3" rx="1.2"/>
+    </g>
+    <rect x="-11" y="-7" width="22" height="14" rx="2" data-z="3;6" fill="#2a3036"/>
+    <rect x="-11" y="-7" width="22" height="14" rx="2" data-z="7" fill="#3a424b" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+    <rect x="-9" y="-6" width="2" height="12" data-z="7" fill="#ffcf5a"/>
+    <rect x="-5" y="-6" width="2" height="12" data-z="7" fill="#ffcf5a"/>
+    <rect x="-1" y="-6" width="2" height="12" data-z="7" fill="#ffcf5a"/>
+    <rect x="3" y="-6" width="2" height="12" data-z="7" fill="#ffcf5a"/>
+    <g transform="translate(-4 0)" data-rot="arm-a">
+      <rect x="0" y="-1.2" width="3.4" height="2.4" data-z="8" fill="#ffb347"/>
+      <rect x="2.6" y="-1.2" width="3.4" height="2.4" data-z="10" fill="#ffb347"/>
+      <rect x="5.2" y="-1.2" width="3.4" height="2.4" data-z="12" fill="#ffb347"/>
+      <rect x="7.8" y="-1.2" width="3.4" height="2.4" data-z="14" fill="#ffb347"/>
+      <rect x="10.4" y="-1.2" width="3.4" height="2.4" data-z="16" fill="#ffb347"/>
+    </g>
+    <rect x="2" y="-6.5" width="8" height="13" rx="2" data-z="6;10" fill="#1d5c9c" data-fill="tc.d"/>
+    <rect x="2" y="-6.5" width="8" height="13" rx="2" data-z="11" fill="#42a5ff" data-fill="tc.c" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+    <rect x="7" y="-5" width="2.4" height="10" data-z="11" fill="#12202c"/>
+    <circle cx="10.5" cy="-5" r="1" data-z="11" fill="#fff3c4"/>
+    <circle cx="10.5" cy="5" r="1" data-z="11" fill="#fff3c4"/>
+  </g>
+</svg>

@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -30 60 60" width="240" height="240" data-kind="sm-model">
+  <title>Medium Prism energy tank</title>
+  <g data-rot="a">
+    <rect x="-16" y="-11.5" width="32" height="23" rx="3" class="shadow" data-shadow="flat" data-off="1.5;-.5" fill="rgba(0,0,0,0.28)"/>
+    <rect x="-16" y="-11.5" width="32" height="23" rx="3" class="shadow" data-shadow="cast" data-z="9" fill="rgba(0,0,0,0.1)"/>
+  </g>
+  <g data-rot="ta">
+    <g class="shadow" data-shadow="cast" data-z="16" fill="rgba(0,0,0,0.08)">
+      <rect x="0" y="-1.5" width="23.6" height="3"/>
+      <circle cx="0" cy="0" r="7.6"/>
+    </g>
+  </g>
+  <g data-rot="a">
+    <g class="solid" data-z="0;4" fill="#12161a">
+      <rect x="-16" y="-11.5" width="32" height="6" rx="2.6"/>
+      <rect x="-16" y="5.5" width="32" height="6" rx="2.6"/>
+    </g>
+    <g class="solid" data-z="5" fill="#272d34">
+      <rect x="-16" y="-11.5" width="32" height="6" rx="2.6"/>
+      <rect x="-16" y="5.5" width="32" height="6" rx="2.6"/>
+    </g>
+    <line x1="-15" y1="-8.5" x2="16" y2="-8.5" data-z="5" fill="none" stroke="rgba(0,0,0,.55)" stroke-width="6" stroke-dasharray="1 2.5" data-dashoffset=".5-odo%3.5"/>
+    <line x1="-15" y1="8.5" x2="16" y2="8.5" data-z="5" fill="none" stroke="rgba(0,0,0,.55)" stroke-width="6" stroke-dasharray="1 2.5" data-dashoffset=".5-odo%3.5"/>
+    <g data-if="cos(a-PI/2)+sin(a-PI/2)&gt;=.2">
+      <circle cx="-13" cy="-11.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="-13" cy="-11.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+      <circle cx="-6.5" cy="-11.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="-6.5" cy="-11.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+      <circle cx="0" cy="-11.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="0" cy="-11.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+      <circle cx="6.5" cy="-11.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="6.5" cy="-11.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+      <circle cx="13" cy="-11.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="13" cy="-11.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+    </g>
+    <g data-if="cos(a+PI/2)+sin(a+PI/2)&gt;=.2">
+      <circle cx="-13" cy="11.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="-13" cy="11.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+      <circle cx="-6.5" cy="11.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="-6.5" cy="11.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+      <circle cx="0" cy="11.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="0" cy="11.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+      <circle cx="6.5" cy="11.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="6.5" cy="11.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+      <circle cx="13" cy="11.5" r="2" class="disc" data-z="2.3" fill="#56616c" data-sx="fs"/>
+      <circle cx="13" cy="11.5" r="0.8" class="disc" data-z="2.3" fill="#1b2026" data-sx="fs"/>
+    </g>
+    <rect x="-14.8" y="-8.98" width="29.4" height="17.96" rx="2" data-z="5;6" fill="#1d5c9c" data-fill="tc.d"/>
+    <rect x="-14" y="-6.7" width="28" height="13.4" rx="2.2" class="taper" data-z="6;9.6" data-taper="-13.3 -6.1 23.4 12.2 2.2" fill="#1d5c9c" data-fill="tc.d" data-top-fill="tc.c"/>
+    <rect x="-11.4" y="-4.1" width="1" height="8.2" data-z="9.6" fill="rgba(0,0,0,.4)"/>
+    <rect x="-9.4" y="-4.1" width="1" height="8.2" data-z="9.6" fill="rgba(0,0,0,.4)"/>
+    <rect x="-7.4" y="-4.1" width="1" height="8.2" data-z="9.6" fill="rgba(0,0,0,.4)"/>
+    <rect x="-3.84" y="-5.6" width="1.6" height="11.2" data-z="9.6" fill="#b5dcff" data-fill="tc.l" opacity="0.5"/>
+    <circle cx="13.4" cy="-5.5" r="1" data-z="6.4" fill="#fff3c4"/>
+    <circle cx="13.4" cy="5.5" r="1" data-z="6.4" fill="#fff3c4"/>
+  </g>
+  <g data-rot="ta">
+    <g data-if="cos(ta)+sin(ta)&lt;-.25">
+      <line x1="7.1" y1="0" x2="26.1" y2="0" class="tube" data-z="11.9;11.9" stroke="#7d8894" stroke-width="2.5" data-lite="#b9c3cc"/>
+      <line x1="9.7" y1="0" x2="11.1" y2="0" class="tube" data-z="11.9;11.9" stroke="#1d5c9c" data-stroke="tc.d" stroke-width="3.7"/>
+      <line x1="12.8" y1="0" x2="14.2" y2="0" class="tube" data-z="11.9;11.9" stroke="#b9c3cc" stroke-width="3.7"/>
+      <line x1="15.9" y1="0" x2="17.3" y2="0" class="tube" data-z="11.9;11.9" stroke="#1d5c9c" data-stroke="tc.d" stroke-width="3.7"/>
+      <line x1="19" y1="0" x2="20.4" y2="0" class="tube" data-z="11.9;11.9" stroke="#b9c3cc" stroke-width="3.7"/>
+      <line x1="22.1" y1="0" x2="23.5" y2="0" class="tube" data-z="11.9;11.9" stroke="#1d5c9c" data-stroke="tc.d" stroke-width="3.7"/>
+      <line x1="24.1" y1="0" x2="26.1" y2="0" class="tube" data-z="11.9;11.9" stroke="#1c2127" stroke-width="3.2"/>
+    </g>
+    <rect x="-7.6" y="-5.9" width="15.2" height="11.8" rx="3.54" class="taper" data-z="9.6;14.2" data-taper="-6.7 -5.1 13.1 10.2 3.54" fill="#1d5c9c" data-fill="tc.d" data-top-fill="tc.m"/>
+    <circle cx="-2.28" cy="1.77" r="1.8" data-z="14.2" fill="#1d5c9c" data-fill="tc.d"/>
+    <g data-if="cos(ta)+sin(ta)&gt;=-.25">
+      <line x1="7.1" y1="0" x2="26.1" y2="0" class="tube" data-z="11.9;11.9" stroke="#7d8894" stroke-width="2.5" data-lite="#b9c3cc"/>
+      <line x1="9.7" y1="0" x2="11.1" y2="0" class="tube" data-z="11.9;11.9" stroke="#1d5c9c" data-stroke="tc.d" stroke-width="3.7"/>
+      <line x1="12.8" y1="0" x2="14.2" y2="0" class="tube" data-z="11.9;11.9" stroke="#b9c3cc" stroke-width="3.7"/>
+      <line x1="15.9" y1="0" x2="17.3" y2="0" class="tube" data-z="11.9;11.9" stroke="#1d5c9c" data-stroke="tc.d" stroke-width="3.7"/>
+      <line x1="19" y1="0" x2="20.4" y2="0" class="tube" data-z="11.9;11.9" stroke="#b9c3cc" stroke-width="3.7"/>
+      <line x1="22.1" y1="0" x2="23.5" y2="0" class="tube" data-z="11.9;11.9" stroke="#1d5c9c" data-stroke="tc.d" stroke-width="3.7"/>
+      <line x1="24.1" y1="0" x2="26.1" y2="0" class="tube" data-z="11.9;11.9" stroke="#1c2127" stroke-width="3.2"/>
+    </g>
+  </g>
+  <g data-rot="ta">
+    <circle cx="26.7" cy="0" class="glow" r="3.6" data-r="3.6+sin(t*9+id)" data-z="11.9" data-glow="T" opacity="0.85" fill="#b4e0ff"/>
+  </g>
+  <g data-rot="ta">
+    <line x1="-4.56" y1="-2.95" x2="-4.56" y2="-2.95" class="strut" data-z="14.2;23.2" stroke="rgba(20,22,26,.85)" stroke-width="0.8"/>
+  </g>
+</svg>

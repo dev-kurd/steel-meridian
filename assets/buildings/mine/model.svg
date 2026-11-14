@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -50 100 100" width="400" height="400" data-kind="sm-model">
+  <title>Ore Mine</title>
+  <rect x="-34" y="-24.48" width="68" height="48.96" rx="5" class="shadow" data-shadow="flat" data-off="3;-1" fill="rgba(0,0,0,0.22)"/>
+  <rect x="-18.7" y="-11.9" width="30.6" height="20.4" rx="3" class="shadow" data-shadow="cast" data-z="30" fill="rgba(0,0,0,0.085)"/>
+  <rect x="-18.7" y="-11.9" width="30.6" height="20.4" rx="3" data-z="2" fill="none" stroke="#b9c6d3" stroke-width="4" stroke-dasharray="9 3" data-if="fort"/>
+  <rect x="-34" y="-24.48" width="68" height="48.96" rx="5" data-z="0;3" fill="#221c15"/>
+  <rect x="-34" y="-24.48" width="68" height="48.96" rx="5" data-z="4" fill="#4a3f31" stroke="rgba(255,255,255,0.1)" stroke-width="0.8"/>
+  <ellipse cx="-3.4" cy="12.92" rx="9" ry="6" data-z="4" fill="rgba(0,0,0,.45)"/>
+  <line x1="-5.4" y1="12.92" x2="21.8" y2="20.4" data-z="4" fill="none" stroke="#2a2f35" stroke-width="1.2"/>
+  <line x1="-1.4" y1="12.92" x2="25.8" y2="20.4" data-z="4" fill="none" stroke="#2a2f35" stroke-width="1.2"/>
+  <circle cx="0" cy="0" r="15" transform="translate(14.28 -4.08)" data-z="4" fill="rgb(150,108,30)" data-scale="1+.16*L"/>
+  <circle cx="0" cy="0" r="13.471" transform="translate(14.28 -4.08)" data-z="6" fill="rgb(163,121,37)" data-scale="1+.16*L"/>
+  <circle cx="0" cy="0" r="11.941" transform="translate(14.28 -4.08)" data-z="8" fill="rgb(177,135,44)" data-scale="1+.16*L"/>
+  <circle cx="0" cy="0" r="10.412" transform="translate(14.28 -4.08)" data-z="10" fill="rgb(190,149,51)" data-scale="1+.16*L"/>
+  <circle cx="0" cy="0" r="8.882" transform="translate(14.28 -4.08)" data-z="12" fill="rgb(204,162,58)" data-scale="1+.16*L"/>
+  <circle cx="0" cy="0" r="7.353" transform="translate(14.28 -4.08)" data-z="14" fill="rgb(217,176,65)" data-scale="1+.16*L"/>
+  <circle cx="0" cy="0" r="5.824" transform="translate(14.28 -4.08)" data-z="16" fill="rgb(231,190,72)" data-scale="1+.16*L"/>
+  <circle cx="0" cy="0" r="4.294" transform="translate(14.28 -4.08)" data-z="18" fill="rgb(245,204,80)" data-scale="1+.16*L"/>
+  <circle cx="16.982" cy="0.127" class="glow" r="4" data-z="12" data-glow="W" data-alpha="max(0,sin(t*3+0))*.8" fill="#fff0b4" data-if="live&amp;&amp;sin(t*3+0)&gt;.1"/>
+  <circle cx="9.284" cy="-3.872" class="glow" r="4" data-z="14" data-glow="W" data-alpha="max(0,sin(t*3+2))*.8" fill="#fff0b4" data-if="live&amp;&amp;sin(t*3+2)&gt;.1"/>
+  <circle cx="16.623" cy="-8.497" class="glow" r="4" data-z="16" data-glow="W" data-alpha="max(0,sin(t*3+4))*.8" fill="#fff0b4" data-if="live&amp;&amp;sin(t*3+4)&gt;.1"/>
+  <rect x="-20.28" y="-12.8" width="12" height="12" rx="1" data-z="4;16" fill="#232a31"/>
+  <rect x="-20.28" y="-12.8" width="12" height="12" rx="1" data-z="18;20" fill="#42a5ff" data-fill="tc.c"/>
+  <rect x="-20.28" y="-12.8" width="12" height="12" rx="1" data-z="22;30" fill="#232a31"/>
+  <rect x="-20.28" y="-12.8" width="12" height="12" rx="1" data-z="30" fill="#b5dcff" data-fill="tc.l" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+  <g transform="translate(-14.28 -6.8)" data-rot="live?t*2.5:0">
+    <circle cx="0" cy="0" r="6" data-z="32" fill="none" stroke="#14181c" stroke-width="1.6"/>
+    <path d="M-6 0L6 0M0 -6L0 6" data-z="32" fill="none" stroke="#14181c" stroke-width="1.6"/>
+  </g>
+  <line x1="-14.28" y1="-6.8" x2="14.28" y2="-4.08" class="strut" data-z="24;17" stroke="#14181c" stroke-width="3"/>
+  <line x1="-14.28" y1="-6.8" x2="14.28" y2="-4.08" class="strut" data-z="24;17" stroke="#e0b040" stroke-width="1.6" stroke-dasharray="3 6" data-dashoffset="live?-t*22:0"/>
+</svg>

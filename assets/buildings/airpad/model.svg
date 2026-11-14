@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -50 100 100" width="400" height="400" data-kind="sm-model">
+  <title>Sky Dock</title>
+  <circle cx="0" cy="0" r="34" class="shadow" data-shadow="flat" data-off="3;-1" fill="rgba(0,0,0,0.22)"/>
+  <circle cx="0" cy="0" r="34" class="shadow" data-shadow="cast" data-z="8" fill="rgba(0,0,0,0.085)"/>
+  <circle cx="0" cy="0" r="34" data-z="2" fill="none" stroke="#b9c6d3" stroke-width="4" stroke-dasharray="9 3" data-if="fort"/>
+  <circle cx="0" cy="0" r="34" data-z="0;6" fill="#171c22"/>
+  <circle cx="0" cy="0" r="34" data-z="8" fill="#2a3037" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+  <circle cx="0" cy="0" r="26.52" data-z="8" fill="none" stroke="#42a5ff" data-stroke="tc.c" stroke-width="4"/>
+  <circle cx="0" cy="0" r="21.08" data-z="8" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="1" stroke-dasharray="3 5"/>
+  <path d="M-9 -11L-9 11M9 -11L9 11M-9 0L9 0" data-z="8" fill="none" stroke="#cfd6dd" stroke-width="3"/>
+  <circle cx="28.811" cy="12.181" r="2.2" data-z="8" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*4)%8==0?tc.l:'#4b545d'"/>
+  <circle cx="11.759" cy="28.986" r="2.2" data-z="8" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*4)%8==1?tc.l:'#4b545d'"/>
+  <circle cx="-12.181" cy="28.811" r="2.2" data-z="8" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*4)%8==2?tc.l:'#4b545d'"/>
+  <circle cx="-28.986" cy="11.759" r="2.2" data-z="8" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*4)%8==3?tc.l:'#4b545d'"/>
+  <circle cx="-28.811" cy="-12.181" r="2.2" data-z="8" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*4)%8==4?tc.l:'#4b545d'"/>
+  <circle cx="-11.759" cy="-28.986" r="2.2" data-z="8" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*4)%8==5?tc.l:'#4b545d'"/>
+  <circle cx="12.181" cy="-28.811" r="2.2" data-z="8" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*4)%8==6?tc.l:'#4b545d'"/>
+  <circle cx="28.986" cy="-11.759" r="2.2" data-z="8" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*4)%8==7?tc.l:'#4b545d'"/>
+  <rect x="-26.08" y="-26.08" width="10" height="10" rx="2" data-z="8;20" fill="#232a31"/>
+  <rect x="-26.08" y="-26.08" width="10" height="10" rx="2" data-z="22" fill="none" stroke="rgba(150,220,255,.85)" data-stroke="live?'rgba(150,220,255,.85)':'#333'" stroke-width="2.4"/>
+  <rect x="-26.08" y="-26.08" width="10" height="10" rx="2" data-z="24;26" fill="#42a5ff" data-fill="tc.c"/>
+  <rect x="-26.08" y="-26.08" width="10" height="10" rx="2" data-z="28" fill="#b5dcff" data-fill="tc.l" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+  <line x1="-21.08" y1="-21.08" x2="-21.08" y2="-21.08" class="strut" data-z="28;38" stroke="#8f99a3" stroke-width="1"/>
+  <circle cx="-21.08" cy="-21.08" class="glow" r="5" data-z="39" data-glow="R" opacity="0.9" fill="#ff6450" data-if="live&amp;&amp;sin(t*4)&gt;.3"/>
+</svg>

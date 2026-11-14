@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "buildings": [
+    "hq",
+    "factory",
+    "airpad",
+    "refinery",
+    "tech",
+    "robot",
+    "foundry",
+    "airfield",
+    "laser",
+    "outpost",
+    "mine",
+    "pad"
+  ],
+  "turrets": [
+    "gun",
+    "cannon",
+    "flak",
+    "arty",
+    "rocket",
+    "missile"
+  ],
+  "units": [
+    "gun",
+    "fighter",
+    "jet",
+    "bomber",
+    "eng",
+    "truck",
+    "bot",
+    "botaa",
+    "botl",
+    "adv",
+    "bt0",
+    "bt1",
+    "bt2",
+    "ar0",
+    "ar1",
+    "ar2",
+    "ad0",
+    "ad1",
+    "ad2",
+    "fl0",
+    "fl1",
+    "fl2",
+    "en0",
+    "en1",
+    "en2"
+  ],
+  "props": {
+    "rocks": [
+      "rock-1",
+      "rock-2",
+      "rock-3",
+      "rock-4"
+    ],
+    "trees": [
+      "tree-1",
+      "tree-2",
+      "tree-3"
+    ]
+  },
+  "fx": {
+    "glowO": "glow-fire",
+    "glowW": "glow-warm",
+    "glowR": "glow-red",
+    "smoke": "smoke",
+    "dust": "dust",
+    "cloud": "puff-light",
+    "cloudS": "puff-dark"
+  },
+  "flags": [
+    "north",
+    "centre",
+    "south",
+    "team",
+    "crimson"
+  ],
+  "icons": [
+    "up",
+    "res",
+    "fort",
+    "del",
+    "stop",
+    "hold",
+    "patrol",
+    "guard",
+    "sortie",
+    "laser",
+    "strike",
+    "repair",
+    "tgun",
+    "tcannon",
+    "tflak",
+    "tmissile",
+    "trocket",
+    "tarty"
+  ],
+  "cursors": [
+    "atk",
+    "cap",
+    "up",
+    "dock",
+    "fix"
+  ]
+}

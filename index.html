@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Steel Meridian</title>
+<link rel="icon" href="icon.png">
+<style>
+:root{--bg:#0b0e12;--panel:rgba(16,21,27,.92);--line:#2b3540;--ink:#dfe6ec;--dim:#8794a1;--acc:#ffb347;--blue:#42a5ff;--red:#ff5d4a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font:14px/1.4 "Segoe UI",system-ui,sans-serif;user-select:none}
+canvas#game{position:fixed;inset:0;display:block;cursor:crosshair}
+.hidden{display:none!important}
+button{font:inherit;color:var(--ink);background:#1b232c;border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
+button:hover{background:#25303b;border-color:#455464}
+button.on{border-color:var(--acc);color:var(--acc);background:#2a2416}
+button.off{opacity:.45}
+button small{color:var(--dim);margin-left:6px}
+#top{position:fixed;top:0;left:0;right:0;height:42px;display:flex;align-items:center;gap:18px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--line)}
+#top .brand{font-weight:700;letter-spacing:.22em;color:var(--acc);font-size:12px}
+#top .sp{flex:1}
+#top .vol{display:flex;align-items:center;gap:6px;color:var(--dim);font-size:12px}
+#top .vol input{width:72px;accent-color:var(--acc)}
+@media (max-width:1150px){#top .vol{display:none}}
+#top b{color:var(--acc);font-variant-numeric:tabular-nums}
+#top span{font-variant-numeric:tabular-nums}
+#toasts{position:fixed;top:54px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
+.toast{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--acc);padding:6px 14px;border-radius:6px;animation:fade 4s forwards}
+.toast.bad{border-left-color:var(--red)}
+.toast.good{border-left-color:#5fd38a}
+@keyframes fade{0%{opacity:0;transform:translateY(-6px)}8%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+#mini{position:fixed;left:12px;bottom:12px;border:1px solid var(--line);border-radius:8px;background:#05080b;cursor:pointer;border-color:#3d4a59;box-shadow:0 6px 22px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,255,255,.04)}
+#powers{position:fixed;bottom:12px;left:290px;right:330px;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
+#powers .prow{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+#powers button{pointer-events:auto}
+#powers button{min-width:124px;padding:7px 10px;font-size:13px;background:var(--panel);white-space:nowrap}
+#panel{position:fixed;right:12px;bottom:12px;width:300px;min-height:120px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px}
+#panel h3{margin:0 0 2px;font-size:15px}
+#panel .sub{color:var(--dim);font-size:12px;margin-bottom:8px}
+#panel .bar{height:6px;background:#0c1014;border-radius:3px;overflow:hidden;margin:6px 0 10px}
+#panel .bar i{display:block;height:100%;background:#5fd38a}
+#panel .bar.prog i{background:var(--acc)}
+#panel .bar.up{height:9px;border-radius:5px;margin:3px 0 10px;box-shadow:inset 0 0 0 1px rgba(108,196,255,.25)}
+#panel .bar.up i{background:linear-gradient(90deg,#3d8fd0,#8ed6ff);width:0}
+@keyframes upfill{from{width:0}to{width:100%}}
+#panel .acts button .pb{position:absolute;left:6px;right:6px;bottom:2px;height:4px;border-radius:3px;background:rgba(0,0,0,.55);overflow:hidden;pointer-events:none}
+#panel .acts button .pb b{display:block;height:100%;width:0;background:linear-gradient(90deg,#3d8fd0,#8ed6ff)}
+#panel .uplbl{display:flex;justify-content:space-between;font-size:12.5px;color:#9fd8ff;margin-top:2px}
+#panel .acts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#panel .acts button{text-align:left;padding:7px 9px}
+#panel .tip{color:var(--dim);font-size:12px;margin-top:8px}
+#menu,#end,#pauseov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column}
+#menu{background:transparent;overflow:auto;padding:24px}
+canvas#game.menubg{filter:blur(1.6px) saturate(.85)}
+#menu .mbtns,#menu .setbox,#zinfo{backdrop-filter:blur(3px)}
+#menu h1{font-size:54px;letter-spacing:.3em;margin:0;color:var(--acc);font-weight:800;text-align:center}
+#menu .tag{color:var(--dim);letter-spacing:.3em;margin:4px 0 28px;font-size:12px}
+.cards{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.card{width:230px;padding:14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;cursor:pointer}
+.card:hover{border-color:#455464}
+.card.on{border-color:var(--acc)}
+.card h4{margin:0 0 4px}
+.card p{margin:0;color:var(--dim);font-size:12px}
+.row{display:flex;gap:8px;margin:18px 0;align-items:center}
+#start{font-size:18px;padding:12px 46px;background:var(--acc);color:#1a1205;border:none;font-weight:700;letter-spacing:.1em}
+#start:hover{background:#ffc670}
+.help{max-width:720px;color:var(--dim);font-size:12.5px;margin-top:22px;display:grid;grid-template-columns:1fr 1fr;gap:4px 28px}
+.help b{color:var(--ink);font-weight:600}
+#end,#pauseov{background:rgba(5,7,10,.72)}
+#end h2{font-size:48px;letter-spacing:.25em;margin:0 0 8px}
+#end p{color:var(--dim);margin:0 0 20px}
+#end p.why{color:#e8edf2;font-size:17px;margin:0 0 14px;max-width:640px;text-align:center}
+#end .starlist{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;margin:0 0 16px;font-size:13px;color:#6b7785}
+#end .starlist .got{color:#ffcf5a}
+#pauseov{font-size:34px;letter-spacing:.4em;color:var(--acc);pointer-events:none}
+@media (max-width:760px){#panel{width:220px}#powers{right:250px}#powers button{min-width:96px}.help{grid-template-columns:1fr}#menu h1{font-size:34px}}
+#obj{position:fixed;top:50px;left:14px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:6px;padding:5px 12px;font-size:13px;font-variant-numeric:tabular-nums}
+#toasts{top:92px!important}
+.mscreen{display:flex;flex-direction:column;align-items:center;width:100%}
+.mscreen h2{font-size:30px;letter-spacing:.14em;margin:0 0 4px;color:var(--acc);text-align:center}
+.sub2{color:var(--dim);font-size:13px;margin:2px 0 14px}
+.mbtns{display:flex;flex-direction:column;gap:10px;width:300px}
+button.big{font-size:17px;padding:13px 20px;letter-spacing:.06em}
+button.primary{background:var(--acc);color:#1a1205;border:none;font-weight:700}
+button.primary:hover{background:#ffc670}
+button:disabled{opacity:.45;cursor:default}
+button.primary:disabled{background:#6b5a3a}
+.zwrap{display:flex;gap:22px;align-items:center;justify-content:center;flex-wrap:wrap;max-width:1000px}
+#iraq{width:min(520px,90vw);height:auto}
+#iraq .zone{stroke:#0b0e12;stroke-width:2.5;cursor:pointer;opacity:.82;transition:opacity .15s,transform .15s}
+#iraq .zone:hover{opacity:1}
+#iraq .zone.on{opacity:1;stroke:var(--acc);stroke-width:4}
+#iraq .river{fill:none;stroke:#7ec3e6;stroke-width:2;opacity:.7;pointer-events:none}
+#iraq .city{fill:#10151b;stroke:#fff;stroke-width:1;pointer-events:none}
+#iraq .cityt{fill:#0b0e12;font-size:11px;font-weight:600;pointer-events:none;paint-order:stroke;stroke:rgba(255,255,255,.55);stroke-width:2.5px}
+#iraq .zlabel{fill:#fff;font-size:15px;font-weight:700;text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:rgba(0,0,0,.75);stroke-width:4px;letter-spacing:.04em}
+#zinfo{width:300px;min-height:210px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+.zflag{float:right;width:72px;height:48px;border:1px solid var(--line);border-radius:3px;margin:0 0 8px 10px}
+#zinfo h3{margin:0 0 2px;font-size:19px}#zinfo h4{margin:12px 0 4px;color:var(--acc)}#zinfo p{margin:0 0 8px;font-size:13.5px}
+@media (prefers-reduced-motion:reduce){#iraq .zone{transition:none}}
+#panel kbd{display:inline-block;min-width:15px;margin-right:6px;padding:0 3px;border:1px solid var(--line);border-radius:3px;font:11px/15px inherit;color:var(--dim);text-align:center}
+#panel .ords{grid-template-columns:repeat(4,1fr);margin-bottom:8px}
+#panel .ords button{text-align:center;padding:6px 2px}
+#panel .ords small{display:block;margin:0}
+.mrow{display:flex;justify-content:space-between;gap:8px;padding:7px 9px;margin:5px 0;border:1px solid var(--line);border-radius:6px;cursor:pointer;font-size:13.5px}
+.mrow:hover{border-color:#455464}.mrow.on{border-color:var(--acc);background:#2a2416}.mrow.locked{opacity:.45}
+.mrow span{color:var(--acc);font-size:12px;white-space:nowrap}
+#iraq .zone.locked{opacity:.3}#iraq .zone.locked.on{opacity:.55}
+#iraq .zsub{fill:#fff;font-size:11px;text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:rgba(0,0,0,.75);stroke-width:3px}
+#zinfo{width:330px!important}
+.setbox{width:min(520px,92vw);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin:6px 0 4px}
+.set{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:14px}
+.set input[type=checkbox]{width:17px;height:17px;accent-color:var(--acc)}
+.set input[type=range]{flex:1;accent-color:var(--acc)}
+#bcont small{display:block;font-size:12px;letter-spacing:0;color:var(--dim)}
+#panel{width:320px}
+#powers{right:350px}
+#panel .acts button{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-height:46px;padding:5px 8px 5px 31px;font-size:13.5px;line-height:1.3;white-space:nowrap;overflow:hidden}
+#panel .acts button small{margin:0;font-size:11.5px}
+#panel .acts button kbd{position:absolute;left:7px;top:50%;transform:translateY(-50%);margin:0}
+#panel .acts button .ic{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:19px;height:19px;pointer-events:none}
+#panel .acts button:has(.ic){padding-right:30px}
+[dir=rtl] #panel .acts button .ic{right:auto;left:7px}
+[dir=rtl] #panel .acts button:has(.ic){padding-right:31px;padding-left:30px}
+#skbox{min-width:440px;max-width:560px}
+.skprevw{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.skspec{font-size:13px;color:var(--ink);text-align:center;max-width:420px}
+.skspec b{color:var(--acc)}
+.skpos{color:var(--dim);margin-inline-start:6px}
+#skprev{cursor:pointer;max-width:100%;border:1px solid var(--line);border-radius:6px;background:#05080b}
+.skprevw small{color:var(--dim);font-size:12px;text-align:center}
+.skrow{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.skrow select{font:inherit;color:var(--ink);background:#1b232c;border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+.skrow .seg button{padding:4px 14px;margin-inline-start:6px}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-inline-end:8px;vertical-align:-1px}
+#skgo{font-size:17px;padding:10px 40px;background:var(--acc);color:#1a1205;border:none;font-weight:700}
+#end table.rank{border-collapse:collapse;margin:0 0 18px;font-size:14px}
+#end table.rank th,#end table.rank td{padding:4px 12px;text-align:start;color:var(--ink)}
+#end table.rank th{color:var(--dim);font-weight:500;font-size:12px}
+@media (max-width:520px){#skbox{min-width:0}}
+#confirm{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(5,8,11,.72)}
+.cbox{background:var(--panel);border:1px solid var(--acc);border-radius:12px;padding:22px 26px;max-width:460px;text-align:center;box-shadow:0 14px 50px rgba(0,0,0,.6)}
+.cbox h3{margin:0 0 8px;font-size:21px;color:var(--acc)}
+.cbox p{margin:0 0 18px;color:var(--ink);line-height:1.5}
+.cbox .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:0}
+.cbox button{padding:8px 16px}
+#loading{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:rgba(5,8,11,.93)}
+#loading .spin{width:54px;height:54px;border-radius:50%;border:5px solid #2b3540;border-top-color:var(--acc);animation:spin .9s linear infinite}
+#loading .lt{color:var(--acc);font-size:17px;letter-spacing:.08em}
+@keyframes spin{to{transform:rotate(360deg)}}
+#pside{position:fixed;left:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;direction:ltr;align-items:flex-start;z-index:3}
+#pside button{position:relative;display:flex;align-items:center;height:56px;min-width:56px;padding:0 13px;border-radius:11px;background:var(--panel);box-shadow:0 4px 14px rgba(0,0,0,.45)}
+#pside button:hover{background:#25303b}
+#pside button.on{border-color:var(--acc);background:#2a2416}
+#pside .pic{width:30px;height:30px;flex:none}
+#pside .lbl{max-width:0;opacity:0;overflow:hidden;white-space:nowrap;text-align:start;line-height:1.25;font-size:14.5px;transition:max-width .2s ease,opacity .2s ease,margin .2s ease}
+#pside button:hover .lbl{max-width:280px;opacity:1;margin-left:11px;margin-right:6px}
+#pside .lbl small{display:block;margin:0;font-size:12px}
+#pside .bdg{position:absolute;right:4px;bottom:2px;font-size:10.5px;line-height:1;color:var(--dim);font-variant-numeric:tabular-nums}
+#pside button:hover .bdg{opacity:0}
+@media (max-height:520px){#pside button{height:44px;min-width:44px}#pside .pic{width:24px;height:24px}}
+#powers .pic{width:16px;height:16px;vertical-align:-3px;margin-inline-end:6px}
+#powers button.tb{position:relative;min-width:0;width:60px;height:58px;padding:5px 2px 3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+#powers button.tb .ic{width:30px;height:30px;margin:0}
+#powers button.tb small{margin:0;font-size:11.5px;line-height:1.1;font-variant-numeric:tabular-nums}
+#powers button.tb.on{border-color:var(--acc);background:#2a2416}
+#powers button.tb.off .ic{opacity:.45}
+#powers .tt{display:none;position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);width:230px;padding:9px 11px;border-radius:9px;background:#10161c;border:1px solid #33414f;box-shadow:0 8px 22px rgba(0,0,0,.6);font-size:12.5px;line-height:1.35;color:#c6d1db;white-space:normal;text-align:start;pointer-events:none;z-index:5}
+#powers .tt b{display:block;color:#fff;font-size:13.5px;margin-bottom:3px}
+#powers .tt i{display:block;font-style:normal;color:var(--dim);margin-top:4px}
+#powers button.tb:hover .tt{display:block}
+#panel .acts .ic{flex:none}
+#panel .acts button.ib{padding:3px 2px;align-items:center;justify-content:center;gap:0}
+#panel .acts button.ib .ic{position:static;transform:none;width:27px;height:27px}
+#panel .acts button.ib small{font-size:11px;line-height:1}
+#panel .acts button.ib.off .ic{opacity:.4}
+#panel .ords button .ic,[dir=rtl] #panel .ords button .ic{position:static;transform:none;display:block;margin:1px auto 3px;width:20px;height:20px}
+#panel .ords button:has(.ic),[dir=rtl] #panel .ords button:has(.ic){padding:6px 2px;align-items:center;min-height:62px}
+#panel .ords button{align-items:center;padding:5px 2px;min-height:42px}
+@media (max-width:760px){#panel{width:250px}#powers{right:270px}#panel .acts button{padding-left:27px;font-size:12.5px}}
+#coach{position:fixed;top:88px;left:14px;width:330px;max-width:calc(100vw - 28px);background:var(--panel);border:1px solid var(--acc);border-radius:8px;padding:10px 12px;font-size:13.5px;box-shadow:0 6px 22px rgba(0,0,0,.5)}
+#coach b{color:var(--acc);font-size:12px}
+#coach p{margin:4px 0 8px;line-height:1.45}
+#coach .row{display:flex;gap:8px;margin:0}
+#coach button{padding:3px 10px;font-size:12.5px}
+/* languages: Kurdish and Arabic read right to left */
+#langs{display:flex;gap:8px;justify-content:center;margin-top:10px}
+#langs button{padding:5px 14px;font-size:14px}
+#slang{font:inherit;color:var(--ink);background:#1b232c;border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+#iraq text{direction:ltr}
+[dir=rtl] body{font-family:"Segoe UI","Noto Naskh Arabic","Noto Sans Arabic",Tahoma,sans-serif;font-size:15px}
+[dir=rtl] *{letter-spacing:0!important}
+[dir=rtl] #top .brand,[dir=rtl] #menu h1{direction:ltr;unicode-bidi:isolate}
+[dir=rtl] #top .brand{letter-spacing:.22em!important}
+[dir=rtl] #menu h1{letter-spacing:.3em!important}
+[dir=rtl] button small{margin-left:0;margin-right:6px}
+[dir=rtl] #panel .acts button{text-align:right;padding:5px 31px 5px 8px}
+[dir=rtl] #panel .acts button small{margin:0}
+[dir=rtl] #panel .acts button kbd{left:auto;right:7px}
+[dir=rtl] #panel .ords button{text-align:center;padding:6px 2px;align-items:center}
+[dir=rtl] #obj{border-left:1px solid var(--line);border-right:3px solid var(--acc)}
+[dir=rtl] #end h2,[dir=rtl] .mscreen h2{font-weight:800}
+[dir=rtl] .help{font-size:13.5px}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" class="hidden">
+  <div id="top">
+    <span class="brand">STEEL MERIDIAN</span>
+    <span>Credits <b id="cred">0</b></span>
+    <span id="inc"></span>
+    <span>Research <b id="rp" style="color:#6cc4ff">0</b> <small id="rpr" data-keep></small></span>
+    <span id="pop"></span>
+    <span id="clock"></span>
+    <span class="sp"></span>
+    <button data-act="save" title="Save the mission (Ctrl+S). The game also saves by itself every 45 seconds and when you leave to the menu.">Save</button>
+    <button data-act="idle" id="bidle" title="Jump to the next idle unit (. or Tab)">Idle 0</button>
+    <button data-act="adv" id="badv" title="Select the Vanguard, your command craft (G). Press again to jump to it.">Vanguard</button>
+    <label class="vol">Music<input type="range" id="vmus" min="0" max="100"></label>
+    <label class="vol">Effects<input type="range" id="vfx" min="0" max="100"></label>
+    <button data-act="speed" id="bspeed">Speed 1×</button>
+    <button data-act="pause">Pause</button>
+    <button data-act="mute" id="bmute">Sound on</button>
+    <button data-act="quit">Menu</button>
+  </div>
+  <div id="obj"></div>
+  <div id="coach" class="hidden"></div>
+  <div id="toasts"></div>
+  <canvas id="mini"></canvas>
+  <div id="powers"></div>
+  <div id="pside"></div>
+  <div id="panel"></div>
+</div>
+
+<div id="pauseov" class="hidden">PAUSED</div>
+<div id="confirm" class="hidden"></div>
+<div id="loading" class="hidden"><div class="spin"></div><div class="lt">Preparing the battlefield…</div></div>
+
+<div id="menu">
+  <section id="m-main" class="mscreen">
+    <h1>STEEL MERIDIAN</h1>
+    <div class="tag">CAPTURE · HOLD · OVERRUN</div>
+    <div class="mbtns">
+      <button data-m="continue" id="bcont" class="big hidden">Continue</button>
+      <button data-m="zones" class="big primary">Play vs AI</button>
+      <button data-m="skirmish" class="big">Skirmish</button>
+      <button class="big" disabled>Multiplayer <small>later release</small></button>
+      <button data-m="settings" class="big">Settings</button>
+      <button data-m="about" class="big">About</button>
+      <button data-m="exit" class="big">Exit</button>
+      <div id="langs" data-keep><button data-lang="en">English</button><button data-lang="ckb">کوردی</button><button data-lang="ar">العربية</button></div>
+    </div>
+  </section>
+  <section id="m-zones" class="mscreen hidden">
+    <h2>Choose a theatre</h2>
+    <p class="sub2">Three regions, five missions each. Win a mission to open the next.</p>
+    <div class="zwrap"><svg id="iraq" viewBox="0 0 600 560" role="img" aria-label="Theatre map with three regions"></svg><div id="zinfo"></div></div>
+    <div class="row"><button data-m="main">Back</button><button id="znext" class="primary" disabled>Continue</button></div>
+  </section>
+  <section id="m-diff" class="mscreen hidden">
+    <h2 id="dtitle">Difficulty</h2>
+    <p class="sub2">Choose the opponent's strength.</p>
+    <div class="cards" id="diffs"></div>
+    <div class="row"><button data-m="zones">Back</button><button id="start" class="primary big">DEPLOY</button></div>
+  </section>
+  <section id="m-skirmish" class="mscreen hidden">
+    <h2>Skirmish</h2>
+    <div id="skbox" class="setbox"></div>
+    <div class="row" style="margin-top:14px"><button data-m="main">Back</button><button id="skgo" class="primary">DEPLOY</button></div>
+  </section>
+  <section id="m-settings" class="mscreen hidden">
+    <h2>Settings</h2>
+    <div class="setbox">
+      <label class="set"><input type="checkbox" data-cfg="edge"> Scroll the map when the pointer touches the screen edge</label>
+      <label class="set">Scroll speed <input type="range" data-cfg="scroll" min="50" max="200" step="10"> <span id="scv"></span></label>
+      <label class="set"><input type="checkbox" data-cfg="cb"> Colour-blind-safe team colours (blue against orange)</label>
+      <label class="set"><input type="checkbox" data-cfg="clouds"> Clouds over the battlefield</label>
+      <label class="set"><input type="checkbox" data-cfg="tut"> Show tutorial hints</label>
+      <label class="set"><input type="checkbox" data-cfg="voice"> Announcer voice</label>
+      <label class="set">Announcer volume <input type="range" id="svo" min="0" max="100"></label>
+      <label class="set"><span>Language</span> <select id="slang" data-keep><option value="en">English</option><option value="ckb">کوردی (سۆرانی)</option><option value="ar">العربية</option></select></label>
+      <label class="set">Music volume <input type="range" id="smus" min="0" max="100"></label>
+      <label class="set">Effects volume <input type="range" id="sfxv" min="0" max="100"></label>
+      <div class="row" style="margin:10px 0 0"><button id="unlockall">Unlock all missions</button><button id="resetcamp">Reset campaign progress</button></div>
+      <p id="setmsg" class="sub2" style="margin:8px 0 0"></p>
+    </div>
+    <div class="row"><button data-m="main">Back</button></div>
+  </section>
+  <section id="m-about" class="mscreen hidden">
+    <h2>About</h2>
+    <p class="sub2" style="max-width:640px;text-align:center">Steel Meridian is an original real-time strategy game. The two armies, Azure and Crimson, are fictional. The theatre map is a simplified sketch used to pick a mission, not an accurate map.</p>
+    <div class="help">
+      <div><b>Left click / drag</b> — select units or a structure</div>
+      <div><b>Right click</b> — move, attack, or set a rally point · <b>Ctrl+right click</b> attack-move</div>
+      <div><b>Double click</b> — select all of that unit type on screen</div>
+      <div><b>Ctrl+A</b> — select the whole army · <b>.</b> or <b>Tab</b> next idle unit</div>
+      <div><b>X</b> stop · <b>Z</b> hold position · <b>V</b> patrol · <b>C</b> guard</div>
+      <div>With a structure selected: <b>1…9</b> press its buttons · <b>U</b> upgrade</div>
+      <div><b>Ctrl+S</b> save · the game also autosaves; use Continue on the main menu</div>
+      <div><b>Ctrl+1…9 / 1…9</b> — set and recall groups</div>
+      <div><b>Arrows / WASD / edges / middle drag</b> — pan · <b>wheel</b> zoom</div>
+      <div><b>Q</b> air strike · <b>E</b> repair · <b>R</b> fighters · <b>T</b> laser · <b>B</b> build turret pad</div>
+      <div><b>H</b> home · <b>Space</b> last alert · <b>P</b> pause · <b>F</b> speed · <b>M</b> sound</div>
+      <div>Factories build units for free — pick what they make. Spend credits on upgrades, defences and structures.</div>
+      <div>Park ground units beside a neutral or knocked-out structure to capture it.</div>
+      <div>Each mission shows its objective at the top of the screen. Losing your Command Core always loses the mission.</div>
+      <div>Battle tanks and artillery cannot hit aircraft; Skyguards and most turrets can.</div>
+      <div>The Vanguard is your command craft, docked on the Command Core (G selects it). Sit it on a neutral or knocked-out structure to capture it, on one of your own to repair it, or send it to wreck enemy structures. If it is lost, a new one appears at the Core. Some missions have no Vanguard.</div>
+    </div>
+    <div class="row"><button data-m="main">Back</button></div>
+  </section>
+  <section id="m-exit" class="mscreen hidden">
+    <h2>Thanks for playing</h2>
+    <p class="sub2">You can close this tab or window now.</p>
+    <div class="row"><button data-m="main">Back to menu</button></div>
+  </section>
+</div>
+
+<div id="end" class="hidden"></div>
+
+<script src="lang.js"></script>
+<script src="assets/buildings/heavy-factory/heavy-factory.js"></script>
+<script src="game.js"></script>
+</body>
+</html>

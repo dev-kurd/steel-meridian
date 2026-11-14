@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -30 60 60" width="240" height="240" data-kind="sm-model">
+  <title>Turret Pad</title>
+  <polygon points="18,0 9,15.588 -9,15.588 -18,0 -9,-15.588 9,-15.588" class="shadow" data-shadow="flat" data-off="3;-1" fill="rgba(0,0,0,0.22)"/>
+  <circle cx="0" cy="0" r="10.8" class="shadow" data-shadow="cast" data-z="18" fill="rgba(0,0,0,0.085)" data-if="turret"/>
+  <circle cx="0" cy="0" r="3.6" class="shadow" data-shadow="cast" data-z="5" fill="rgba(0,0,0,0.085)" data-if="!turret"/>
+  <circle cx="0" cy="0" r="10.8" data-z="2" fill="none" stroke="#b9c6d3" stroke-width="4" stroke-dasharray="9 3" data-if="fort"/>
+  <polygon points="18,0 9,15.588 -9,15.588 -18,0 -9,-15.588 9,-15.588" data-z="0;4" fill="#171c22"/>
+  <polygon points="18,0 9,15.588 -9,15.588 -18,0 -9,-15.588 9,-15.588" data-z="6" fill="#272d33" stroke="rgba(255,255,255,0)" stroke-width="0.8"/>
+  <polygon points="18,0 9,15.588 -9,15.588 -18,0 -9,-15.588 9,-15.588" data-z="6" fill="none" stroke="#42a5ff" data-stroke="tc.c" stroke-width="2"/>
+  <circle cx="14.76" cy="0" r="1.3" data-z="6" fill="#59626b"/>
+  <circle cx="7.38" cy="12.783" r="1.3" data-z="6" fill="#59626b"/>
+  <circle cx="-7.38" cy="12.783" r="1.3" data-z="6" fill="#59626b"/>
+  <circle cx="-14.76" cy="0" r="1.3" data-z="6" fill="#59626b"/>
+  <circle cx="-7.38" cy="-12.783" r="1.3" data-z="6" fill="#59626b"/>
+  <circle cx="7.38" cy="-12.783" r="1.3" data-z="6" fill="#59626b"/>
+  <path d="M-5 0L5 0M0 -5L0 5" data-z="6" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="1.5" data-if="!turret"/>
+</svg>

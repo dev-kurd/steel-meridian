@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -50 100 100" width="400" height="400" data-kind="sm-model">
+  <title>Allied Outpost</title>
+  <polygon points="28.271,11.71 11.71,28.271 -11.71,28.271 -28.271,11.71 -28.271,-11.71 -11.71,-28.271 11.71,-28.271 28.271,-11.71" class="shadow" data-shadow="cast" data-z="24" fill="rgba(0,0,0,0.085)"/>
+  <polygon points="28.271,11.71 11.71,28.271 -11.71,28.271 -28.271,11.71 -28.271,-11.71 -11.71,-28.271 11.71,-28.271 28.271,-11.71" data-z="2" fill="none" stroke="#b9c6d3" stroke-width="4" stroke-dasharray="9 3" data-if="fort"/>
+  <polygon points="31.412,13.011 13.011,31.412 -13.011,31.412 -31.412,13.011 -31.412,-13.011 -13.011,-31.412 13.011,-31.412 31.412,-13.011" data-z="0;8" fill="#3b3a2c"/>
+  <polygon points="31.412,13.011 13.011,31.412 -13.011,31.412 -31.412,13.011 -31.412,-13.011 -13.011,-31.412 13.011,-31.412 31.412,-13.011" data-z="10" fill="#57553f" stroke="rgba(255,255,255,0.1)" stroke-width="0.8"/>
+  <circle cx="27.014" cy="11.19" r="4.2" data-z="10" fill="#7a7656"/>
+  <circle cx="11.19" cy="27.014" r="4.2" data-z="10" fill="#7a7656"/>
+  <circle cx="-11.19" cy="27.014" r="4.2" data-z="10" fill="#7a7656"/>
+  <circle cx="-27.014" cy="11.19" r="4.2" data-z="10" fill="#7a7656"/>
+  <circle cx="-27.014" cy="-11.19" r="4.2" data-z="10" fill="#7a7656"/>
+  <circle cx="-11.19" cy="-27.014" r="4.2" data-z="10" fill="#7a7656"/>
+  <circle cx="11.19" cy="-27.014" r="4.2" data-z="10" fill="#7a7656"/>
+  <circle cx="27.014" cy="-11.19" r="4.2" data-z="10" fill="#7a7656"/>
+  <rect x="-17" y="-17" width="34" height="34" rx="3" data-z="10;16" fill="#232a31"/>
+  <rect x="-17" y="-17" width="34" height="34" rx="3" data-z="18;19" fill="#44484c" data-fill="wreck?'#44484c':'#3f8f52'"/>
+  <rect x="-17" y="-17" width="34" height="34" rx="3" data-z="20;22" fill="#232a31"/>
+  <rect x="-17" y="-17" width="34" height="34" rx="3" data-z="22" fill="#3e4852" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+  <rect x="-4" y="-4" width="8" height="8" data-z="22" fill="#44484c" data-fill="wreck?'#44484c':'#3f8f52'"/>
+  <g data-if="!wreck" data-rot="ta">
+    <g class="solid" data-z="23;25" fill="#1c2127">
+      <rect x="0" y="-4" width="20" height="3"/>
+      <rect x="0" y="1" width="20" height="3"/>
+    </g>
+    <circle cx="0" cy="0" r="6" data-z="26" fill="#cfd6dd" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+  </g>
+  <line x1="-13.6" y1="-13.6" x2="-13.6" y2="-13.6" class="strut" data-z="22;46" stroke="#c9d1d9" stroke-width="1.4"/>
+  <polygon points="0,0 15,4 0,9" class="billboard" data-at="-13.6;-13.6" data-z="46" fill="#44484c" data-fill="wreck?'#44484c':'#3f8f52'" data-if="!wreck" data-rot="sin(t*4)*.1"/>
+</svg>

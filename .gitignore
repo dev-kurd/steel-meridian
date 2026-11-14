@@ -1,0 +1,20 @@
+# Built files: make them locally with tools/build-exe.ps1
+dist/
+
+# Local safety copies of game.js; the repository's history replaces them
+backups/
+
+# Working output of the voice tool; the lines the game plays are in sounds/voice
+tools/voice-out/
+tools/voice-test/
+
+# Shortcut with a path that only works on one PC; use "Play Steel Meridian.bat"
+*.lnk
+
+# Editor and system files
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
+node_modules/

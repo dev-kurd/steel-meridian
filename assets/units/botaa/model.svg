@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-18 -18 36 36" width="144" height="144" data-kind="sm-model">
+  <title>Warden air-defence robot</title>
+  <g data-rot="a">
+    <circle cx="0" cy="0" r="6" class="shadow" data-shadow="flat" data-off="1.5;-.5" fill="rgba(0,0,0,0.28)"/>
+    <circle cx="0" cy="0" r="6" class="shadow" data-shadow="cast" data-z="12" fill="rgba(0,0,0,0.1)"/>
+  </g>
+  <g data-rot="ta">
+    <g class="shadow" data-shadow="cast" data-z="17" fill="rgba(0,0,0,0.09)">
+      <rect x="0" y="-1" width="9" height="2"/>
+      <circle cx="0" cy="0" r="5"/>
+    </g>
+  </g>
+  <g data-rot="a">
+    <g transform="translate(0 -5)" data-move="sin(odo*.35)*4;0">
+      <rect x="-3.5" y="-2.2" width="7" height="4.4" rx="1.5" data-z="0;2" fill="#101317"/>
+      <circle cx="0" cy="0" r="1.7" data-z="2;8" fill="#2a3036"/>
+    </g>
+    <g transform="translate(0 5)" data-move="sin(odo*.35+PI)*4;0">
+      <rect x="-3.5" y="-2.2" width="7" height="4.4" rx="1.5" data-z="0;2" fill="#101317"/>
+      <circle cx="0" cy="0" r="1.7" data-z="2;8" fill="#2a3036"/>
+    </g>
+    <rect x="-5" y="-6.2" width="10" height="12.4" rx="3" data-z="8;14" fill="#1d5c9c" data-fill="tc.d"/>
+    <rect x="-5" y="-6.2" width="10" height="12.4" rx="3" data-z="15" fill="#42a5ff" data-fill="tc.c" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+    <rect x="-5" y="-1.1" width="3" height="2.2" data-z="15" fill="#ffcf5a"/>
+    <rect x="1" y="-4.5" width="1.2" height="9" data-z="15" fill="rgba(0,0,0,.35)"/>
+  </g>
+  <g data-rot="ta">
+    <g class="solid" data-z="15;19" fill="#1c2127">
+      <rect x="0" y="-8" width="8" height="2.6"/>
+      <rect x="0" y="5.4" width="8" height="2.6"/>
+    </g>
+    <g data-rot="t*3-ta">
+      <rect x="-4" y="-0.8" width="8" height="1.6" data-z="22" fill="#cfd6dd"/>
+    </g>
+    <circle cx="1" cy="0" r="3.4" data-z="15;18" fill="#1d5c9c" data-fill="tc.d"/>
+    <circle cx="1" cy="0" r="3.4" data-z="19" fill="#b5dcff" data-fill="tc.l" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+    <rect x="2.2" y="-2" width="2" height="4" data-z="19" fill="#12202c"/>
+    <circle cx="13" cy="0" class="glow" r="7" data-z="14" data-glow="W" opacity="1" fill="#fff0b4" data-if="flash&gt;0"/>
+  </g>
+</svg>

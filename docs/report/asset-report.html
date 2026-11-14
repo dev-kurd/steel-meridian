@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Steel Meridian — Asset Inventory and Production Brief</title>
+<!-- Source of the PDF report. Open through the dev server (http://localhost:8377/docs/report/asset-report.html): the pictures are
+     drawn live from the game's own assets by a hidden copy of the game. Print to PDF with tools/build-report.ps1. -->
+<style>
+  @page { size: A4; margin: 0; }
+  :root { --ink: #16202b; --mute: #5d6b7a; --line: #dfe5ec; --navy: #0c1722; --navy2: #13283b; --azure: #2f8fe6; --soft: #f3f6f9; --amber: #c9861a; --green: #2e8b57; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #7d8791; font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; color: var(--ink); font-size: 9.6pt; line-height: 1.42; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { width: 210mm; height: 297mm; margin: 6mm auto; background: #fff; position: relative; overflow: hidden; page-break-after: always; break-after: page; padding: 17mm 16mm 16mm; }
+  @media print { html, body { background: #fff; } .page { margin: 0; } #stage { display: none; } }
+  .foot { position: absolute; left: 16mm; right: 16mm; bottom: 8mm; display: flex; justify-content: space-between; font-size: 7.6pt; color: var(--mute); border-top: 1px solid var(--line); padding-top: 2.2mm; letter-spacing: .04em; }
+  .kicker { font-size: 7.6pt; letter-spacing: .22em; text-transform: uppercase; color: var(--azure); font-weight: 700; margin: 0 0 1.5mm; }
+  h1 { font-size: 20pt; line-height: 1.12; margin: 0 0 3mm; letter-spacing: -.01em; font-weight: 700; }
+  h2 { font-size: 11pt; margin: 6mm 0 2mm; font-weight: 700; }
+  p { margin: 0 0 2.4mm; }
+  .lead { font-size: 10.6pt; color: #2b3a49; max-width: 160mm; margin-bottom: 5mm; }
+  code { font-family: Consolas, "Cascadia Mono", monospace; font-size: 8.4pt; background: var(--soft); padding: .2mm 1.2mm; border-radius: 1mm; color: #24405c; }
+  table { width: 100%; border-collapse: collapse; font-size: 8.7pt; margin: 0 0 3mm; }
+  th { text-align: left; font-size: 7.4pt; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); font-weight: 700; padding: 1.6mm 2mm; border-bottom: 1.5px solid var(--ink); }
+  td { padding: 1.7mm 2mm; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.n { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+  .tag { display: inline-block; font-size: 7pt; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: .3mm 1.8mm; border-radius: 1mm; white-space: nowrap; }
+  .tag.ph { background: #fdf1dc; color: #8a5a10; } .tag.ok { background: #dff3e7; color: #1d6b40; } .tag.no { background: #fbe4e1; color: #9c2a1d; } .tag.todo { background: #e3effc; color: #1d5c9c; }
+  /* cover */
+  .cover { padding: 0; background: var(--navy); color: #fff; }
+  .cover .hero { position: absolute; inset: 0 0 96mm 0; background: var(--navy2) center/cover no-repeat; }
+  .cover .hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(12,23,34,.35) 0%, rgba(12,23,34,0) 35%, rgba(12,23,34,.2) 70%, var(--navy) 100%); }
+  .cover .band { position: absolute; left: 0; right: 0; bottom: 0; height: 104mm; padding: 6mm 18mm 0; }
+  .cover .brand { position: absolute; top: 14mm; left: 18mm; font-size: 8.4pt; letter-spacing: .34em; font-weight: 700; text-transform: uppercase; z-index: 2; }
+  .cover .brand span { color: #7cc0ff; }
+  .cover h1 { font-size: 33pt; line-height: 1.04; margin: 0 0 4mm; }
+  .cover .sub { font-size: 12pt; color: #b9c9d8; max-width: 140mm; margin-bottom: 9mm; }
+  .cover .meta { display: flex; gap: 12mm; border-top: 1px solid rgba(255,255,255,.2); padding-top: 4mm; font-size: 8.6pt; color: #b9c9d8; }
+  .cover .meta b { display: block; color: #fff; font-size: 10pt; font-weight: 600; }
+  .cover .rule { width: 22mm; height: 1.2mm; background: var(--azure); margin-bottom: 6mm; }
+  /* figures */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; margin: 0 0 5mm; }
+  .stat { background: var(--soft); border-radius: 2mm; padding: 3.5mm 4mm; border-left: 1.2mm solid var(--azure); }
+  .stat b { display: block; font-size: 19pt; line-height: 1; font-weight: 700; } .stat span { font-size: 8pt; color: var(--mute); }
+  .grid { display: grid; gap: 3mm; margin: 0 0 3mm; }
+  .g3 { grid-template-columns: repeat(3, 1fr); } .g4 { grid-template-columns: repeat(4, 1fr); } .g5 { grid-template-columns: repeat(5, 1fr); } .g6 { grid-template-columns: repeat(6, 1fr); } .g7 { grid-template-columns: repeat(7, 1fr); } .g9 { grid-template-columns: repeat(9, 1fr); }
+  .card { border: 1px solid var(--line); border-radius: 2mm; overflow: hidden; background: #fff; break-inside: avoid; }
+  .card .pic { background: radial-gradient(ellipse at 50% 62%, #5f7a55 0%, #3f5a45 55%, #2c4034 100%); display: flex; align-items: center; justify-content: center; height: 42mm; overflow: hidden; }
+  .card .pic.dark { background: radial-gradient(ellipse at 50% 55%, #24384c 0%, #121f2c 100%); }
+  .card .pic.sky { background: linear-gradient(180deg, #8fb5d1 0%, #5f7a55 70%, #46624a 100%); }
+  .card .pic.lite { background: #eef2f6; }
+  .card .pic img { height: 100%; width: 100%; object-fit: contain; display: block; }
+  .card .cap { padding: 1.6mm 2.2mm 2mm; }
+  .card .cap b { display: block; font-size: 8.7pt; line-height: 1.2; } .card .cap i { display: block; font-style: normal; font-family: Consolas, monospace; font-size: 7pt; color: var(--azure); margin: .3mm 0 .6mm; } .card .cap span { display: block; font-size: 7.7pt; color: var(--mute); line-height: 1.3; }
+  .small .pic { height: 22mm; } .card .cap b span.tag { display: inline-block; } .small .cap b { font-size: 7.6pt; } .small .cap { padding: 1.2mm 1.6mm 1.5mm; }
+  .tiny .pic { height: 19mm; padding: 2.5mm; } .tiny .cap b { font-size: 6.9pt; font-weight: 600; text-align: center; } .tiny .cap { padding: 1mm; }
+  .wide .pic { height: 74mm; } .wide .pic svg { height: 100%; width: auto; max-width: 100%; }
+  .note { background: var(--soft); border-left: 1.2mm solid var(--amber); padding: 2.6mm 4mm; border-radius: 0 2mm 2mm 0; font-size: 8.7pt; margin: 3mm 0; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+  ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: s; }
+  ol.steps li { counter-increment: s; position: relative; padding: 0 0 2.6mm 9mm; }
+  ol.steps li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 6mm; height: 6mm; border-radius: 50%; background: var(--navy); color: #fff; font-size: 8pt; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  ol.steps b { display: block; }
+  ul.q { margin: 0; padding: 0; list-style: none; } ul.q li { padding: 0 0 2mm 7mm; position: relative; } ul.q li::before { content: ""; position: absolute; left: 0; top: 1mm; width: 3.4mm; height: 3.4mm; border: 1.3px solid var(--mute); border-radius: .8mm; }
+  .sw { display: inline-block; width: 3.2mm; height: 3.2mm; border-radius: .8mm; vertical-align: -0.5mm; margin-right: 1.2mm; }
+  #stage { position: fixed; left: -3000px; top: 0; width: 1280px; height: 720px; border: 0; }
+</style>
+</head>
+<body>
+<iframe id="stage" src="../../index.html"></iframe>
+
+<section class="page cover">
+  <div class="brand">Steel <span>Meridian</span></div>
+  <div class="hero" id="hero"></div>
+  <div class="band">
+    <div class="rule"></div>
+    <h1>Asset Inventory and<br>Production Brief</h1>
+    <div class="sub">Every building, unit, effect, interface graphic and sound the game uses today, and what the art team needs to deliver to replace them.</div>
+    <div class="meta"><div><b>14 November 2026</b>Date</div><div><b>Art and audio team</b>Prepared for</div><div><b>86 art assets · 93 audio files</b>Scope</div><div><b>Build 20261114</b>Game version</div></div>
+  </div>
+</section>
+
+<section class="page">
+  <p class="kicker">01 · Summary</p>
+  <h1>All but one of the game's 86 art assets are placeholders</h1>
+  <p class="lead">Steel Meridian loads every drawing from its <code>assets</code> folder at start-up. The art was written by the programmer to make the game playable. It is original to this project, so it is safe to ship, but it was not made by an artist. Only the Heavy Factory has a team-made model.</p>
+  <div class="stats">
+    <div class="stat"><b>14</b><span>structure models needed<br>(12 structures, 3 factory classes)</span></div>
+    <div class="stat"><b>31</b><span>turrets and units<br>(6 turrets, 20 ground, 5 air)</span></div>
+    <div class="stat"><b>42</b><span>small graphics<br>(props, effects, flags, icons, cursors)</span></div>
+    <div class="stat"><b>1</b><span>asset delivered by the team<br>(Heavy Factory)</span></div>
+  </div>
+  <table>
+    <tr><th>Category</th><th style="text-align:right">Count</th><th>What it covers</th><th>State today</th></tr>
+    <tr><td>Buildings</td><td class="n">12 + 1</td><td>Twelve structures, plus the separate Heavy Factory model</td><td><span class="tag ph">Placeholder</span> <span class="tag ok">1 delivered</span></td></tr>
+    <tr><td>Turrets</td><td class="n">6</td><td>Weapons mounted on a Turret Pad</td><td><span class="tag ph">Placeholder</span></td></tr>
+    <tr><td>Ground units</td><td class="n">20</td><td>15 tanks, 3 robots, Engineer, Supply Truck</td><td><span class="tag ph">Placeholder</span></td></tr>
+    <tr><td>Aircraft</td><td class="n">5</td><td>Gunship, jet, bomber, sortie fighter, Vanguard</td><td><span class="tag ph">Placeholder</span></td></tr>
+    <tr><td>Props</td><td class="n">7</td><td>4 rocks, 3 trees</td><td><span class="tag ph">Placeholder</span></td></tr>
+    <tr><td>Effects</td><td class="n">7</td><td>3 glows, smoke, dust, 2 mist puffs</td><td><span class="tag ph">Placeholder</span></td></tr>
+    <tr><td>Flags</td><td class="n">5</td><td>3 campaign zones, team flag, enemy flag</td><td><span class="tag ph">Placeholder</span></td></tr>
+    <tr><td>Interface icons</td><td class="n">18</td><td>Command, power and turret buttons</td><td><span class="tag ph">Placeholder</span></td></tr>
+    <tr><td>Cursors</td><td class="n">5</td><td>Attack, capture, upgrade, dock, repair</td><td><span class="tag ph">Placeholder</span></td></tr>
+    <tr><td>Sound effects</td><td class="n">15</td><td>Weapons and explosions</td><td><span class="tag ok">CC0 recordings</span> <span class="tag no">about 10 missing</span></td></tr>
+    <tr><td>Announcer voice</td><td class="n">26 × 3</td><td>English, Arabic, Kurdish (Sorani)</td><td><span class="tag todo">Licence to confirm</span></td></tr>
+    <tr><td>Music</td><td class="n">0</td><td>One theme at minimum</td><td><span class="tag no">Missing</span></td></tr>
+  </table>
+  <div class="note">Terrain, water and the large clouds are not assets. The game generates them from noise for each map, so there is nothing to prepare unless the team wants to replace that system.</div>
+  <div class="foot"><span>STEEL MERIDIAN · ASSET INVENTORY</span><span>2</span></div>
+</section>
+
+<section class="page">
+  <p class="kicker">02 · Delivery requirements</p>
+  <h1>Vector 2.5D, one folder per asset, recolourable per army</h1>
+  <p class="lead">Nothing is embedded in the code. Replacing a file in <code>assets/</code> and reloading the game is enough to see new art.</p>
+  <table>
+    <tr><th style="width:34mm">Requirement</th><th>Detail</th></tr>
+    <tr><td><b>Style</b></td><td>Vector 2.5D, drawn for a 2:1 isometric map (26.57°).</td></tr>
+    <tr><td><b>Scale</b></td><td>1 unit = 1 world pixel. A heavy tank is 38 × 28; a light tank about 26 × 19; a standard structure 60–92 across.</td></tr>
+    <tr><td><b>Format A</b><br>plan-view model</td><td>An SVG drawn from straight above, with a height on each shape. The game raises it into 2.5D, turns it to any heading and casts its shadow. Used by all current buildings, turrets and units. Specification: <code>assets/README.md</code>.</td></tr>
+    <tr><td><b>Format B</b><br>scripted model</td><td>A self-animating SVG script, as delivered for the Heavy Factory. Suits large structures with complex moving parts. It does not turn, so it needs one drawing per facing. Specification: <code>docs/art/art-style-guide.md</code>.</td></tr>
+    <tr><td><b>Structure states</b></td><td>Owned, neutral (grey), destroyed (wreck), fortified, working (lights, smoke, moving parts), and upgrade levels where listed.</td></tr>
+    <tr><td><b>Unit states</b></td><td>Any heading; turret turns separately from the hull; muzzle flash when firing; moving tracks or legs; ground shadow.</td></tr>
+    <tr><td><b>Small graphics</b></td><td>Plain SVG. Flags are 72 × 48. Cursors carry a hot-spot.</td></tr>
+    <tr><td><b>Originality</b></td><td>The game is going commercial. All art must be original to the team or properly licensed, with no likeness to an existing game's units or structures.</td></tr>
+  </table>
+  <h2>Team colour</h2>
+  <p>Colour must be changeable at run time. Each army has a main, a dark and a light shade. The same model in the four army colours and as a neutral:</p>
+  <div class="grid g5" id="teams"></div>
+  <h2>Structure states</h2>
+  <p>The Command Core placeholder in the states every structure needs:</p>
+  <div class="grid g5" id="states"></div>
+  <div class="foot"><span>STEEL MERIDIAN · ASSET INVENTORY</span><span>3</span></div>
+</section>
+
+<section class="page">
+  <p class="kicker">03 · Buildings</p>
+  <h1>Twelve structures; the Tank Factory needs three models</h1>
+  <p class="lead">The Heavy Factory is delivered and in the game. The Light and Medium factories are the next models due from the team.</p>
+  <div class="card wide"><div class="pic dark" id="hf"></div><div class="cap"><b>Tank Factory, Heavy <span class="tag ok" style="margin-left:2mm">Delivered · in game</span></b><i>buildings/heavy-factory · 150 × 90 · levels 0–2</i><span>Three gates with sliding doors; a locked line shows a sealed gate; fans, radar and smoke. Real tanks drive out through the gates. Still missing: fortified and upgrade-level visuals.</span></div></div>
+  <div style="height:3mm"></div>
+  <div class="grid g4" id="bld1"></div>
+  <div class="foot"><span>STEEL MERIDIAN · ASSET INVENTORY</span><span>4</span></div>
+</section>
+
+<section class="page">
+  <p class="kicker">03 · Buildings, continued</p>
+  <h1>Support structures and the six turrets</h1>
+  <div class="grid g4" id="bld2"></div>
+  <h2>Turrets</h2>
+  <p>Each is drawn to sit on the Turret Pad and turn to any heading. Each needs a muzzle flash and a "reloaded" look. Two upgrades change strength only, not appearance.</p>
+  <div class="grid g6" id="tur"></div>
+  <div class="note">Sizes are in world pixels. The Light and Medium factories share one placeholder today; they should be sized so their own tank classes fit through the gates, as the Heavy Factory now does.</div>
+  <div class="foot"><span>STEEL MERIDIAN · ASSET INVENTORY</span><span>5</span></div>
+</section>
+
+<section class="page">
+  <p class="kicker">04 · Ground units</p>
+  <h1>Fifteen tanks: five roles in three weight classes</h1>
+  <p class="lead">A heavier class should read as larger and more heavily armoured at a glance. Folder names are the role code plus the class number: <code>units/bt2</code> is the Heavy Lancer.</p>
+  <table id="tanks"><tr><th style="width:44mm">Role</th><th>Light · radius 11 · about 26 × 19</th><th>Medium · radius 13 · about 31 × 23</th><th>Heavy · radius 16 · 38 × 28</th></tr></table>
+  <p>Every tank needs a hull, a separately turning turret, moving tracks, a muzzle flash and a shadow.</p>
+  <div class="foot"><span>STEEL MERIDIAN · ASSET INVENTORY</span><span>6</span></div>
+</section>
+
+<section class="page">
+  <p class="kicker">04 · Ground units, continued · 05 · Aircraft</p>
+  <h1>Robots, support vehicles and five aircraft</h1>
+  <h2>Robots and support vehicles</h2>
+  <div class="grid g5" id="gnd"></div>
+  <h2>Aircraft</h2>
+  <p>Each is drawn at altitude with its shadow on the ground below, and banks or bobs as it flies.</p>
+  <div class="grid g5" id="air"></div>
+  <div class="foot"><span>STEEL MERIDIAN · ASSET INVENTORY</span><span>7</span></div>
+</section>
+
+<section class="page">
+  <p class="kicker">06 · Environment, effects, flags · 07 · Interface</p>
+  <h1>Forty-two small graphics, each a plain SVG</h1>
+  <h2>Props</h2>
+  <div class="grid g7" id="props"></div>
+  <h2>Effects</h2>
+  <div class="grid g7" id="fx"></div>
+  <p style="font-size:8.4pt;color:var(--mute)">Explosions, shells, missiles, laser beams, tracer fire, sparks and track marks are drawn by code today. Drawn versions would be new assets and need a small code change to load them.</p>
+  <h2>Flags</h2>
+  <div class="grid g7" id="flags"></div>
+  <h2>Interface icons and cursors</h2>
+  <div class="grid g9" id="icons"></div>
+  <div class="grid g9" id="cursors"></div>
+  <p style="font-size:8.4pt;color:var(--mute)">Menus, panels, the minimap frame and health bars are drawn with CSS and code, not image files. A visual redesign of those is a design task rather than an asset swap. The application icon is <code>icon.png</code> / <code>icon.ico</code>.</p>
+  <div class="foot"><span>STEEL MERIDIAN · ASSET INVENTORY</span><span>8</span></div>
+</section>
+
+<section class="page">
+  <p class="kicker">08 · Audio · 09 · Plan</p>
+  <h1>Audio is the least complete area; factories and tanks come first</h1>
+  <table>
+    <tr><th style="width:32mm">Group</th><th style="width:26mm">Location</th><th>Have</th><th>Missing or to review</th></tr>
+    <tr><td><b>Weapon and explosion effects</b></td><td><code>sounds/</code></td><td>15 WAV files: bullet ×3, shell ×3, flak ×2, artillery ×2, laser ×1, vehicle explosion ×3, structure explosion ×2</td><td>All CC0. The tank and artillery sounds are slowed rifle recordings, not real guns.</td></tr>
+    <tr><td><b>Synthesised cues</b></td><td>none</td><td>Missile, jet, thunder, laser charge, alert, build, capture, deny, ready and interface clicks are generated by code</td><td>Recordings would replace them: about 10 sounds.</td></tr>
+    <tr><td><b>Announcer</b></td><td><code>sounds/voice</code></td><td>26 lines in each of English, Arabic and Kurdish (Sorani)</td><td>Machine-generated. The sound notes record two different tools over time; confirm the licence of the current files before release.</td></tr>
+    <tr><td><b>Music</b></td><td><code>music/</code></td><td>Nothing; the game plays a built-in synthesised score</td><td>One theme (<code>theme.mp3</code>) at minimum; menu and battle tracks if wanted.</td></tr>
+  </table>
+  <div class="two">
+    <div>
+      <h2>Suggested order of work</h2>
+      <ol class="steps">
+        <li><b>Light and Medium Tank Factory models</b>Already promised; they complete the factory set.</li>
+        <li><b>Heavy Factory additions</b>Fortified and upgrade-level visuals.</li>
+        <li><b>The 15 tanks</b>Agree one design per role, then scale it to three classes.</li>
+        <li><b>Command Core and Vanguard</b>The two assets that identify each army.</li>
+        <li><b>Remaining structures and the six turrets</b></li>
+        <li><b>Robots, aircraft, Engineer, Supply Truck</b></li>
+        <li><b>Props, effects, flags, icons, cursors</b>Small; a second artist can work in parallel.</li>
+        <li><b>Audio</b>Music, missing effects, announcer licence check.</li>
+      </ol>
+    </div>
+    <div>
+      <h2>Open questions for the team</h2>
+      <ul class="q">
+        <li>Which format will the team deliver in: plan-view models (A), scripted models (B), or a mix by asset type?</li>
+        <li>Should structures other than the Heavy Factory grow to match its new, larger scale?</li>
+        <li>Skirmish for 2–4 players is planned. Are four team colours enough?</li>
+        <li>Should terrain, water and battle effects stay generated by code, or become drawn assets?</li>
+      </ul>
+      <div class="note" style="border-left-color:var(--azure)">Pictures in this report are the current placeholders, drawn by the game itself. Notes on what each asset "must show" describe its role in play; where they go beyond the placeholder they are suggestions for the artist.</div>
+    </div>
+  </div>
+  <div class="foot"><span>STEEL MERIDIAN · ASSET INVENTORY</span><span>9</span></div>
+</section>
+
+<script src="../../assets/buildings/heavy-factory/heavy-factory.js"></script>
+<script>
+const A = '../../assets/', $ = id => document.getElementById(id), jobs = [];
+// a card whose picture the hidden game draws (spec = [kind, key, options]) or that shows a file (src)
+function card(to, o) {
+  const d = document.createElement('div'); d.className = 'card ' + (o.cls || '');
+  d.innerHTML = '<div class="pic ' + (o.bg || '') + '"><img alt=""></div><div class="cap"><b>' + o.name + '</b>' + (o.id ? '<i>' + o.id + '</i>' : '') + (o.note ? '<span>' + o.note + '</span>' : '') + '</div>';
+  const im = d.querySelector('img'); if (o.src) im.src = A + o.src; else jobs.push([im, o.spec]);
+  $(to).appendChild(d);
+}
+const B = { z: 2.3, cy: .66 }, T = { z: 6.5, cy: .6, a: .55 };
+[['Azure', 0, '#42a5ff'], ['Crimson', 1, '#ff5d4a'], ['Amber', 2, '#f0a030'], ['Violet', 3, '#a56bff']].forEach(q => card('teams', { cls: 'small', name: '<span class="sw" style="background:' + q[2] + '"></span>' + q[0], note: q[2], spec: ['unit', 'bt2', Object.assign({ team: q[1] }, T)] }));
+card('teams', { cls: 'small', name: '<span class="sw" style="background:#9aa0a6"></span>Neutral', note: '#9aa0a6 · uncaptured structures', spec: ['bld', 'refinery', Object.assign({ team: -1 }, B)] });
+[['Owned', {}], ['Level 2', { lvl: 2 }], ['Fortified', { fort: 1 }], ['Neutral', { team: -1 }], ['Wreck', { wreck: 1 }]].forEach(q => card('states', { cls: 'small', name: q[0], spec: ['bld', 'hq', Object.assign({ z: 1.75, cy: .74 }, q[1])] }));
+const bl = (to, k, name, size, lv, note, o) => card(to, { name, id: 'buildings/' + k + ' · ' + size + ' · ' + lv, note, spec: ['bld', k, Object.assign({}, B, o || {})] });
+bl('bld1', 'hq', 'Command Core', '92', 'levels 0–2', "Each army's base. Has its own gun, flies the army's flag, grows per level, shows a Vanguard being rebuilt.", { z: 1.75, cy: .74 });
+bl('bld1', 'factory', 'Tank Factory, Light / Medium', '76', 'levels 0–1', 'One placeholder for both. 1–3 production lines; smoke stack; gates for tanks. <b style="display:inline;color:#1d5c9c">Two models due from the team.</b>');
+bl('bld1', 'airpad', 'Sky Dock', '68', 'levels 0–2', 'Builds the gunship, jet and bomber. Landing pad with lights.');
+bl('bld1', 'robot', 'Robot Works', '72', 'levels 0–2', 'Builds the three robots. Two welding arms that swing and spark while working.');
+bl('bld2', 'refinery', 'Refinery', '64', 'levels 0–4', 'Income. Gains tanks or towers per level.');
+bl('bld2', 'mine', 'Ore Mine', '68', 'levels 0–4', 'Income. Working machinery.');
+bl('bld2', 'tech', 'Tech Lab', '64', 'no levels', 'Research. Animated dish or antenna.');
+bl('bld2', 'foundry', 'Foundry', '72', 'no levels', 'Speeds up production. Two smoke stacks.');
+bl('bld2', 'airfield', 'Airfield', '76', 'no levels', 'Enables the Fighter Sortie power. Runway lights.');
+bl('bld2', 'laser', 'Laser Array', '60', 'no levels', 'Enables the Laser Strike power. Needs charged and firing states.', { z: 2, cy: .76 });
+bl('bld2', 'outpost', 'Allied Outpost', '68', 'no levels', 'Mission objective to defend.');
+bl('bld2', 'pad', 'Turret Pad', '36', 'levels 0–2', 'Empty base that a turret is built on. Never a wreck.', { z: 4 });
+[['gun', 'Gun Turret', 'Ground and air'], ['cannon', 'Cannon', 'Ground'], ['flak', 'Flak Battery', 'Air'], ['missile', 'Missile Turret', 'Ground and air'], ['rocket', 'Rocket Battery', 'Ground, salvo of 4'], ['arty', 'Artillery', 'Ground, long range']].forEach(q => card('tur', { cls: 'small', name: q[1], id: 'turrets/' + q[0], note: q[2], spec: ['turret', q[0], { z: 4.4, cy: .64 }] }));
+[['bt', 'Lancer', 'Battle tank', 'Turret gun; the Heavy has twin barrels.'], ['ar', 'Bastion', 'Artillery', 'Long raised barrel.'], ['ad', 'Skyguard', 'Air defence', 'Rapid-fire anti-air guns.'], ['fl', 'Scorcher', 'Flame tank', 'Short flame projector, fuel tanks.'], ['en', 'Prism', 'Energy tank', 'Beam emitter.']].forEach(r => {
+  const tr = document.createElement('tr'); tr.innerHTML = '<td><b style="font-size:10.5pt">' + r[1] + '</b><br>' + r[2] + ' · code <code>' + r[0] + '</code><br><span style="color:var(--mute);font-size:8.2pt">' + r[3] + '</span></td>';
+  for (let c = 0; c < 3; c++) { const td = document.createElement('td'); td.innerHTML = '<div class="card"><div class="pic" style="height:27mm"><img alt=""></div><div class="cap" style="padding:1mm 2mm"><i style="margin:0">units/' + r[0] + c + '</i></div></div>'; jobs.push([td.querySelector('img'), ['unit', r[0] + c, T]]); tr.appendChild(td); }
+  $('tanks').appendChild(tr);
+});
+const G1 = { z: 7.5, cy: .6, a: .55 };
+[['bot', 'Sentinel', 'Combat robot. Walking legs, light gun; attacks ground. Built at the Robot Works.'], ['botaa', 'Warden', 'Air-defence robot. Walking legs, anti-air weapon.'], ['botl', 'Arc', 'Laser robot. Larger walker with a laser.'], ['eng', 'Engineer', 'Unarmed wheeled vehicle with a repair arm. Built at any Tank Factory.'], ['truck', 'Supply Truck', 'Unarmed wheeled convoy vehicle. Missions only.']].forEach(q => card('gnd', { name: q[1], id: 'units/' + q[0], note: q[2], spec: ['unit', q[0], G1] }));
+const A1 = { z: 3.6, cy: .86, a: .55, order: 1 };
+[['gun', 'Kestrel', 'Gunship from the Sky Dock. Hovers; spinning rotors.'], ['jet', 'Swift', 'Jet fighter from the Sky Dock. Fast, with missiles.'], ['bomber', 'Anvil', 'Bomber from the Sky Dock. Large and slow.', { z: 3 }], ['fighter', 'Falcon', 'Sortie fighter. Appears for about 25 seconds.'], ['adv', 'Vanguard', "The player's hero craft, radius 21. Hovers over a structure to capture or repair it.", { z: 2.8, order: 0 }]].forEach(q => card('air', { bg: 'sky', name: q[1], id: 'units/' + q[0], note: q[2], spec: ['unit', q[0], Object.assign({}, A1, q[3] || {})] }));
+const S = (to, list, bg) => list.forEach(q => card(to, { cls: 'tiny', bg: bg || '', name: q[1], src: q[0] }));
+S('props', ['rock-1', 'rock-2', 'rock-3', 'rock-4', 'tree-1', 'tree-2', 'tree-3'].map(n => ['props/' + n + '/sprite.svg', n]));
+S('fx', ['glow-fire', 'glow-warm', 'glow-red', 'smoke', 'dust', 'puff-light', 'puff-dark'].map(n => ['fx/' + n + '/sprite.svg', n]), 'dark');
+S('flags', [['north', 'Zone: north'], ['centre', 'Zone: centre'], ['south', 'Zone: south'], ['team', 'Army (recoloured)'], ['crimson', 'Campaign enemy']].map(q => ['flags/' + q[0] + '/flag.svg', q[1]]), 'lite');
+S('icons', [['up', 'Upgrade'], ['res', 'Research'], ['fort', 'Fortify'], ['del', 'Remove'], ['stop', 'Stop'], ['hold', 'Hold'], ['patrol', 'Patrol'], ['guard', 'Guard'], ['strike', 'Air Strike'], ['repair', 'Field Repair'], ['sortie', 'Sortie'], ['laser', 'Laser Strike'], ['tgun', 'Gun Turret'], ['tcannon', 'Cannon'], ['tflak', 'Flak'], ['tmissile', 'Missile'], ['trocket', 'Rocket'], ['tarty', 'Artillery']].map(q => ['ui/icons/' + q[0] + '/icon.svg', q[1]]), 'dark');
+S('cursors', [['atk', 'Cursor: attack'], ['cap', 'Cursor: capture'], ['up', 'Cursor: upgrade'], ['dock', 'Cursor: dock'], ['fix', 'Cursor: repair']].map(q => ['ui/cursors/' + q[0] + '/cursor.svg', q[1]]), 'dark');
+HeavyFactory.create($('hf'), { lines: 2, facing: 0, team: '#42a5ff', scale: .92 });
+
+// the hidden copy of the game draws the pictures once its assets are in
+const st = $('stage'); let started = false;
+const timer = setInterval(() => {
+  const w = st.contentWindow, SM = w && w.SM; if (!SM) return;
+  try {
+    if (!started) { SM.start(0, 'easy'); started = true; w.document.querySelectorAll('#menu,#loading').forEach(e => e.classList.add('hidden')); }
+    SM.thumb('unit', 'bt0', {}); // throws until the models are loaded
+  } catch (e) { started = false; return; }
+  clearInterval(timer);
+  for (const j of jobs) { try { j[0].src = SM.thumb(j[1][0], j[1][1], j[1][2]); } catch (e) { console.error(j[1][1], e); } }
+  // cover picture: the player's base a little into a battle
+  try {
+    const G = SM.G, h = G.blds.find(b => b.k === 'factory' && b.team === 0), q = G.blds.find(b => b.k === 'hq' && b.team === 0);
+    h.lines.forEach(l => { l.open = true; }); SM.step(700, .05); G.cam.x = (h.x + q.x) / 2 + 40; G.cam.y = (h.y + q.y) / 2 + 60; G.cam.z = 1.5; SM.step(2, .02); SM.render();
+    $('hero').style.backgroundImage = 'url(' + w.document.getElementById('game').toDataURL('image/jpeg', .9) + ')';
+  } catch (e) { console.error('hero', e); }
+  document.body.dataset.ready = '1';
+}, 250);
+</script>
+</body>
+</html>

@@ -1,0 +1,612 @@
+/*!
+ * HeavyFactory v2 — 2.5D isometric vector (SVG) Heavy Tank Factory
+ * -----------------------------------------------------------------
+ * - High-tech look: sloped armour, control tower + radar, sliding blast
+ *   doors, beveled platform with team-coloured light lines, turbine fans.
+ * - 3 gates (production lines); map decides how many are active (1..3).
+ *   Unused gates stay sealed (hazard stripes, padlock, red lights).
+ * - 6 exhaust turbine fans (spin up while producing).
+ * - 4 fixed facings (0/90/180/270°) with real depth sorting, so tanks
+ *   drive out correctly from any side.
+ * - Team colour drives all light strips, emblems, fan rings and tanks.
+ *
+ * Usage:
+ *   const f = HeavyFactory.create(el, {
+ *     lines: 2,            // active lines from the map (1..3)
+ *     facing: 0,           // 0..3 → 0°, 90°, 180°, 270°
+ *     team: '#33d17a',
+ *     fadeOutTank: true,
+ *     onTankOut: line => spawnUnit(line)
+ *   });
+ *   f.produce(0);  f.setLines(3);  f.setFacing(1);  f.setTeam('#e5484d');
+ *   scale: 0.2            // optional: fixed pixel size (svg units × scale)
+ *   f.anchor()            → {x,y} px inside the element = building ground centre
+ *   f.gateExit(line)      → {x,y} px inside the element where the tank stops
+ *   Placement: el.style.left = tileX - f.anchor().x; el.style.top = tileY - f.anchor().y
+ */
+(function (global) {
+  'use strict';
+
+  // ---------------------------------------------------------------- math
+  const C = 0.8660254;
+  const proj = p => [(p[0] - p[1]) * C, (p[0] + p[1]) * 0.5 - p[2]];
+  const f = n => Math.round(n * 100) / 100;
+  const f4 = n => Math.round(n * 10000) / 10000;
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const norm = a => { const m = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / m, a[1] / m, a[2] / m]; };
+  const LIGHT = norm([0.35, 0.6, 1]);
+  const VIEW = [1, 1, 1];
+  const OUT = '#0b0e13';
+
+  function rot(k, x, y) { switch (k & 3) { case 0: return [x, y]; case 1: return [-y, x]; case 2: return [-x, -y]; default: return [y, -x]; } }
+  function makeXf(k, cx, cy) {
+    return {
+      k,
+      p: q => { const r = rot(k, q[0] - cx, q[1] - cy); return [r[0] + cx, r[1] + cy, q[2]]; },
+      v: q => { const r = rot(k, q[0], q[1]); return [r[0], r[1], q[2]]; },
+    };
+  }
+
+  // --------------------------------------------------------------- colour
+  const hex2rgb = h => { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+  const rgb2hex = r => '#' + r.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+  const shade = (h, k) => rgb2hex(hex2rgb(h).map(v => v * k));
+  const mix = (a, b, t) => { const A = hex2rgb(a), B = hex2rgb(b); return rgb2hex(A.map((v, i) => v + (B[i] - v) * t)); };
+
+  // -------------------------------------------------------------- solids
+  function newell(pts) {
+    let n = [0, 0, 0];
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i], b = pts[(i + 1) % pts.length];
+      n[0] += (a[1] - b[1]) * (a[2] + b[2]); n[1] += (a[2] - b[2]) * (a[0] + b[0]); n[2] += (a[0] - b[0]) * (a[1] + b[1]);
+    }
+    return norm(n);
+  }
+  function finalize(raw, opt) {
+    const all = raw.flat();
+    const cen = all.reduce((s, p) => [s[0] + p[0], s[1] + p[1], s[2] + p[2]], [0, 0, 0]).map(v => v / all.length);
+    const faces = [];
+    for (const pts of raw) {
+      let n = newell(pts);
+      const fc = pts.reduce((s, p) => [s[0] + p[0], s[1] + p[1], s[2] + p[2]], [0, 0, 0]).map(v => v / pts.length);
+      if (dot(n, sub(fc, cen)) < 0) n = n.map(v => -v);
+      let key;
+      if (Math.abs(n[2]) > 0.9) key = n[2] > 0 ? 'pz' : 'nz';
+      else key = Math.abs(n[0]) > Math.abs(n[1]) ? (n[0] > 0 ? 'px' : 'nx') : (n[1] > 0 ? 'py' : 'ny');
+      if (key === 'nz') continue;
+      const spec = (opt.faces || {})[key] || {};
+      const face = { pts, n, key, fill: spec.fill || opt.fill, flat: spec.flat, dec: spec.dec };
+      if (key === 'pz') { face.o = [0, 0, pts[0][2]]; face.u = [1, 0, 0]; face.v = [0, 1, 0]; }
+      else {
+        const t = norm([n[1], -n[0], 0]);
+        let v = norm(cross(n, t)); if (v[2] > 0) v = v.map(x => -x);
+        let minA = Infinity, maxA = -Infinity, minB = Infinity, maxB = -Infinity;
+        for (const p of pts) { const a = dot(p, t), b = dot(p, v); minA = Math.min(minA, a); maxA = Math.max(maxA, a); minB = Math.min(minB, b); maxB = Math.max(maxB, b); }
+        const d = dot(pts[0], n);
+        face.o = [0, 1, 2].map(i => t[i] * minA + v[i] * minB + n[i] * d);
+        face.u = t; face.v = v; face.dims = { w: maxA - minA, h: maxB - minB };
+      }
+      faces.push(face);
+    }
+    return { faces, pts: all };
+  }
+  function prism(bot, top, z0, z1, opt) {
+    const raw = [top.map(p => [p[0], p[1], z1])];
+    for (let i = 0; i < bot.length; i++) {
+      const j = (i + 1) % bot.length;
+      raw.push([[bot[i][0], bot[i][1], z0], [bot[j][0], bot[j][1], z0], [top[j][0], top[j][1], z1], [top[i][0], top[i][1], z1]]);
+    }
+    return finalize(raw, opt);
+  }
+  const rect = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+  const box = (x0, x1, y0, y1, z0, z1, opt) => prism(rect(x0, y0, x1, y1), rect(x0, y0, x1, y1), z0, z1, opt);
+  function extrudeX(x0, x1, yz, opt) {
+    const raw = [yz.map(p => [x0, p[0], p[1]]), yz.map(p => [x1, p[0], p[1]]).reverse()];
+    for (let i = 0; i < yz.length; i++) { const j = (i + 1) % yz.length; raw.push([[x0, yz[i][0], yz[i][1]], [x0, yz[j][0], yz[j][1]], [x1, yz[j][0], yz[j][1]], [x1, yz[i][0], yz[i][1]]]); }
+    return finalize(raw, opt);
+  }
+  const cyl = (cx, cy, r, z0, z1, opt) => Object.assign({ cyl: true, cx, cy, r, z0, z1 }, opt);
+
+  // ------------------------------------------------------------ rendering
+  function renderSolid(s, xf) {
+    let out = '';
+    for (const fc of s.faces) {
+      const nw = xf.v(fc.n);
+      if (dot(nw, VIEW) <= 1e-6) continue;
+      const fill = fc.flat ? fc.fill : shade(fc.fill, 0.55 + 0.55 * Math.max(0, dot(nw, LIGHT)));
+      out += `<polygon points="${fc.pts.map(p => { const q = proj(xf.p(p)); return f(q[0]) + ',' + f(q[1]); }).join(' ')}" fill="${fill}" stroke="${OUT}" stroke-width=".8" stroke-linejoin="round"/>`;
+      if (fc.dec) {
+        const o = proj(xf.p(fc.o)), u = proj(xf.v(fc.u)), v = proj(xf.v(fc.v));
+        out += `<g transform="matrix(${f4(u[0])},${f4(u[1])},${f4(v[0])},${f4(v[1])},${f(o[0])},${f(o[1])})">${typeof fc.dec === 'function' ? fc.dec(fc.dims || {}) : fc.dec}</g>`;
+      }
+    }
+    return out;
+  }
+  function renderCyl(c, xf, G) {
+    const w = xf.p([c.cx, c.cy, 0]);
+    const rx = c.r * 1.2247, ry = c.r * 0.7071;
+    const [bx, by] = proj([w[0], w[1], c.z0]), [tx, ty] = proj([w[0], w[1], c.z1]);
+    let s = `<path d="M${f(bx - rx)},${f(by)} A${f(rx)},${f(ry)} 0 0 0 ${f(bx + rx)},${f(by)} L${f(tx + rx)},${f(ty)} A${f(rx)},${f(ry)} 0 0 1 ${f(tx - rx)},${f(ty)} Z" fill="url(#${G(c.fill)})" stroke="${OUT}" stroke-width=".8"/>`;
+    for (const b of c.bands || []) {
+      const [x, y] = proj([w[0], w[1], b[0]]);
+      s += `<path d="M${f(x - rx)},${f(y)} A${f(rx)},${f(ry)} 0 0 0 ${f(x + rx)},${f(y)}" fill="none" stroke="${b[1]}" stroke-width="${b[2] || 1.4}" ${b[3] ? 'filter="url(#GLOW)"' : ''}/>`;
+    }
+    s += `<ellipse cx="${f(tx)}" cy="${f(ty)}" rx="${f(rx)}" ry="${f(ry)}" fill="${c.top || shade(c.fill, 1.15)}" stroke="${OUT}" stroke-width=".8"/>`;
+    if (c.dec) {
+      const u = proj(xf.v([1, 0, 0])), v = proj(xf.v([0, 1, 0]));
+      s += `<g transform="matrix(${f4(u[0])},${f4(u[1])},${f4(v[0])},${f4(v[1])},${f(tx)},${f(ty)})">${c.dec}</g>`;
+    }
+    return s;
+  }
+  function primAABB(pr, xf) {
+    if (pr.cyl) { const w = xf.p([pr.cx, pr.cy, 0]); return [w[0] - pr.r, w[0] + pr.r, w[1] - pr.r, w[1] + pr.r, pr.z0, pr.z1]; }
+    const b = [Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity];
+    for (const p of pr.pts) { const q = xf.p(p); b[0] = Math.min(b[0], q[0]); b[1] = Math.max(b[1], q[0]); b[2] = Math.min(b[2], q[1]); b[3] = Math.max(b[3], q[1]); b[4] = Math.min(b[4], q[2]); b[5] = Math.max(b[5], q[2]); }
+    return b;
+  }
+  const unionBox = bs => bs.reduce((a, b) => [Math.min(a[0], b[0]), Math.max(a[1], b[1]), Math.min(a[2], b[2]), Math.max(a[3], b[3]), Math.min(a[4], b[4]), Math.max(a[5], b[5])]);
+  function screenBox(b) {
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const x of [b[0], b[1]]) for (const y of [b[2], b[3]]) for (const z of [b[4], b[5]]) { const q = proj([x, y, z]); x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); }
+    return [x0, x1, y0, y1];
+  }
+  // +1: a drawn before b, -1: b before a, 0: no constraint (axes disagree)
+  function behind(a, b) {
+    const e = 0.01; let s = 0;
+    for (let k = 0; k < 6; k += 2) {
+      const d = a[k + 1] <= b[k] + e ? 1 : (b[k + 1] <= a[k] + e ? -1 : 0);
+      if (!d) continue;
+      if (s && d !== s) return 0;
+      s = d;
+    }
+    if (s) return s;
+    return (a[0] + a[1] + a[2] + a[3] + a[4] + a[5]) < (b[0] + b[1] + b[2] + b[3] + b[4] + b[5]) ? 1 : -1;
+  }
+  function depthSort(items) { // items: {aabb, sb}
+    const n = items.length, before = items.map(() => []);
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+      const A = items[i].sb, B = items[j].sb;
+      if (A[1] <= B[0] || B[1] <= A[0] || A[3] <= B[2] || B[3] <= A[2]) continue;
+      const r = behind(items[i].aabb, items[j].aabb);
+      if (r > 0) before[j].push(i); else if (r < 0) before[i].push(j);
+    }
+    const out = [], state = new Uint8Array(n);
+    const visit = i => { if (state[i]) return; state[i] = 1; for (const k of before[i]) visit(k); out.push(items[i]); };
+    for (let i = 0; i < n; i++) visit(i);
+    return out;
+  }
+
+  // -------------------------------------------------------------- model
+  const W = 300, D = 180, H = 90, BD = 92, BY = D - BD; // BY: bay back wall y
+  const GW = 34, GH = 62, GX = [55, 150, 245];
+  const PAD = { x0: -52, y0: -34, x1: W + 42, y1: D + 132 };
+  const CX = (PAD.x0 + PAD.x1) / 2, CY = (PAD.y0 + PAD.y1) / 2;
+  const TANK_START = BY + 34, TANK_END = D + 112;
+  const STACKS = [[132, 26, H + 30], [132, 68, H + 30]];
+  const M = { steel: '#5a6573', dark: '#38404a', plate: '#6b7785', interior: '#161a20', pad: '#3a414a', padSide: '#272c33', trim: '#808c9a', door: '#717d8b', lock: '#6b3434' };
+
+  function oct(x0, y0, x1, y1, c) { return [[x0 + c, y0], [x1 - c, y0], [x1, y0 + c], [x1, y1 - c], [x1 - c, y1], [x0 + c, y1], [x0, y1 - c], [x0, y0 + c]]; }
+
+  // decals ---------------------------------------------------------------
+  const glow = 'filter="url(#GLOW)"';
+  function emblem(T, TL, s = 1) {
+    return `<g transform="scale(${s})"><polygon points="0,-14 12,-7 12,7 0,14 -12,7 -12,-7" fill="${shade(T, .35)}" stroke="${T}" stroke-width="1.6" ${glow}/>
+      <path d="M-7,3 L0,-5 L7,3 M-7,8 L0,0 L7,8" fill="none" stroke="${TL}" stroke-width="2.2" stroke-linejoin="round"/></g>`;
+  }
+  function padDecal(lines, T, TL) {
+    const p = PAD; let s = '';
+    for (let x = p.x0 + 30; x < p.x1 - 10; x += 40) s += `<line x1="${x}" y1="${p.y0 + 8}" x2="${x}" y2="${p.y1 - 8}" stroke="#2c3239" stroke-width=".9"/>`;
+    for (let y = p.y0 + 26; y < p.y1 - 10; y += 40) s += `<line x1="${p.x0 + 8}" y1="${y}" x2="${p.x1 - 8}" y2="${y}" stroke="#2c3239" stroke-width=".9"/>`;
+    const e = oct(p.x0 + 13, p.y0 + 13, p.x1 - 13, p.y1 - 13, 17).map(q => q.join(',')).join(' ');
+    s += `<polygon points="${e}" fill="none" stroke="${T}" stroke-width="1.6" opacity=".9" ${glow}/>`;
+    s += `<polygon points="${e}" fill="none" stroke="${TL}" stroke-width=".5" stroke-dasharray="2 10"/>`;
+    // bay floors + lanes
+    GX.forEach((gx, i) => {
+      s += `<rect x="${gx - GW}" y="${BY}" width="${GW * 2}" height="${BD}" fill="#14181d"/>`;
+      if (i < lines) {
+        s += `<ellipse data-glow="${i}" cx="${gx}" cy="${BY + 50}" rx="30" ry="40" fill="url(#BAYGLOW)" opacity=".2"/>`;
+        [-10, 10].forEach(dx => s += `<line x1="${gx + dx}" y1="${BY + 4}" x2="${gx + dx}" y2="${D}" stroke="#3b434c" stroke-width="2"/>`);
+        s += `<line x1="${gx - GW - 2}" y1="${D + 8}" x2="${gx - GW - 2}" y2="${D + 112}" stroke="${T}" stroke-width="1.8" ${glow}/>`;
+        s += `<line x1="${gx + GW + 2}" y1="${D + 8}" x2="${gx + GW + 2}" y2="${D + 112}" stroke="${T}" stroke-width="1.8" ${glow}/>`;
+        for (let k = 0; k < 4; k++) s += `<path d="M${gx - 13},${D + 20 + k * 22} L${gx},${D + 31 + k * 22} L${gx + 13},${D + 20 + k * 22}" fill="none" stroke="${TL}" stroke-width="2.4" opacity="${(0.25 + k * 0.15).toFixed(2)}"/>`;
+        s += `<rect x="${gx - GW}" y="${D}" width="${GW * 2}" height="7" fill="url(#HAZ)" opacity=".85"/>`;
+      } else {
+        s += `<rect x="${gx - GW}" y="${D + 4}" width="${GW * 2}" height="26" fill="url(#HAZ)" opacity=".85"/>`;
+        s += `<path d="M${gx - 18},${D + 40} L${gx + 18},${D + 76} M${gx + 18},${D + 40} L${gx - 18},${D + 76}" stroke="#ff3b30" stroke-width="4" opacity=".6" ${glow}/>`;
+      }
+    });
+    // left service pad (coolant)
+    s += `<circle cx="-28" cy="53" r="27" fill="none" stroke="#5a6470" stroke-width="1.2" stroke-dasharray="4 3"/>`;
+    return s;
+  }
+  function doorDec(side, T) {
+    return ({ w, h }) => {
+      let s = `<line x1="0" y1="10" x2="${w}" y2="10" stroke="#3c4550" stroke-width="1"/><line x1="0" y1="52" x2="${w}" y2="52" stroke="#3c4550" stroke-width="1"/>`;
+      s += `<rect x="0" y="38" width="${w}" height="12" fill="#22272d"/>`;
+      if (side === 'L') { for (let x = w - 11; x >= 0; x -= 10) s += `<polygon points="${f(x)},50 ${f(x + 5)},50 ${f(x + 9)},38 ${f(x + 4)},38" fill="#f2c230"/>`; }
+      else { for (let x = 2; x + 9 <= w; x += 10) s += `<polygon points="${f(x)},38 ${f(x + 5)},38 ${f(x + 9)},50 ${f(x + 4)},50" fill="#f2c230"/>`; }
+      const sx = side === 'L' ? w - 2.2 : 0;
+      s += `<rect x="${f(sx)}" y="0" width="2.2" height="${h}" fill="${T}" ${glow}/>`;
+      const px = side === 'L' ? w - 16 : 6;
+      if (w > 22) s += `<rect x="${f(px)}" y="18" width="10" height="12" rx="1.5" fill="#2a3038" stroke="#8b97a5" stroke-width=".6"/><rect x="${f(px + 2)}" y="20" width="6" height="3" fill="${T}" opacity=".8"/>`;
+      return s;
+    };
+  }
+  function lockDec() {
+    return ({ w, h }) => `
+      <rect x="0" y="24" width="${w}" height="12" fill="url(#HAZ)"/>
+      <path d="M3,4 L${w - 3},${h - 4} M${w - 3},4 L3,${h - 4}" stroke="#a7b0ba" stroke-width="2.6" stroke-dasharray="4 2" stroke-linecap="round"/>
+      <rect x="${w / 2 - 1}" y="0" width="2" height="${h}" fill="#ff3b30" ${glow}/>
+      <g transform="translate(${w / 2},30)">
+        <path d="M-7,-2 V-9 A7,7 0 0 1 7,-9 V-2" fill="none" stroke="#cfd5db" stroke-width="3.2"/>
+        <rect x="-10.5" y="-3" width="21" height="17" rx="2.5" fill="#f2c230" stroke="#15140c" stroke-width="1"/>
+        <circle cx="0" cy="4" r="2.6" fill="#15140c"/><rect x="-1.1" y="4" width="2.2" height="6" fill="#15140c"/>
+      </g>
+      <text x="${w / 2}" y="${h - 6}" font-family="Impact,'Arial Black',sans-serif" font-size="6" text-anchor="middle" fill="#ffb3ad" letter-spacing="1">LOCKED</text>`;
+  }
+
+  function buildModel(lines, T) {
+    const TL = mix(T, '#ffffff', 0.5);
+    const parts = [];
+    const add = (id, prims, extra) => parts.push(Object.assign({ id, prims }, extra || {}));
+    const INT = { fill: M.interior, flat: true };
+
+    // platform
+    add('pad', [prism(oct(PAD.x0, PAD.y0, PAD.x1, PAD.y1, 26), oct(PAD.x0 + 7, PAD.y0 + 7, PAD.x1 - 7, PAD.y1 - 7, 23), -12, 0,
+      { fill: M.padSide, faces: { pz: { fill: M.pad, dec: padDecal(lines, T, TL) } } })]);
+
+    // coolant tanks
+    [[-28, 36], [-28, 70]].forEach(([x, y], k) => add('cool' + k, [cyl(x, y, 13, 0, 44, {
+      fill: M.plate, top: '#7d8997', bands: [[10, T, 1.6, 1], [34, T, 1.6, 1], [22, '#2a3038', 1]],
+      dec: `<circle r="9" fill="none" stroke="url(#HAZ)" stroke-width="3"/><circle r="4" fill="#4b5560" stroke="${OUT}" stroke-width=".6"/>`,
+    })]));
+
+    // back block (sloped back + sides, vertical front = bay back wall)
+    const sideDecBack = ({ w, h }) => `
+      <rect x="6" y="8" width="${w - 12}" height="${h - 16}" fill="none" stroke="#3d4651" stroke-width="1"/>
+      <g transform="translate(${w / 2},${h * 0.42})">${emblem(T, TL, 1.2)}</g>
+      <text x="${w / 2}" y="${h - 14}" font-family="Impact,'Arial Black',sans-serif" font-size="11" text-anchor="middle" fill="${TL}" opacity=".85" letter-spacing="2">HF-3</text>
+      <rect x="0" y="${h - 6}" width="${w}" height="6" fill="url(#HAZ)" opacity=".8"/>`;
+    const backDec = ({ w, h }) => {
+      let s = `<rect x="0" y="16" width="${w}" height="3" fill="${T}" ${glow}/>`;
+      [40, 120, 200].forEach(x => { s += `<rect x="${x}" y="30" width="56" height="34" fill="#1d2228" stroke="#7d8997" stroke-width="1.4"/>`; for (let yy = 34; yy < 62; yy += 5) s += `<line x1="${x + 3}" y1="${yy}" x2="${x + 53}" y2="${yy + 2}" stroke="#4d5763" stroke-width="2"/>`; });
+      s += `<rect x="${w - 30}" y="50" width="18" height="${h - 50}" fill="#2a3038" stroke="#8b97a5" stroke-width=".8"/>`;
+      s += `<rect x="0" y="${h - 6}" width="${w}" height="6" fill="url(#HAZ)" opacity=".8"/>`;
+      return s;
+    };
+    const bayWallDec = () => { // origin at x=0 (bounding box of trapezoid)
+      let s = '';
+      GX.forEach((gx, i) => {
+        if (i >= lines) return;
+        const u = gx - GW;
+        s += `<rect x="${u + 6}" y="${H - GH + 6}" width="${GW * 2 - 12}" height="22" fill="#20262d" stroke="#3b444e" stroke-width="1"/>`;
+        s += `<rect data-strip="${i}" x="${u + 4}" y="${H - GH + 34}" width="${GW * 2 - 8}" height="4" fill="#ffcf70" opacity=".35" ${glow}/>`;
+        s += `<rect x="${u + 10}" y="${H - 18}" width="${GW * 2 - 20}" height="14" fill="#262c33"/>`;
+      });
+      return s;
+    };
+    add('back', [prism(rect(0, 0, W, BY), rect(10, 12, W - 10, BY), 0, H, {
+      fill: M.steel, faces: {
+        nx: { dec: sideDecBack }, px: { dec: sideDecBack }, ny: { dec: backDec },
+        py: { fill: '#1b2027', flat: true, dec: bayWallDec },
+        pz: { fill: M.steel, dec: () => { let s = ''; for (let x = 40; x < W - 10; x += 50) s += `<line x1="${x}" y1="14" x2="${x}" y2="${BY}" stroke="#46505c" stroke-width="1"/>`; s += `<rect x="150" y="${BY - 6}" width="136" height="3" fill="${T}" ${glow}/>`; s += `<rect x="14" y="16" width="16" height="16" fill="url(#HAZ)" opacity=".7"/>`; return s; } },
+      },
+    })]);
+
+    // pillars
+    const pillarFront = ({ w, h }) => `<rect x="2" y="4" width="${w - 4}" height="${h - 8}" fill="none" stroke="#3d4651" stroke-width=".8"/><rect x="${w / 2 - 1.5}" y="10" width="3" height="${h - 40}" fill="${T}" ${glow}/><circle cx="${w / 2}" cy="${h - 20}" r="2" fill="${TL}"/>`;
+    const pillarSide = ({ w, h }) => {
+      let s = `<rect x="8" y="10" width="${w - 16}" height="${h - 24}" fill="none" stroke="#3d4651" stroke-width="1"/>`;
+      for (let y = 18; y < 52; y += 6) s += `<rect x="18" y="${y}" width="${w - 36}" height="3" fill="#252b32"/>`;
+      s += `<path d="M10,${h - 30} L${w / 2},${h - 40} L${w - 10},${h - 30}" fill="none" stroke="${T}" stroke-width="2.4" ${glow}/>`;
+      s += `<rect x="0" y="${h - 6}" width="${w}" height="6" fill="url(#HAZ)" opacity=".8"/>`;
+      return s;
+    };
+    add('pilL', [prism(rect(0, BY, GX[0] - GW, D), rect(10, BY, GX[0] - GW, D), 0, H, { fill: M.steel, faces: { px: INT, nx: { dec: pillarSide }, py: { dec: pillarFront } } })]);
+    add('pilR', [prism(rect(GX[2] + GW, BY, W, D), rect(GX[2] + GW, BY, W - 10, D), 0, H, { fill: M.steel, faces: { nx: INT, px: { dec: pillarSide }, py: { dec: pillarFront } } })]);
+    add('pilM1', [box(GX[0] + GW, GX[1] - GW, BY, D, 0, H, { fill: M.steel, faces: { nx: INT, px: INT, py: { dec: pillarFront } } })]);
+    add('pilM2', [box(GX[1] + GW, GX[2] - GW, BY, D, 0, H, { fill: M.steel, faces: { nx: INT, px: INT, py: { dec: pillarFront } } })]);
+
+    // bay ceilings + gate frames
+    GX.forEach((gx, i) => {
+      const locked = i >= lines;
+      add('lint' + i, [box(gx - GW, gx + GW, BY, D, GH, H, { fill: M.steel, faces: { pz: { dec: `<rect x="${gx - GW + 4}" y="${BY + 4}" width="${GW * 2 - 8}" height="${BD - 8}" fill="none" stroke="#46505c" stroke-width="1"/>` } } })]);
+      const jambDec = ({ w, h }) => `<rect x="0" y="0" width="${w}" height="${h}" fill="url(#HAZ)" opacity=".9"/>`;
+      add('jambL' + i, [box(gx - GW - 6, gx - GW, D, D + 6, 0, GH, { fill: M.trim, faces: { py: { dec: jambDec } } })]);
+      add('jambR' + i, [box(gx + GW, gx + GW + 6, D, D + 6, 0, GH, { fill: M.trim, faces: { py: { dec: jambDec } } })]);
+      const trimDec = ({ w }) => `
+        <rect x="${w / 2 - 6}" y="1" width="12" height="8" rx="1" fill="#0f1317" stroke="#5a6470" stroke-width=".5"/>
+        <text x="${w / 2}" y="7.6" font-family="Impact,'Arial Black',sans-serif" font-size="7.5" text-anchor="middle" fill="${locked ? '#6e7883' : TL}">${i + 1}</text>
+        <rect data-bar="${i}" x="12" y="4" width="${w / 2 - 22}" height="2" fill="${locked ? '#ff3b30' : T}" ${glow}/>
+        <rect data-bar="${i}" x="${w / 2 + 10}" y="4" width="${w / 2 - 22}" height="2" fill="${locked ? '#ff3b30' : T}" ${glow}/>
+        <circle data-lamp="${i}" cx="6" cy="5" r="2.6" fill="${locked ? '#ff3b30' : '#3dff5a'}" stroke="${OUT}" stroke-width=".6" ${glow}/>
+        <circle data-lamp="${i}" cx="${w - 6}" cy="5" r="2.6" fill="${locked ? '#ff3b30' : '#3dff5a'}" stroke="${OUT}" stroke-width=".6" ${glow}/>`;
+      add('trim' + i, [box(gx - GW - 6, gx + GW + 6, D, D + 6, GH, GH + 10, { fill: M.trim, faces: { py: { dec: trimDec } } })]);
+      if (locked) add('lock' + i, [box(gx - GW, gx + GW, D - 4, D - 1, 0, GH, { fill: M.lock, faces: { py: { dec: lockDec() } } })]);
+      else { add('doorL' + i, [], { door: i, side: 'L' }); add('doorR' + i, [], { door: i, side: 'R' }); add('tank' + i, [], { tank: i }); }
+    });
+
+    // front canopy (visor)
+    add('canopy', [extrudeX(8, W - 8, [[D, H], [D + 16, H - 6], [D + 16, H - 12], [D, H - 16]], {
+      fill: M.plate, faces: { py: { dec: ({ w, h }) => { let s = `<rect x="0" y="${h / 2 - 1}" width="${w}" height="2" fill="${T}" ${glow}/>`; for (let x = 10; x < w; x += 22) s += `<circle cx="${x}" cy="${h / 2}" r="1.2" fill="#fff"/>`; return s; } } },
+    })]);
+
+    // control tower
+    const towerDec = ({ w, h }) => { let s = `<rect x="0" y="5" width="${w}" height="7" fill="#12161b"/>`; for (let x = 4; x < w - 6; x += 9) s += `<rect x="${x}" y="6.5" width="6" height="4" fill="${TL}" opacity=".85" ${glow}/>`; s += `<line x1="0" y1="18" x2="${w}" y2="18" stroke="#3d4651"/>`; return s; };
+    add('tower', [prism(rect(24, 18, 120, 80), rect(32, 24, 112, 74), H, H + 26, {
+      fill: '#4d5866', faces: { px: { dec: towerDec }, nx: { dec: towerDec }, py: { dec: towerDec }, ny: { dec: towerDec },
+        pz: { dec: `<circle cx="72" cy="49" r="14" fill="none" stroke="${T}" stroke-width="1.4" ${glow}/><rect x="36" y="28" width="10" height="10" fill="url(#HAZ)" opacity=".7"/>` } },
+    })]);
+    add('radar', [cyl(72, 49, 2.5, H + 26, H + 40, { fill: M.plate }), cyl(72, 49, 6, H + 40, H + 43, {
+      fill: '#7d8997', top: '#8c98a6',
+      dec: `<g data-radar="1"><rect x="-15" y="-2.2" width="30" height="4.4" rx="1" fill="#c9d2dc" stroke="${OUT}" stroke-width=".6"/><rect x="9" y="-3.2" width="6" height="6.4" fill="${T}"/></g><circle r="2.2" fill="${TL}"/>`,
+    })]);
+    add('antenna', [cyl(104, 30, 1.3, H + 26, H + 64, { fill: '#8a96a3', dec: `<circle data-beacon="1" r="2.6" fill="#ff4040" ${glow}/>` })]);
+
+    // exhaust stacks
+    STACKS.forEach(([x, y, z], k) => add('stack' + k, [cyl(x, y, 7, H, z, { fill: '#46505b', top: '#2b3138', bands: [[z - 4, T, 1.6, 1]], dec: '<circle r="5.4" fill="#0c0f12"/>' })]));
+
+    // 6 turbine fans
+    const fans = [[55, 134], [150, 134], [245, 134], [168, 50], [222, 50], [268, 50]];
+    fans.forEach(([x, y], k) => {
+      const blades = Array.from({ length: 7 }, (_, j) => `<path transform="rotate(${j * 360 / 7})" d="M2.5,-1.6 L13.5,-4.2 L14.2,1.2 L2.5,1.8 Z" fill="#c3ccd6" stroke="#59636e" stroke-width=".4"/>`).join('');
+      add('fan' + k, [cyl(x, y, 19, H, H + 7, {
+        fill: '#3d4550', top: '#4a535e', bands: [[H + 3.5, '#22282f', 1]],
+        dec: `<circle r="17" fill="#0e1318" stroke="${T}" stroke-width="1.8" ${glow}/><circle r="14.4" fill="#18202a"/>
+              <g data-fan="${k}">${blades}</g>
+              <circle r="4.2" fill="#2b333d" stroke="${TL}" stroke-width="1"/><circle r="1.6" fill="${TL}"/>
+              <path d="M-17,0 H17 M0,-17 V17" stroke="#56616d" stroke-width=".8" opacity=".7"/>`,
+      })]);
+    });
+    return parts;
+  }
+
+  function doorPrims(i, side, open, T) {
+    const gx = GX[i], w = GW * (1 - open);
+    if (w < 0.6) return [];
+    const x0 = side === 'L' ? gx - GW : gx + GW - w, x1 = side === 'L' ? gx - GW + w : gx + GW;
+    return [box(x0, x1, D - 4, D - 1, 0, GH, { fill: M.door, faces: { py: { dec: doorDec(side, T) } } })];
+  }
+
+  function tankPrims(T) {
+    const TL = mix(T, '#ffffff', 0.45);
+    const wheels = ({ w }) => [7, 19, 31, 43, 55].map(u => `<circle cx="${u * w / 62}" cy="5" r="3.8" fill="#3c434b" stroke="${OUT}" stroke-width=".5"/><circle cx="${u * w / 62}" cy="5" r="1.3" fill="#8a949f"/>`).join('');
+    const stripe = ({ w, h }) => `<rect x="0" y="${h * 0.42}" width="${w}" height="${h * 0.22}" fill="${T}"/>`;
+    return [
+      box(-20, -12, -31, 31, 0, 10, { fill: '#2b3036', faces: { px: { dec: wheels }, nx: { dec: wheels } } }),
+      prism(rect(-15, -30, 15, 30), rect(-13, -28, 13, 18), 4, 16, {
+        fill: '#5d6773', faces: {
+          pz: { dec: `<rect x="-9" y="-26" width="18" height="8" fill="#353c44" stroke="${OUT}" stroke-width=".4"/><path d="M-6,-24 V-20 M-2,-24 V-20 M2,-24 V-20 M6,-24 V-20" stroke="#6b7580" stroke-width=".8"/><rect x="-13" y="10" width="26" height="2.2" fill="${T}"/>` },
+          py: { dec: ({ w }) => `<circle cx="5" cy="3" r="1.6" fill="#fff6c8"/><circle cx="${w - 5}" cy="3" r="1.6" fill="#fff6c8"/>` },
+        },
+      }),
+      box(12, 20, -31, 31, 0, 10, { fill: '#2b3036', faces: { px: { dec: wheels }, nx: { dec: wheels } } }),
+      prism(rect(-11, -16, 11, 10), rect(-8, -13, 8, 4), 16, 25, {
+        fill: '#6a7480', faces: { px: { dec: stripe }, nx: { dec: stripe }, py: { dec: stripe }, ny: { dec: stripe }, pz: { dec: `<path d="M-5,-2 L0,-7 L5,-2" fill="none" stroke="${TL}" stroke-width="1.6"/><circle cx="3.5" cy="-10" r="2.4" fill="#4d5660" stroke="${OUT}" stroke-width=".4"/>` } },
+      }),
+      box(3, 7, -11, -6, 25, 28, { fill: '#3a4048', faces: { py: { dec: ({ w }) => `<rect x="0.5" y="1" width="${w - 1}" height="1.2" fill="${TL}"/>` } } }),
+      box(-1.5, 1.5, 7, 46, 19.5, 22.5, { fill: '#4b535d' }),
+      box(-2.6, 2.6, 42, 49, 18.8, 23.2, { fill: '#3e454e' }),
+    ];
+  }
+  const TANK_BOX = [-20, 20, -31, 49, 0, 28];
+
+  // ----------------------------------------------------------- controller
+  let counter = 0;
+  function create(container, opts = {}) {
+    const o = Object.assign({ lines: 3, facing: 0, team: '#33d17a', fadeOutTank: true, onTankOut: null, scale: null }, opts);
+    let vb = null;
+    const p = o.idPrefix || ('hf' + (++counter));
+    let svg, scene, smokeG, parts, xf, gates, lampEls, radarEl, beaconEl, fanEls, stackTops, order = [];
+    let raf, last, alive = true, fanAngle = 0, fanSpeed = 170, radarAngle = 0, smoke = [], spawnAcc = 0;
+    const grads = new Map();
+    const G = color => { if (!grads.has(color)) grads.set(color, `${p}-g${grads.size}`); return grads.get(color); };
+
+    function viewBox() {
+      const pts = [];
+      for (let k = 0; k < 4; k++) {
+        const x = makeXf(k, CX, CY);
+        oct(PAD.x0, PAD.y0, PAD.x1, PAD.y1, 26).forEach(q => { pts.push(proj(x.p([q[0], q[1], -12]))); pts.push(proj(x.p([q[0], q[1], 0]))); });
+        pts.push(proj(x.p([104, 30, H + 64])));
+      }
+      const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+      const x0 = Math.min(...xs) - 10, x1 = Math.max(...xs) + 10, y0 = Math.min(...ys) - 40, y1 = Math.max(...ys) + 10;
+      vb = [x0, y0, x1 - x0, y1 - y0];
+      return `${f(x0)} ${f(y0)} ${f(x1 - x0)} ${f(y1 - y0)}`;
+    }
+
+    function renderPart(pt) {
+      if (pt.tank !== undefined) return pt.svgCache;
+      return pt.prims.map(pr => pr.cyl ? renderCyl(pr, xf, G) : renderSolid(pr, xf)).join('');
+    }
+    function partAABB(pt) {
+      if (pt.tank !== undefined) {
+        const g = gates[pt.tank]; if (!g || g.phase !== 'driving' || tankHidden(g)) return null;
+        const c = xf.p([GX[pt.tank], g.ty, 0]);
+        const r = [TANK_BOX[0], TANK_BOX[1], TANK_BOX[2], TANK_BOX[3]];
+        const corners = [[r[0], r[2]], [r[1], r[2]], [r[0], r[3]], [r[1], r[3]]].map(q => xf.v([q[0], q[1], 0]));
+        const xs = corners.map(q => q[0] + c[0]), ys = corners.map(q => q[1] + c[1]);
+        return [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys), 0, TANK_BOX[5]];
+      }
+      if (!pt.prims.length) return null;
+      return unionBox(pt.prims.map(pr => primAABB(pr, xf)));
+    }
+
+    function mount() {
+      o.lines = Math.max(1, Math.min(3, o.lines | 0)); o.facing = ((o.facing | 0) % 4 + 4) % 4;
+      xf = makeXf(o.facing, CX, CY);
+      grads.clear();
+      parts = buildModel(o.lines, o.team);
+      gates = GX.map((gx, i) => ({ i, locked: i >= o.lines, phase: 'idle', door: 0, t: 0, ty: TANK_START, queue: [], resolve: null }));
+      // tank svg (rotation only, translated per frame)
+      const txf = makeXf(o.facing, 0, 0);
+      const tp = tankPrims(o.team);
+      const titems = tp.map(pr => { const b = primAABB(pr, txf); return { pr, aabb: b, sb: screenBox(b) }; });
+      const tankSVG = `<polygon points="${[[-24, -34], [24, -34], [24, 40], [-24, 40]].map(q => { const w = proj(txf.v([q[0], q[1], 0])); return f(w[0]) + ',' + f(w[1]); }).join(' ')}" fill="rgba(0,0,0,.3)"/>` +
+        depthSort(titems).map(it => renderSolid(it.pr, txf)).join('');
+
+      parts.forEach(pt => { if (pt.tank !== undefined) pt.svgCache = tankSVG; if (pt.door !== undefined) { pt.prims = doorPrims(pt.door, pt.side, 0, o.team); pt.lastOpen = 0; } });
+
+      const T = o.team;
+      let html = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox()}" ${o.scale ? `width="${f(vb[2] * o.scale)}" height="${f(vb[3] * o.scale)}"` : 'width="100%"'} style="display:block;overflow:visible"><defs>
+        <filter id="${p}-GLOW" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <pattern id="${p}-HAZ" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)"><rect width="8" height="8" fill="#16181b"/><rect width="4" height="8" fill="#f2c230"/></pattern>
+        <radialGradient id="${p}-BAYGLOW"><stop offset="0" stop-color="#ffd27a" stop-opacity=".95"/><stop offset="1" stop-color="#ff8a1a" stop-opacity="0"/></radialGradient>
+        __GRADS__</defs><g class="scene">`;
+      let body = '';
+      parts.forEach(pt => { pt.el = null; body += `<g data-part="${pt.id}">${pt.tank !== undefined ? `<g class="tk" style="display:none">${pt.svgCache}</g>` : renderPart(pt)}</g>`; });
+      html += body + `</g><g class="smoke"></g></svg>`;
+      const gradDefs = [...grads].map(([c, id]) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${shade(c, .6)}"/><stop offset=".38" stop-color="${shade(c, 1.35)}"/><stop offset=".65" stop-color="${shade(c, 1)}"/><stop offset="1" stop-color="${shade(c, .5)}"/></linearGradient>`).join('');
+      html = html.replace('__GRADS__', gradDefs).replace(/url\(#GLOW\)/g, `url(#${p}-GLOW)`).replace(/url\(#HAZ\)/g, `url(#${p}-HAZ)`).replace(/url\(#BAYGLOW\)/g, `url(#${p}-BAYGLOW)`);
+      container.innerHTML = html;
+      svg = container.querySelector('svg'); scene = svg.querySelector('.scene'); smokeG = svg.querySelector('.smoke');
+      parts.forEach(pt => { pt.el = scene.querySelector(`[data-part="${pt.id}"]`); });
+      fanEls = [...svg.querySelectorAll('[data-fan]')];
+      radarEl = svg.querySelector('[data-radar]'); beaconEl = svg.querySelector('[data-beacon]');
+      gates.forEach(g => {
+        g.lamps = [...svg.querySelectorAll(`[data-lamp="${g.i}"]`)];
+        g.bars = [...svg.querySelectorAll(`[data-bar="${g.i}"]`)];
+        g.glowEl = svg.querySelector(`[data-glow="${g.i}"]`);
+        g.stripEl = svg.querySelector(`[data-strip="${g.i}"]`);
+        g.tankPart = parts.find(pt => pt.tank === g.i);
+        g.doorParts = parts.filter(pt => pt.door === g.i);
+      });
+      stackTops = STACKS.map(([x, y, z]) => proj(xf.p([x, y, z])));
+      smoke = []; order = [];
+      resort();
+    }
+
+    function resort() {
+      const items = [];
+      parts.forEach(pt => { const b = partAABB(pt); pt.aabb = b; if (b) { pt.sb = screenBox(b); items.push(pt); } });
+      const sorted = depthSort(items.map(pt => ({ aabb: pt.aabb, sb: pt.sb, pt }))).map(it => it.pt);
+      const ids = sorted.map(pt => pt.id).join('|');
+      if (ids !== order) { order = ids; sorted.forEach(pt => scene.appendChild(pt.el)); }
+    }
+
+    // gates facing away from the camera: tank is fully occluded until it leaves the bay
+    const gatesAway = () => dot(xf.v([0, 1, 0]), VIEW) <= 0;
+    const tankHidden = g => gatesAway() && g.ty - 31 < D + 2;
+    const smooth = t => t * t * (3 - 2 * t);
+    const clamp = v => Math.max(0, Math.min(1, v));
+
+    function start(g, res) { g.phase = 'opening'; g.t = 0; g.ty = TANK_START; g.resolve = res; }
+    function stepGate(g, dt, now) {
+      if (g.locked) { const k = (0.55 + 0.45 * Math.sin(now * 3)).toFixed(2); g.lamps.forEach(l => l.setAttribute('opacity', k)); return false; }
+      let moved = false;
+      if (g.phase === 'opening') { g.door = Math.min(1, g.door + dt / 0.9); if (g.door >= 1) { g.phase = 'driving'; g.t = 0; g.tankPart.el.firstChild.style.display = ''; } }
+      else if (g.phase === 'driving') {
+        g.t = Math.min(1, g.t + dt / 3);
+        g.ty = TANK_START + (TANK_END - TANK_START) * smooth(g.t);
+        if (g.ty - 31 > D + 4) g.door = Math.max(0, g.door - dt / 0.9);
+        let op = clamp((g.ty - TANK_START) / 18);
+        if (o.fadeOutTank && g.t > 0.86) op *= (1 - g.t) / 0.14;
+        const br = 0.25 + 0.75 * clamp((g.ty - (BY + 50)) / 60);
+        const c = proj(xf.p([GX[g.i], g.ty, 0]));
+        const tk = g.tankPart.el.firstChild;
+        tk.setAttribute('transform', `translate(${f(c[0])},${f(c[1])})`);
+        tk.style.display = tankHidden(g) ? 'none' : '';
+        tk.style.opacity = op.toFixed(3); tk.style.filter = `brightness(${br.toFixed(2)})`;
+        moved = true;
+        if (g.t >= 1) {
+          g.phase = 'closing';
+          if (o.fadeOutTank) tk.style.display = 'none';
+          if (o.onTankOut) try { o.onTankOut(g.i); } catch (e) { console.error(e); }
+        }
+      } else if (g.phase === 'closing') {
+        g.door = Math.max(0, g.door - dt / 0.9);
+        if (g.door <= 0) {
+          g.phase = 'idle'; if (!o.fadeOutTank) g.tankPart.el.firstChild.style.display = 'none';
+          const r = g.resolve; g.resolve = null; r && r(true);
+          if (g.queue.length) start(g, g.queue.shift());
+        }
+      }
+      g.doorParts.forEach(pt => {
+        if (Math.abs(pt.lastOpen - g.door) > 0.002 || (g.door === 0 && pt.lastOpen !== 0)) {
+          pt.lastOpen = g.door; pt.prims = doorPrims(g.i, pt.side, g.door, o.team);
+          pt.el.innerHTML = renderPart(pt).replace(/url\(#GLOW\)/g, `url(#${p}-GLOW)`).replace(/url\(#HAZ\)/g, `url(#${p}-HAZ)`);
+          moved = true;
+        }
+      });
+      const busy = g.phase !== 'idle';
+      const blink = busy ? Math.sin(now * 10) > 0 : true;
+      const col = busy ? (blink ? '#ffb020' : '#5a3a00') : '#3dff5a';
+      g.lamps.forEach(l => l.setAttribute('fill', col));
+      g.bars.forEach(b => b.setAttribute('opacity', busy ? (blink ? '1' : '.3') : '.9'));
+      if (g.glowEl) g.glowEl.setAttribute('opacity', (busy ? 0.8 + 0.15 * Math.sin(now * 6) : 0.2).toFixed(2));
+      if (g.stripEl) g.stripEl.setAttribute('opacity', busy ? '1' : '.35');
+      return moved;
+    }
+
+    function stepSmoke(dt, busy) {
+      spawnAcc += dt * (busy ? 4 + busy * 3 : 1);
+      while (spawnAcc >= 1) {
+        spawnAcc -= 1;
+        const c = stackTops[(Math.random() * stackTops.length) | 0];
+        const el = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        el.setAttribute('fill', busy ? '#7a8088' : '#9aa0a8'); smokeG.appendChild(el);
+        smoke.push({ el, x: c[0] + (Math.random() - 0.5) * 4, y: c[1] - 1, life: 0, max: 2 + Math.random(), vx: 5 + Math.random() * 6 });
+      }
+      smoke = smoke.filter(s => {
+        s.life += dt; const k = s.life / s.max;
+        if (k >= 1) { s.el.remove(); return false; }
+        s.x += s.vx * dt; s.y -= (22 - 8 * k) * dt;
+        s.el.setAttribute('cx', f(s.x)); s.el.setAttribute('cy', f(s.y)); s.el.setAttribute('r', f(3 + 10 * k)); s.el.setAttribute('opacity', f(0.5 * (1 - k)));
+        return true;
+      });
+    }
+
+    function loop(ts) {
+      if (!alive) return;
+      const now = ts / 1000, dt = Math.min(0.05, last ? now - last : 0.016); last = now;
+      let busy = 0, moved = false;
+      gates.forEach(g => { if (stepGate(g, dt, now)) moved = true; if (!g.locked && g.phase !== 'idle') busy++; });
+      if (moved) resort();
+      fanSpeed += ((busy ? 820 : 160) - fanSpeed) * Math.min(1, dt * 2);
+      fanAngle = (fanAngle + fanSpeed * dt) % 360;
+      fanEls.forEach((el, k) => el.setAttribute('transform', `rotate(${f(fanAngle + k * 23)})`));
+      radarAngle = (radarAngle + 70 * dt) % 360; if (radarEl) radarEl.setAttribute('transform', `rotate(${f(radarAngle)})`);
+      if (beaconEl) beaconEl.setAttribute('opacity', (now % 1.2) < 0.25 ? '1' : '.15');
+      stepSmoke(dt, busy);
+      raf = requestAnimationFrame(loop);
+    }
+
+    mount();
+    raf = requestAnimationFrame(loop);
+
+    return {
+      get lines() { return o.lines; },
+      get facing() { return o.facing; },
+      get element() { return svg; },
+      produce(line) {
+        return new Promise(res => {
+          const g = gates[line];
+          if (!g || g.locked) return res(false);
+          if (g.phase !== 'idle') { g.queue.push(res); return; }
+          start(g, res);
+        });
+      },
+      isBusy: l => !!gates[l] && gates[l].phase !== 'idle',
+      isLocked: l => !gates[l] || gates[l].locked,
+      setLines(n) { o.lines = n; mount(); },
+      setFacing(k) { o.facing = k; mount(); },
+      rotate(step = 1) { o.facing = (o.facing + step + 4) % 4; mount(); },
+      setTeam(c) { o.team = c; mount(); },
+      // svg-unit point → pixel offset inside the element (needs scale option)
+      toPixels(pt) { const k = o.scale || 1; return { x: (pt.x - vb[0]) * k, y: (pt.y - vb[1]) * k }; },
+      // ground centre of the building (put this on your tile centre)
+      anchor() { const q = proj(xf.p([W / 2, D / 2, 0])); return this.toPixels({ x: q[0], y: q[1] }); },
+      // where the produced tank stops, in pixels inside the element (spawn the unit here)
+      gateExit(line) { const q = proj(xf.p([GX[line], TANK_END, 0])); return this.toPixels({ x: q[0], y: q[1] }); },
+      setScale(k) { o.scale = k; mount(); },
+      toSVGString() { const c = svg.cloneNode(true); c.querySelector('.smoke').innerHTML = ''; return '<?xml version="1.0" encoding="UTF-8"?>\n' + c.outerHTML; },
+      destroy() { alive = false; cancelAnimationFrame(raf); container.innerHTML = ''; },
+    };
+  }
+
+  const api = { create, project: proj, dims: { W, D, H, GW, GH, GX } };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  global.HeavyFactory = api;
+})(typeof window !== 'undefined' ? window : globalThis);

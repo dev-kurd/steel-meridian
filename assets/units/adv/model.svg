@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -30 60 60" width="240" height="240" data-kind="sm-model">
+  <title>Vanguard command craft</title>
+  <g data-rot="a" data-lift="A">
+    <polygon points="14.16,-9.44 -7.67,-18.29 -16.52,-7.67 -16.52,7.67 -7.67,18.29 14.16,9.44" class="shadow" data-shadow="flat" data-off="0;0" data-z="alt" fill="rgba(0,0,0,0.24)"/>
+    <g class="shadow" data-shadow="flat" data-off="0;0" data-z="alt" fill="rgba(0,0,0,0.24)">
+      <rect x="-14.16" y="-23.01" width="25.96" height="8.26" rx="3.54"/>
+      <rect x="-14.16" y="14.75" width="25.96" height="8.26" rx="3.54"/>
+    </g>
+    <circle cx="-1.18" cy="-18.88" class="glow" r="6" data-r="(moving?10.5:8)+rnd()*2.5" data-z="-6" data-glow="W" opacity="0.8" fill="#fff0b4"/>
+    <circle cx="-1.18" cy="18.88" class="glow" r="6" data-r="(moving?10.5:8)+rnd()*2.5" data-z="-6" data-glow="W" opacity="0.8" fill="#fff0b4"/>
+    <circle cx="-20.06" cy="-5.9" class="glow" r="7" data-r="7+rnd()*5" data-z="1" data-glow="O" opacity="0.9" fill="#ffaa3c" data-if="moving"/>
+    <circle cx="-20.06" cy="5.9" class="glow" r="7" data-r="7+rnd()*5" data-z="1" data-glow="O" opacity="0.9" fill="#ffaa3c" data-if="moving"/>
+    <circle cx="0" cy="0" class="glow" r="13" data-r="13+sin(t*3)*2" data-z="-14" data-glow="W" opacity="0.3" fill="#fff0b4" data-if="docked"/>
+    <g data-rot="t*(busy?5:2.2)-a">
+      <circle cx="0" cy="0" r="1" data-z="-7" fill="none" stroke="rgba(90,170,255,.95)" data-stroke="busy&amp;&amp;cap?'rgba(90,170,255,.95)':busy?'rgba(200,140,255,.95)':site?'rgba(255,207,90,.95)':team?'rgba(255,170,140,.65)':'rgba(140,210,255,.65)'" stroke-dasharray="5 4" data-lw="busy?2.2:1.6" data-scale="(11+sin(t*5)*(busy?2.6:.8))*1.18"/>
+      <circle cx="0" cy="0" r="1" data-z="-7" fill="none" stroke="rgba(90,170,255,.95)" data-stroke="busy&amp;&amp;cap?'rgba(90,170,255,.95)':busy?'rgba(200,140,255,.95)':site?'rgba(255,207,90,.95)':team?'rgba(255,170,140,.65)':'rgba(140,210,255,.65)'" stroke-dasharray="5 4" data-lw="2.2" data-scale="(11+sin(t*5)*(busy?2.6:.8))*1.18*.55" opacity="0.5" data-if="busy"/>
+    </g>
+    <g class="solid" data-z="-3;0" fill="#1c2127">
+      <rect x="-14.16" y="-23.01" width="25.96" height="8.26" rx="3.54"/>
+      <rect x="-14.16" y="14.75" width="25.96" height="8.26" rx="3.54"/>
+    </g>
+    <g class="solid" data-z="1" fill="#1d5c9c" data-fill="tc.d" stroke="rgba(255,255,255,0.2)" stroke-width="0.8">
+      <rect x="-14.16" y="-23.01" width="25.96" height="8.26" rx="3.54"/>
+      <rect x="-14.16" y="14.75" width="25.96" height="8.26" rx="3.54"/>
+    </g>
+    <g transform="translate(-1.18 -18.88)" data-rot="t*26-a">
+      <circle cx="0" cy="0" r="3.658" data-z="1.4" fill="rgba(8,12,16,.9)"/>
+      <path d="M0 0L3.54 0M0 0L-1.77 3.066M0 0L-1.77 -3.066" data-z="1.4" fill="none" stroke="rgba(210,225,240,.8)" stroke-width="1.1"/>
+    </g>
+    <g transform="translate(-1.18 18.88)" data-rot="t*-26-a">
+      <circle cx="0" cy="0" r="3.658" data-z="1.4" fill="rgba(8,12,16,.9)"/>
+      <path d="M0 0L3.54 0M0 0L-1.77 3.066M0 0L-1.77 -3.066" data-z="1.4" fill="none" stroke="rgba(210,225,240,.8)" stroke-width="1.1"/>
+    </g>
+    <g class="solid" data-z="-2;-1" fill="#1c2127">
+      <rect x="10.62" y="-22.066" width="7.67" height="6.372"/>
+      <rect x="10.62" y="15.694" width="7.67" height="6.372"/>
+    </g>
+    <polygon points="14.16,-9.44 -7.67,-18.29 -16.52,-7.67 -16.52,7.67 -7.67,18.29 14.16,9.44" data-z="0;2" fill="#1d5c9c" data-fill="tc.d"/>
+    <polygon points="14.16,-9.44 -7.67,-18.29 -16.52,-7.67 -16.52,7.67 -7.67,18.29 14.16,9.44" data-z="3" fill="#42a5ff" data-fill="tc.c" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+    <rect x="-15.93" y="-1.652" width="9.44" height="3.304" data-z="3" fill="#ffcf5a"/>
+    <rect x="-5.9" y="-14.16" width="1.77" height="28.32" data-z="3" fill="rgba(0,0,0,.3)"/>
+    <rect x="-10.62" y="-12.39" width="2.36" height="24.78" data-z="3" fill="#b5dcff" data-fill="tc.l" data-alpha=".5+.5*sin(t*4+id)"/>
+    <ellipse cx="2.95" cy="0" rx="16.52" ry="8.26" data-z="3;6" fill="#1d5c9c" data-fill="tc.d"/>
+    <ellipse cx="2.95" cy="0" rx="16.52" ry="8.26" data-z="7" fill="#b5dcff" data-fill="tc.l" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+    <ellipse cx="10.03" cy="0" rx="7.08" ry="5.074" data-z="7" fill="#12202c"/>
+    <ellipse cx="11.446" cy="-1.534" rx="3.068" ry="1.888" data-z="7" fill="rgba(170,220,255,.5)"/>
+    <g transform="translate(-8.26 0)">
+      <g data-rot="t*3.2-a">
+        <rect x="-5.9" y="-1.1" width="11.8" height="2.2" data-z="7;9" fill="#1c2127"/>
+      </g>
+      <circle cx="0" cy="0" r="2.124" data-z="10" fill="#cfd6dd" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+    </g>
+    <circle cx="0" cy="0" r="1" transform="translate(11.8 -18.88)" data-z="2" fill="rgba(255,70,60," data-fill="'rgba(255,70,60,'+(sin(t*5+id)&gt;0?1:.3)+')'" data-scale="sin(t*5+id)&gt;0?2.2:1.4"/>
+    <circle cx="11.8" cy="-18.88" class="glow" r="5" data-z="2" data-glow="R" opacity="0.6" fill="#ff6450" data-if="sin(t*5+id)&gt;0"/>
+    <circle cx="0" cy="0" r="1" transform="translate(11.8 18.88)" data-z="2" fill="rgba(90,255,140," data-fill="'rgba(90,255,140,'+(sin(t*5+id)&lt;=0?1:.3)+')'" data-scale="sin(t*5+id)&lt;=0?2.2:1.4"/>
+    <circle cx="11.8" cy="18.88" class="glow" r="5" data-z="2" data-glow="W" opacity="0.6" fill="#fff0b4" data-if="sin(t*5+id)&lt;=0"/>
+    <circle cx="-12.98" cy="0" class="glow" r="5.5" data-z="10" data-glow="O" opacity="0.9" fill="#ffaa3c" data-if="sin(t*6+id)&gt;.2"/>
+    <circle cx="20.06" cy="-18.88" class="glow" r="9" data-z="-1" data-glow="W" opacity="1" fill="#fff0b4" data-if="flash&gt;0"/>
+    <circle cx="20.06" cy="18.88" class="glow" r="9" data-z="-1" data-glow="W" opacity="1" fill="#fff0b4" data-if="flash&gt;0"/>
+  </g>
+</svg>
