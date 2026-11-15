@@ -39,6 +39,13 @@ button small{color:var(--dim);margin-left:6px}
 #panel .sub{color:var(--dim);font-size:12px;margin-bottom:8px}
 #panel .bar{height:6px;background:#0c1014;border-radius:3px;overflow:hidden;margin:6px 0 10px}
 #panel .bar i{display:block;height:100%;background:#5fd38a}
+#panel .stat{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;color:var(--dim)}
+#panel .stat span{display:flex;align-items:center;gap:6px}
+#panel .stat .si{width:15px;height:15px;flex:none}
+#panel .stat b{color:#fff;font-weight:600;white-space:nowrap}
+#panel .stat b i{font-style:normal;font-weight:400;color:var(--dim)}
+#panel .stat+.bar{margin:5px 0 7px}
+#panel .bar+.stat{margin-bottom:10px;padding-bottom:9px;border-bottom:1px solid rgba(255,255,255,.12)}
 #panel .bar.prog i{background:var(--acc)}
 #panel .bar.up{height:9px;border-radius:5px;margin:3px 0 10px;box-shadow:inset 0 0 0 1px rgba(108,196,255,.25)}
 #panel .bar.up i{background:linear-gradient(90deg,#3d8fd0,#8ed6ff);width:0}
@@ -198,6 +205,10 @@ button.primary:disabled{background:#6b5a3a}
 [dir=rtl] #panel .acts button small{margin:0}
 [dir=rtl] #panel .acts button kbd{left:auto;right:7px}
 [dir=rtl] #panel .ords button{text-align:center;padding:6px 2px;align-items:center}
+/* a switch (Auto repair) takes a whole row under the orders, so its label always fits: icon, name, key on one line */
+#panel .ords button.wide:has(.ic),[dir=rtl] #panel .ords button.wide:has(.ic){grid-column:1/-1;flex-direction:row;justify-content:center;gap:8px;min-height:36px;padding:5px 10px}
+#panel .ords button.wide .ic,[dir=rtl] #panel .ords button.wide .ic{display:inline-block;margin:0;width:18px;height:18px}
+#panel .ords button.wide small,[dir=rtl] #panel .ords button.wide small{display:inline}
 [dir=rtl] #obj{border-left:1px solid var(--line);border-right:3px solid var(--acc)}
 [dir=rtl] #end h2,[dir=rtl] .mscreen h2{font-weight:800}
 [dir=rtl] .help{font-size:13.5px}

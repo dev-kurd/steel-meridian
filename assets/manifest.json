@@ -18,9 +18,9 @@
     "gun",
     "cannon",
     "flak",
-    "arty",
+    "missile",
     "rocket",
-    "missile"
+    "arty"
   ],
   "units": [
     "gun",

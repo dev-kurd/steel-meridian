@@ -1,0 +1,14 @@
+{
+  "name": "Ore Mine",
+  "hp": 1950,
+  "r": 34,
+  "income": 9,
+  "sight": 6,
+  "def": 5,
+  "height": 30,
+  "anim": {
+    "spinSpeed": 2.5,
+    "cableSpeed": 22,
+    "lightSpeed": 3
+  }
+}

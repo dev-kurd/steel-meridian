@@ -16,32 +16,32 @@
   <circle cx="-32.527" cy="32.527" r="4.7" data-z="(18+L*7)*.5;(18+L*7)*.5+2" fill="#42a5ff" data-fill="tc.c"/>
   <circle cx="-32.527" cy="32.527" r="5.6" data-z="(18+L*7);(18+L*7)+3" fill="#42a5ff" data-fill="tc.c"/>
   <circle cx="-32.527" cy="32.527" r="5.6" data-z="(18+L*7)+3" fill="#b5dcff" data-fill="tc.l" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
-  <circle cx="-32.527" cy="32.527" class="glow" r="6" data-r="6+sin(t*3+1.6)*1.5" data-z="(18+L*7)+6" data-glow="T" opacity="0.8" fill="#b4e0ff" data-if="live"/>
+  <circle cx="-32.527" cy="32.527" class="glow" r="6" data-r="6+sin(t*cfg.lightSpeed+1.6)*1.5" data-z="(18+L*7)+6" data-glow="T" opacity="0.8" fill="#b4e0ff" data-if="live"/>
   <circle cx="-32.527" cy="-32.527" r="6.2" data-z="0;3" fill="#3c4853" data-fill="live?'#3c4853':'#363b40'"/>
   <circle cx="-32.527" cy="-32.527" r="4.2" data-z="3;(18+L*7)" fill="#6f7d8a" data-fill="live?'#6f7d8a':'#5a6068'"/>
   <circle cx="-32.527" cy="-32.527" r="4.7" data-z="(18+L*7)*.5;(18+L*7)*.5+2" fill="#42a5ff" data-fill="tc.c"/>
   <circle cx="-32.527" cy="-32.527" r="5.6" data-z="(18+L*7);(18+L*7)+3" fill="#42a5ff" data-fill="tc.c"/>
   <circle cx="-32.527" cy="-32.527" r="5.6" data-z="(18+L*7)+3" fill="#b5dcff" data-fill="tc.l" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
-  <circle cx="-32.527" cy="-32.527" class="glow" r="6" data-r="6+sin(t*3+3.2)*1.5" data-z="(18+L*7)+6" data-glow="T" opacity="0.8" fill="#b4e0ff" data-if="live"/>
+  <circle cx="-32.527" cy="-32.527" class="glow" r="6" data-r="6+sin(t*cfg.lightSpeed+3.2)*1.5" data-z="(18+L*7)+6" data-glow="T" opacity="0.8" fill="#b4e0ff" data-if="live"/>
   <circle cx="32.527" cy="-32.527" r="6.2" data-z="0;3" fill="#3c4853" data-fill="live?'#3c4853':'#363b40'"/>
   <circle cx="32.527" cy="-32.527" r="4.2" data-z="3;(18+L*7)" fill="#6f7d8a" data-fill="live?'#6f7d8a':'#5a6068'"/>
   <circle cx="32.527" cy="-32.527" r="4.7" data-z="(18+L*7)*.5;(18+L*7)*.5+2" fill="#42a5ff" data-fill="tc.c"/>
   <circle cx="32.527" cy="-32.527" r="5.6" data-z="(18+L*7);(18+L*7)+3" fill="#42a5ff" data-fill="tc.c"/>
   <circle cx="32.527" cy="-32.527" r="5.6" data-z="(18+L*7)+3" fill="#b5dcff" data-fill="tc.l" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
-  <circle cx="32.527" cy="-32.527" class="glow" r="6" data-r="6+sin(t*3+4.8)*1.5" data-z="(18+L*7)+6" data-glow="T" opacity="0.8" fill="#b4e0ff" data-if="live"/>
+  <circle cx="32.527" cy="-32.527" class="glow" r="6" data-r="6+sin(t*cfg.lightSpeed+4.8)*1.5" data-z="(18+L*7)+6" data-glow="T" opacity="0.8" fill="#b4e0ff" data-if="live"/>
   <polygon points="42.498,17.603 17.603,42.498 -17.603,42.498 -42.498,17.603 -42.498,-17.603 -17.603,-42.498 17.603,-42.498 42.498,-17.603" data-z="0;6" fill="#566370" data-fill="live?'#566370':'#4a5057'"/>
   <polygon points="42.498,17.603 17.603,42.498 -17.603,42.498 -42.498,17.603 -42.498,-17.603 -17.603,-42.498 17.603,-42.498 42.498,-17.603" data-z="4" fill="none" stroke="rgba(170,232,255,.95)" data-stroke="live?'rgba(170,232,255,.95)':'#3e454b'" stroke-width="2.2" stroke-dasharray="7 5"/>
   <polygon points="42.498,17.603 17.603,42.498 -17.603,42.498 -42.498,17.603 -42.498,-17.603 -17.603,-42.498 17.603,-42.498 42.498,-17.603" data-z="7;11" fill="#42a5ff" data-fill="live?tc.c:'#5c6268'"/>
   <polygon points="42.498,17.603 17.603,42.498 -17.603,42.498 -42.498,17.603 -42.498,-17.603 -17.603,-42.498 17.603,-42.498 42.498,-17.603" data-z="12" fill="#6f7d8a" data-fill="live?'#6f7d8a':'#5a6068'" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
   <path d="M33.12 0L43.7 0M23.419 23.419L30.901 30.901M0 33.12L0 43.7M-23.419 23.419L-30.901 30.901M-33.12 0L-43.7 0M-23.419 -23.419L-30.901 -30.901M0 -33.12L0 -43.7M23.419 -23.419L30.901 -30.901" data-z="12" fill="none" stroke="#3c4853" data-stroke="live?'#3c4853':'#363b40'" stroke-width="1"/>
-  <circle cx="35.699" cy="14.787" r="2.4" data-z="12" fill="#42a5ff" data-fill="tc.c" data-alpha="live?.55+.45*sin(t*3+0):.25"/>
-  <circle cx="14.787" cy="35.699" r="2.4" data-z="12" fill="#42a5ff" data-fill="tc.c" data-alpha="live?.55+.45*sin(t*3+1):.25"/>
-  <circle cx="-14.787" cy="35.699" r="2.4" data-z="12" fill="#42a5ff" data-fill="tc.c" data-alpha="live?.55+.45*sin(t*3+2):.25"/>
-  <circle cx="-35.699" cy="14.787" r="2.4" data-z="12" fill="#42a5ff" data-fill="tc.c" data-alpha="live?.55+.45*sin(t*3+3):.25"/>
-  <circle cx="-35.699" cy="-14.787" r="2.4" data-z="12" fill="#42a5ff" data-fill="tc.c" data-alpha="live?.55+.45*sin(t*3+4):.25"/>
-  <circle cx="-14.787" cy="-35.699" r="2.4" data-z="12" fill="#42a5ff" data-fill="tc.c" data-alpha="live?.55+.45*sin(t*3+5):.25"/>
-  <circle cx="14.787" cy="-35.699" r="2.4" data-z="12" fill="#42a5ff" data-fill="tc.c" data-alpha="live?.55+.45*sin(t*3+6):.25"/>
-  <circle cx="35.699" cy="-14.787" r="2.4" data-z="12" fill="#42a5ff" data-fill="tc.c" data-alpha="live?.55+.45*sin(t*3+7):.25"/>
+  <circle cx="35.699" cy="14.787" r="2.4" data-z="12" fill="#42a5ff" data-fill="tc.c" data-alpha="live?.55+.45*sin(t*cfg.lightSpeed+0):.25"/>
+  <circle cx="14.787" cy="35.699" r="2.4" data-z="12" fill="#42a5ff" data-fill="tc.c" data-alpha="live?.55+.45*sin(t*cfg.lightSpeed+1):.25"/>
+  <circle cx="-14.787" cy="35.699" r="2.4" data-z="12" fill="#42a5ff" data-fill="tc.c" data-alpha="live?.55+.45*sin(t*cfg.lightSpeed+2):.25"/>
+  <circle cx="-35.699" cy="14.787" r="2.4" data-z="12" fill="#42a5ff" data-fill="tc.c" data-alpha="live?.55+.45*sin(t*cfg.lightSpeed+3):.25"/>
+  <circle cx="-35.699" cy="-14.787" r="2.4" data-z="12" fill="#42a5ff" data-fill="tc.c" data-alpha="live?.55+.45*sin(t*cfg.lightSpeed+4):.25"/>
+  <circle cx="-14.787" cy="-35.699" r="2.4" data-z="12" fill="#42a5ff" data-fill="tc.c" data-alpha="live?.55+.45*sin(t*cfg.lightSpeed+5):.25"/>
+  <circle cx="14.787" cy="-35.699" r="2.4" data-z="12" fill="#42a5ff" data-fill="tc.c" data-alpha="live?.55+.45*sin(t*cfg.lightSpeed+6):.25"/>
+  <circle cx="35.699" cy="-14.787" r="2.4" data-z="12" fill="#42a5ff" data-fill="tc.c" data-alpha="live?.55+.45*sin(t*cfg.lightSpeed+7):.25"/>
   <rect x="-2.5" y="-8" width="5" height="16" rx="1.5" transform="translate(30.36 30.36) rotate(45)" data-z="0;8" fill="#4fbfff" data-fill="live?'#4fbfff':'#3b4852'"/>
   <rect x="-2.5" y="-8" width="5" height="16" rx="1.5" transform="translate(30.36 30.36) rotate(45)" data-z="8;9.5" fill="#3c4853" data-fill="live?'#3c4853':'#363b40'"/>
   <circle cx="30.36" cy="30.36" class="glow" r="9" data-z="4" data-glow="T" opacity="0.45" fill="#b4e0ff" data-if="live"/>
@@ -73,7 +73,7 @@
     <circle cx="0" cy="0" r="4" data-z="(31+L*4)+11" fill="#42a5ff" data-fill="tc.c"/>
   </g>
   <line x1="-26.68" y1="-26.68" x2="-26.68" y2="-26.68" class="strut" data-z="12;62+L*4" stroke="#aab4be" stroke-width="1.6"/>
-  <g data-if="live" transform="translate(-26.68 -26.68)" data-rot="t*1.3">
+  <g data-if="live" transform="translate(-26.68 -26.68)" data-rot="t*cfg.spinSpeed">
     <ellipse cx="6" cy="0" rx="3.4" ry="10" data-z="58+L*4" fill="#eef2f5"/>
     <rect x="0" y="-0.9" width="6" height="1.8" data-z="58+L*4" fill="#3c4853" data-fill="live?'#3c4853':'#363b40'"/>
   </g>
@@ -91,7 +91,7 @@
     <circle cx="0" cy="0" r="3.6" data-z="((31+L*4)+12)+13.5;((31+L*4)+12)+22" fill="#1d5c9c" data-fill="live?tc.d:'#484d52'"/>
     <circle cx="0" cy="0" r="3.6" data-z="((31+L*4)+12)+22" fill="#b5dcff" data-fill="tc.l" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
     <circle cx="0" cy="0" class="glow" r="12" data-r="12+sin(t*4)*3" data-z="((31+L*4)+12)+26" data-glow="T" opacity="0.85" fill="#b4e0ff" data-if="live"/>
-    <g data-if="live" data-rot="-t*1.4">
+    <g data-if="live" data-rot="-t*cfg.spinSpeed2">
       <path d="M23 0A23 23 0 0 1 -13.536 18.595M-23 0A23 23 0 0 1 13.536 -18.595" data-z="((31+L*4)+12)+15" fill="none" stroke="#42a5ff" data-stroke="tc.c" stroke-width="2.2"/>
     </g>
   </g>
@@ -111,6 +111,6 @@
   <circle cx="32.527" cy="32.527" r="4.7" data-z="(18+L*7)*.5;(18+L*7)*.5+2" fill="#42a5ff" data-fill="tc.c"/>
   <circle cx="32.527" cy="32.527" r="5.6" data-z="(18+L*7);(18+L*7)+3" fill="#42a5ff" data-fill="tc.c"/>
   <circle cx="32.527" cy="32.527" r="5.6" data-z="(18+L*7)+3" fill="#b5dcff" data-fill="tc.l" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
-  <circle cx="32.527" cy="32.527" class="glow" r="6" data-r="6+sin(t*3+0)*1.5" data-z="(18+L*7)+6" data-glow="T" opacity="0.8" fill="#b4e0ff" data-if="live"/>
+  <circle cx="32.527" cy="32.527" class="glow" r="6" data-r="6+sin(t*cfg.lightSpeed+0)*1.5" data-z="(18+L*7)+6" data-glow="T" opacity="0.8" fill="#b4e0ff" data-if="live"/>
   <circle cx="27.6" cy="-48.3" r="1.5" class="anchor" id="flag" fill="none" stroke="#ff00ff" stroke-width="0.5"/>
 </svg>

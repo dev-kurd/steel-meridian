@@ -1,0 +1,16 @@
+{
+  "name": "Sky Dock",
+  "hp": 2250,
+  "r": 34,
+  "makes": [
+    "gun",
+    "jet",
+    "bomber"
+  ],
+  "sight": 7,
+  "def": 10,
+  "height": 8,
+  "anim": {
+    "lightSpeed": 4
+  }
+}

@@ -28,10 +28,10 @@
   <rect x="-10" y="-6" width="10" height="6" data-z="24" fill="rgba(150,210,240,.6)" data-fill="live?'rgba(150,210,240,.6)':'rgba(60,70,80,.6)'"/>
   <rect x="4" y="-6" width="10" height="6" data-z="24" fill="rgba(150,210,240,.6)" data-fill="live?'rgba(150,210,240,.6)':'rgba(60,70,80,.6)'"/>
   <circle cx="-20.9" cy="15.96" r="6" data-z="24" fill="#20262c"/>
-  <g transform="translate(-20.9 15.96)" data-rot="live?t*6:0">
+  <g transform="translate(-20.9 15.96)" data-rot="live?t*cfg.spinSpeed:0">
     <path d="M-5 0L5 0M0 -5L0 5" data-z="24" fill="none" stroke="#7a8591" stroke-width="1.5"/>
   </g>
-  <rect x="-13" y="24.4" width="26" height="3" data-z="24" fill="#ffb347" data-fill="paid?'#ffb347':'#59626b'" data-alpha="paid?.6+.4*sin(t*8):1"/>
+  <rect x="-13" y="24.4" width="26" height="3" data-z="24" fill="#ffb347" data-fill="paid?'#ffb347':'#59626b'" data-alpha="paid?.6+.4*sin(t*cfg.busyBlink):1"/>
   <g data-if="L&gt;0">
     <rect x="-30" y="4" width="26" height="16" rx="2" data-z="24;30" fill="#232a31"/>
     <rect x="-30" y="4" width="26" height="16" rx="2" data-z="32" fill="#42a5ff" data-fill="tc.c" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
@@ -40,7 +40,7 @@
   </g>
   <g data-if="L&gt;1">
     <line x1="-18" y1="-8" x2="-18" y2="-8" class="strut" data-z="24;38" stroke="#8f99a3" stroke-width="2.4"/>
-    <g transform="translate(-18 -8)" data-rot="live?sin(t*.8)*.9:0">
+    <g transform="translate(-18 -8)" data-rot="live?sin(t*cfg.swingSpeed)*cfg.swing:0">
       <line x1="-6" y1="0" x2="41.8" y2="0" data-z="38" fill="none" stroke="#ffcf5a" stroke-width="2.6"/>
     </g>
   </g>

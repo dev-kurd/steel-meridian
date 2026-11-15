@@ -1,0 +1,24 @@
+{
+  "name": "Swift",
+  "desc": "Jet fighter. Very fast; missiles hit air and ground, with double damage to aircraft.",
+  "air": true,
+  "jetp": true,
+  "hp": 150,
+  "spd": 200,
+  "range": 190,
+  "dmg": 24,
+  "rof": 1.1,
+  "cost": 0,
+  "time": 15,
+  "r": 12,
+  "sight": 10,
+  "kind": "missile",
+  "airMul": 2,
+  "tier": 1,
+  "anim": {
+    "bobSpeed": 2,
+    "bob": 1.5,
+    "orbitSpeed": 1.6,
+    "orbitRadius": 26
+  }
+}

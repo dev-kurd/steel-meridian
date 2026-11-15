@@ -1,0 +1,16 @@
+{
+  "name": "Sentinel",
+  "desc": "Combat robot. Quick on its feet; attacks ground targets.",
+  "hp": 150,
+  "spd": 74,
+  "range": 135,
+  "dmg": 12,
+  "rof": 0.42,
+  "cost": 0,
+  "time": 7,
+  "r": 9,
+  "sight": 7,
+  "kind": "bullet",
+  "noAir": true,
+  "bot": true
+}

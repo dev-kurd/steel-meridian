@@ -1,0 +1,21 @@
+{
+  "name": "Command Core",
+  "hp": 10800,
+  "r": 46,
+  "income": 6,
+  "sight": 10,
+  "def": 20,
+  "height": 46,
+  "weapon": {
+    "range": 230,
+    "dmg": 22,
+    "rof": 0.45,
+    "kind": "bullet"
+  },
+  "anim": {
+    "spinSpeed": 1.3,
+    "spinSpeed2": 1.4,
+    "lightSpeed": 3,
+    "levelHeight": 14
+  }
+}

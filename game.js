@@ -31,33 +31,17 @@ const TEAMC = [
 ];
 const NEUT = { c: '#9aa0a6', d: '#565c62', l: '#d0d4d8', n: 'Neutral' };
 
-const UT = {
-  gun: { name: 'Kestrel', desc: 'Gunship. Flies over any terrain.', air: true, hp: 130, spd: 115, range: 140, dmg: 9, rof: .28, cost: 200, time: 16, r: 12, sight: 9, kind: 'bullet' },
-  jet: { name: 'Swift', desc: 'Jet fighter. Very fast; missiles hit air and ground, with double damage to aircraft.', air: true, jetp: true, hp: 150, spd: 200, range: 190, dmg: 24, rof: 1.1, cost: 0, time: 15, r: 12, sight: 10, kind: 'missile', airMul: 2, tier: 1 },
-  bomber: { name: 'Anvil', desc: 'Bomber. Slow and tough; heavy bombs wreck ground units and structures. Cannot hit aircraft.', air: true, jetp: true, hp: 320, spd: 92, range: 115, dmg: 80, rof: 3, cost: 0, time: 24, r: 16, sight: 9, kind: 'arty', splash: 46, bmul: 1.6, tier: 2 },
-  fighter: { name: 'Falcon', desc: 'Sortie fighter. Returns to the Airfield after about 25 seconds.', air: true, temp: true, hp: 170, spd: 240, range: 165, dmg: 15, rof: .22, cost: 0, time: 0, r: 13, sight: 8, kind: 'bullet' },
-  eng: { name: 'Engineer', desc: 'Unarmed. Repairs friendly units and structures nearby and captures three times faster.', hp: 150, spd: 72, range: 0, dmg: 0, rof: 1, cost: 0, time: 9, r: 11, sight: 7, kind: 'none', unarmed: true, wheeled: true },
-  bot: { name: 'Sentinel', desc: 'Combat robot. Quick on its feet; attacks ground targets.', hp: 150, spd: 74, range: 135, dmg: 12, rof: .42, cost: 0, time: 7, r: 9, sight: 7, kind: 'bullet', noAir: true, bot: true },
-  botaa: { name: 'Warden', desc: 'Air-defence robot. Hits aircraft only.', hp: 140, spd: 74, range: 240, dmg: 15, rof: .3, cost: 0, time: 9, r: 9, sight: 9, kind: 'flak', airOnly: true, bot: true, tier: 1 },
-  botl: { name: 'Arc', desc: 'Laser robot. Heavy damage to both ground and air targets.', hp: 230, spd: 60, range: 200, dmg: 48, rof: 1.2, cost: 0, time: 18, r: 10, sight: 9, kind: 'laser', bot: true, tier: 2 },
-  adv: { name: 'Vanguard', desc: 'Command craft based on your Command Core. Sitting over a structure it captures it if it is neutral or knocked out, or repairs it if it is yours. Its rockets do five times damage to enemy structures. Being hit stops its work for 3 seconds. If it is shot down, a new one is ready at the Core after 30 seconds.', air: true, hero: true, hp: 600, spd: 105, range: 120, dmg: 24, rof: 2, cost: 0, time: 0, r: 21, sight: 9, kind: 'missile', noAir: true, bmul: 5, demo: true },
-  truck: { name: 'Supply Truck', desc: 'Convoy vehicle. Unarmed; it follows its own route.', hp: 460, spd: 34, range: 0, dmg: 0, rof: 1, cost: 0, time: 0, r: 12, sight: 6, kind: 'none', unarmed: true, wheeled: true, convoy: true }
-};
-// Tanks: five roles, each in three weight classes. A heavier class is tougher and hits harder but is slower and takes longer to build.
-const ROLES = {
-  bt: { name: 'Lancer', desc: 'Battle tank. A turret gun for fighting other vehicles.', hp: 190, spd: 70, range: 150, dmg: 22, rof: 1.1, time: 9, sight: 7, kind: 'shell' },
-  ar: { name: 'Bastion', desc: 'Artillery. Long range area fire: strong against turrets and structures, weak against fast units.', hp: 150, spd: 52, range: 235, dmg: 44, rof: 2.9, time: 12, sight: 8, kind: 'arty', splash: 36, bmul: 1.8 },
-  ad: { name: 'Skyguard', desc: 'Air defence. Hits aircraft only.', hp: 150, spd: 74, range: 250, dmg: 14, rof: .26, time: 9, sight: 9, kind: 'flak', airOnly: true },
-  fl: { name: 'Scorcher', desc: 'Flame tank. Short range; burns everything in a small area. Ground targets only.', hp: 200, spd: 66, range: 86, dmg: 6, rof: .14, time: 10, sight: 7, kind: 'flame', splash: 22, noAir: true },
-  en: { name: 'Prism', desc: 'Energy tank. An instant, accurate beam with long range. Ground targets only.', hp: 170, spd: 60, range: 195, dmg: 40, rof: 1.7, time: 13, sight: 9, kind: 'laser', noAir: true }
-};
-const CLSN = ['Light', 'Medium', 'Heavy'], TANKS = [];
-for (const r in ROLES) for (let c = 0; c < 3; c++) {
-  const R = ROLES[r], k = r + c; TANKS.push(k);
-  UT[k] = Object.assign({}, R, { name: CLSN[c] + ' ' + R.name, tank: true, role: r, cls: c, tier: c, cost: 0, r: [11, 13, 16][c],
-    hp: Math.round(R.hp * [1, 1.7, 2.9][c]), dmg: Math.round(R.dmg * [1, 1.6, 2.5][c] * 10) / 10, spd: Math.round(R.spd * [1, .8, .62][c]), range: Math.round(R.range * [1, 1.08, 1.16][c]), time: Math.round(R.time * [1, 1.6, 2.4][c]) });
-  if (R.splash) UT[k].splash = R.splash + c * 5;
-  if (r === 'bt' && c === 2) UT[k].bmul = 1.3;
+// Units are described by the files in assets/units/<kind>/: model.svg is the drawing, config.json the name, text and every stat.
+// loadAssets reads them into UT before the game can start. Tanks come in five roles (bt, ar, ad, fl, en) and three weight
+// classes (0 Light, 1 Medium, 2 Heavy); a tank's config gives its role, the role's name and its class.
+const UT = {}, ROLES = {}, TANKS = [], CLSN = ['Light', 'Medium', 'Heavy'];
+const UNIT_NUM = ['hp', 'spd', 'range', 'dmg', 'rof', 'cost', 'time', 'r', 'sight']; // every unit config must give these as numbers
+function addUnit(k, text) {
+  let u; try { u = JSON.parse(text); } catch (e) { throw new Error('units/' + k + '/config.json is not valid JSON: ' + e.message); }
+  for (const f of UNIT_NUM) if (typeof u[f] !== 'number' || !isFinite(u[f])) throw new Error('units/' + k + '/config.json: "' + f + '" must be a number');
+  if (typeof u.name !== 'string' || typeof u.kind !== 'string') throw new Error('units/' + k + '/config.json: "name" and "kind" are required');
+  if (u.tank) { if (!u.role || !(u.cls >= 0 && u.cls <= 2)) throw new Error('units/' + k + '/config.json: a tank needs "role" and "cls" (0–2)'); ROLES[u.role] = ROLES[u.role] || { name: u.roleName || u.name }; TANKS.push(k); }
+  trProps(u, ['name', 'desc']); UT[k] = u;
 }
 // A tank factory is Light, Medium or Heavy (the highest class its lines can reach) and has one to three production lines,
 // each fixed to one tank role. The map decides both. The first line runs from the start; the others are unlocked with
@@ -88,29 +72,34 @@ function aiFactory(b, tm) {
     if (ln.lvl < (b.lvl || 0) && (tm.rp || 0) >= LINE_RP[ln.lvl + 1]) { lineUp(b, i); break; } }
   if (!b.engQ && rnd() < .03) b.engQ = 1;
 }
-const TT = {
-  gun: { name: 'Gun Turret', desc: 'Rapid fire. Hits ground and air.', hp: 420, range: 195, dmg: 13, rof: .35, cost: 150, kind: 'bullet' },
-  cannon: { name: 'Cannon', desc: 'Heavy shells. Ground targets only.', hp: 650, range: 215, dmg: 70, rof: 1.6, cost: 220, kind: 'shell', noAir: true },
-  flak: { name: 'Flak Battery', desc: 'Air defence. Aircraft only.', hp: 400, range: 300, dmg: 20, rof: .22, cost: 180, kind: 'flak', airOnly: true },
-  missile: { name: 'Missile Turret', desc: 'Long range. Double damage to aircraft.', hp: 360, range: 290, dmg: 48, rof: 1.9, cost: 250, kind: 'missile', airMul: 2 },
-  rocket: { name: 'Rocket Battery', desc: 'Fires a salvo of four rockets that blankets an area. Ground targets only.', hp: 390, range: 340, minRange: 70, dmg: 26, rof: 3.8, cost: 300, kind: 'missile', splash: 36, noAir: true, salvo: 4 },
-  arty: { name: 'Artillery', desc: 'Very long range area fire. Ground only, cannot hit close targets.', hp: 380, range: 430, minRange: 120, dmg: 85, rof: 3.4, cost: 320, kind: 'arty', splash: 46, noAir: true }
-};
-const HQW = { range: 230, dmg: 22, rof: .45, kind: 'bullet' };
-const BT = {
-  hq: { name: 'Command Core', hp: 3600, r: 46, income: 6, sight: 10 },
-  factory: { name: 'Tank Factory', hp: 950, r: 38, makes: [], sight: 7 },
-  airpad: { name: 'Sky Dock', hp: 750, r: 34, makes: ['gun', 'jet', 'bomber'], sight: 7 },
-  refinery: { name: 'Refinery', hp: 750, r: 32, income: 5, sight: 6 },
-  pad: { name: 'Turret Pad', hp: 1, r: 18, sight: 7 },
-  mine: { name: 'Ore Mine', hp: 650, r: 34, income: 9, sight: 6 },
-  tech: { name: 'Tech Lab', hp: 700, r: 32, sight: 7 },
-  foundry: { name: 'Foundry', hp: 850, r: 36, sight: 6 },
-  airfield: { name: 'Airfield', hp: 800, r: 38, sight: 7 },
-  laser: { name: 'Laser Array', hp: 700, r: 30, sight: 8 },
-  robot: { name: 'Robot Works', hp: 900, r: 36, makes: ['bot', 'botaa', 'botl'], sight: 7 },
-  outpost: { name: 'Allied Outpost', hp: 3200, r: 34, sight: 8 }
-};
+// Structures and turrets are described the same way as units: assets/buildings/<kind>/config.json and assets/turrets/<kind>/config.json
+// hold the name and every stat, and loadAssets reads them into BT and TT. A structure's config also gives its Defense points (def),
+// its roof height for effects and bars (height → BH), what it costs to build and which Core level it needs (buildCost → BUILD,
+// needCore → NEEDL), and the Command Core's own gun (weapon → HQW). Turret buttons appear in the manifest's order.
+const TT = {}, BT = {}, HQW = {}, BH = {}, BUILD = {}, NEEDL = {};
+function cfgRead(path, text, nums) {
+  let o; try { o = JSON.parse(text); } catch (e) { throw new Error(path + ' is not valid JSON: ' + e.message); }
+  if (typeof o.name !== 'string') throw new Error(path + ': "name" is required');
+  for (const f of nums) if (typeof o[f] !== 'number' || !isFinite(o[f])) throw new Error(path + ': "' + f + '" must be a number');
+  trProps(o, ['name', 'desc']); return o;
+}
+function addBld(k, text) {
+  const b = BT[k] = cfgRead('buildings/' + k + '/config.json', text, ['hp', 'r', 'sight', 'def', 'height']); BH[k] = b.height;
+  if (b.buildCost !== undefined) BUILD[k] = b.buildCost; if (b.needCore !== undefined) NEEDL[k] = b.needCore; if (b.weapon) Object.assign(HQW, b.weapon);
+}
+// Every animation setting a model reads as cfg.<name>, and every one the game itself uses, must be a number under "anim" in that
+// asset's config; every smoke effect must name anchors the model has. A mistake stops the loading screen and names the file.
+const ANIM_CODE = { 'buildings/robot': ['armSpeed', 'armSwing', 'armReach', 'sparkChance'], 'buildings/hq': ['levelHeight'], 'units/adv': ['swaySpeed', 'sway'] };
+function checkAnim(id, T) {
+  const need = (ASSETS.uses[id] || []).concat(ANIM_CODE[id] || [], T.jetp ? ['orbitSpeed', 'orbitRadius'] : []), a = T.anim || {}, m = ASSETS.models[id];
+  for (const n of need) if (typeof a[n] !== 'number' || !isFinite(a[n])) throw new Error(id + '/config.json: "anim" needs a number called "' + n + '"');
+  for (const e of T.effects || []) {
+    if (e.type !== 'smoke') throw new Error(id + '/config.json: unknown effect type "' + e.type + '"');
+    for (const f of ['chance', 'drift', 'life', 'size', 'rise', 'z']) if (typeof e[f] !== 'number') throw new Error(id + '/config.json: a smoke effect needs a number called "' + f + '"');
+    for (const at of e.at || []) if (!m.anchors[at]) throw new Error(id + '/config.json: the model has no anchor called "' + at + '"');
+  }
+}
+function addTur(k, text) { TT[k] = cfgRead('turrets/' + k + '/config.json', text, ['hp', 'range', 'dmg', 'rof', 'cost', 'def']); if (typeof TT[k].kind !== 'string') throw new Error('turrets/' + k + '/config.json: "kind" is required'); }
 const PW = {
   strike: { name: 'Air Strike', key: 'Q', cost: 200, cd: 45 },
   repair: { name: 'Field Repair', key: 'E', cost: 150, cd: 40 },
@@ -670,7 +659,10 @@ function mapPath(sx, sy, tx, ty) {
 /* ---------- entities ---------- */
 function coreLvl(ti) { const h = G.blds.find(b => b.k === 'hq' && b.team === ti); return h ? h.lvl || 0 : 0; }
 function capOf(ti) { return CAP + 10 * coreLvl(ti); }
-function maxHp(e) { return e.isB ? (e.k === 'pad' ? (e.turret ? TT[e.turret].hp * (1 + .3 * (e.lvl || 0)) : 1) : e.T.hp * (e.fort ? 1.6 : 1) * (e.k === 'hq' ? 1 + .25 * (e.lvl || 0) : 1)) : e.T.hp * (1 + .15 * (e.rank || 0)) * (e.hpM || 1); }
+// Repair speed factors. Structures have three times and turrets twice the hit points of the first design (the config files hold
+// the final numbers); the Vanguard and engineers repair them faster by the same factor, so a repair takes as long as it did.
+const BLD_HP = 3, TUR_HP = 2, hpF = b => b.k === 'pad' ? TUR_HP : BLD_HP;
+function maxHp(e) { return e.isB ? (e.k === 'pad' ? (e.turret ? TT[e.turret].hp * (1 + .3 * (e.lvl || 0)) : 1) : e.T.hp * (1 + .25 * (e.lvl || 0))) : e.T.hp * (1 + .15 * (e.rank || 0)) * (e.hpM || 1); }
 function targetable(e) { return e && !e.dead && e.team >= 0 && e.hp > 0; }
 // two sides are enemies when they are different and not in the same alliance (G.al holds each side's alliance number)
 function hostile(a, b) { return a !== b && a >= 0 && b >= 0 && G.al[a] !== G.al[b]; }
@@ -772,9 +764,13 @@ function fire(src, w, tg, x, y) {
   }
   if (src.team === 0 || tg.team === 0) G.lastCombat = G.t;
 }
+// Defense points of a structure: each point takes 1% off the damage it receives, up to DEF_MAX.
+// A base value from the structure's config (a turret's from the turret's), plus DEF_FORT when fortified, plus DEF_ARM for each level of its owner's Armour research.
+const DEF_FORT = 20, DEF_ARM = 10, DEF_MAX = 60;
+function defOf(b) { return Math.min(DEF_MAX, (b.k === 'pad' && b.turret ? TT[b.turret].def : b.T.def) + (b.fort ? DEF_FORT : 0) + (b.team >= 0 ? (G.teams[b.team].arm || 0) * DEF_ARM : 0)); }
 function damage(e, d, src) {
   if (e.dead || e.hp <= 0 || e.team < 0) return;
-  d /= 1 + .15 * G.teams[e.team].arm;
+  if (e.isB) d *= 1 - defOf(e) / 100; else d /= 1 + .15 * G.teams[e.team].arm; // structures: their defense points; units: Armour research
   e.hp -= d; e.lastHit = G.t; if (src) e.hitBy = src;
   if (!e.isB && e.T.hero && e.team === 0 && e.hp > 0) voice('van_attack');
   if (e.isB) {
@@ -805,7 +801,7 @@ function bldDown(b, src) {
   if (owner === 0 && b.k !== 'hq') G.teams[0].bLost = (G.teams[0].bLost || 0) + 1;
   if (b.k === 'hq') { b.hp = 0; for (let i = 0; i < 7; i++) boom(b.x + (rnd() - .5) * 80, b.y + (rnd() - .5) * 80, 2 + rnd() * 1.5); eliminate(owner); return; }
   boom(b.x, b.y, b.k === 'pad' ? 1.5 : 2.4); burn(b.x, b.y, b.k === 'pad' ? 3 : 9, b.k === 'pad' ? 1 : 1.7);
-  if (b.k === 'pad') b.turret = null;
+  if (b.k === 'pad') { b.turret = null; b.gone = true; } // a turret takes its pad with it: update() clears it off the map
   resetLines(b); b.hp = 0; b.team = -1; b.paid = false; b.pt = 0; b.cap = 0; b.tgt = null; b.up = null; b.lvl = 0; b.fort = false;
   if (owner === 0) { toast(tr('{0} lost.', b.T.name), 'bad'); voice('lost'); }
 }
@@ -899,6 +895,21 @@ function vanguardTick(tm, i) {
   const u = mkUnit('adv', i, hq.x, hq.y); u.a = u.ta = -Math.PI / 4;
   if (G.t > 3) { part('ring', hq.x, hq.y, 0, 0, .7, 40, '140,210,255', 0, BH.hq + 20); if (i === 0) { toast('A new Vanguard is ready at the Command Core.', 'good'); sfx('ready', hq.x, hq.y); voice('van_ready'); } }
 }
+// Auto repair (the player's Vanguard, off by default): when it has nothing else to do it flies to a damaged friendly structure
+// within AUTO_R and repairs it. The nearest goes first; of structures about as far away (each rank is worth AUTO_STEP of distance),
+// tank factories go before turrets, turrets before air structures, and those before the rest.
+// An order from the player always wins; Hold keeps it where it is.
+const AUTO_R = TILE * 26 /* shown on the map as a ring, see drawAutoRing */, AUTO_STEP = TILE * 4;
+function autoRank(b) { return b.k === 'factory' ? 0 : b.k === 'pad' ? 1 : b.k === 'airpad' || b.k === 'airfield' ? 2 : 3; }
+function autoNeeds(u, b) { return b.team === u.team && b.hp > 0 && (b.k !== 'pad' || b.turret) && b.hp < maxHp(b); }
+function advAuto(u, docked) {
+  if (u.order) { if (u.order.auto && !autoNeeds(u, u.order.auto)) u.order = null; return; } // on its way: give up a target that no longer needs it
+  if (u.hold || u.capB || u.fixB) return;
+  if (docked && u.hp < maxHp(u) * .6) return; // badly hurt and docked: mend itself first
+  let best = null, bs = 1e9;
+  for (const b of G.blds) { if (!autoNeeds(u, b)) continue; const d = dist(u, b); if (d > AUTO_R) continue; const s = d + autoRank(b) * AUTO_STEP; if (s < bs) { bs = s; best = b; } }
+  if (best) { orderMove([u], best.x, best.y); u.order.auto = best; }
+}
 // The Vanguard works by sitting over a roof: it captures a neutral or knocked-out structure and repairs a friendly one.
 // Being hit stops the work for 3 seconds.
 function updAdvancer(u, dt) {
@@ -906,10 +917,10 @@ function updAdvancer(u, dt) {
   const docked = !!hq && !u.order && dist(u, hq) < 30; u.docked = docked;
   const fb = u.fixB;
   if (fb && !u.order && !hurt && fb.team === u.team && fb.hp > 0 && fb.hp < maxHp(fb)) {
-    fb.hp = Math.min(maxHp(fb), fb.hp + 75 * dt);
+    fb.hp = Math.min(maxHp(fb), fb.hp + 75 * hpF(fb) * dt);
     if (fb.hp >= maxHp(fb) && u.team === 0) { toast(tr('Vanguard repaired {0}.', fb.k === 'pad' && fb.turret ? TT[fb.turret].name : fb.T.name), 'good'); sfx('build'); voice('van_repaired'); }
   }
-  const pb = !u.order ? (u.capB || u.fixB) : null, want = docked ? BH.hq + 14 + (hq.lvl || 0) * 14 : pb ? (pb.k === 'pad' ? 18 : BH[pb.k]) + 36 : AIRH; // it comes down over the roof it is working on
+  const pb = !u.order ? (u.capB || u.fixB) : null, want = docked ? BH.hq + 14 + (hq.lvl || 0) * BT.hq.anim.levelHeight : pb ? (pb.k === 'pad' ? 18 : BH[pb.k]) + 36 : AIRH; // it comes down over the roof it is working on
   if (pb && !docked) { const f = Math.min(1, dt * 2.5); u.x += (pb.x - u.x) * f; u.y += (pb.y - u.y) * f; }
   u.alt = u.alt === undefined ? want : u.alt + clamp(want - u.alt, -34 * dt, 34 * dt);
   if (docked) { const f = Math.min(1, dt * 3); u.x += (hq.x - u.x) * f; u.y += (hq.y - u.y) * f; if (u.hp < maxHp(u)) u.hp = Math.min(maxHp(u), u.hp + maxHp(u) * .05 * dt); } // docked: repairs itself
@@ -917,6 +928,7 @@ function updAdvancer(u, dt) {
   let capB = null, fixB = null;
   for (const b of G.blds) { if (!onTop(u, b)) continue; if (capturable(b, u.team)) capB = b; else if (b.team === u.team && b.hp > 0 && (b.k !== 'pad' || b.turret) && b.hp < maxHp(b)) fixB = b; }
   u.capB = capB; u.fixB = capB ? null : fixB; u.stalled = hurt && !!(capB || fixB); u.site = null;
+  if (u.auto && !tm.ai) advAuto(u, docked);
   if (!tm.ai || !hq) return;
   // the computer's Vanguard: come home when hurt, mend a damaged structure at home, otherwise raid the nearest enemy structure now and then
   if (!u.retreat && u.hp < maxHp(u) * .4) { u.retreat = true; u.aiFix = null; orderMove([u], hq.x, hq.y); }
@@ -965,11 +977,13 @@ function fortify(b) {
 function finishUp(b) {
   const u = b.up; b.up = null; if (b.k === 'pad' && !b.turret) return;
   if (u.kind === 'line' || u.kind === 'lineup') { const ln = b.lines && b.lines[u.i]; if (ln) { if (u.kind === 'line') { ln.open = true; ln.on = true; } else ln.lvl++; } part('ring', b.x, b.y, 0, 0, .6, b.T.r + 26, u.kind === 'line' ? '255,200,90' : '110,200,255'); }
-  else if (u.kind === 'fort') { b.hp *= 1.6; b.fort = true; part('ring', b.x, b.y, 0, 0, .6, b.T.r + 26, '170,200,230'); }
+  else if (u.kind === 'fort') { b.fort = true; // fortifying adds defense points (defOf), not hit points
+    part('ring', b.x, b.y, 0, 0, .6, b.T.r + 26, '170,200,230'); }
   else {
     b.lvl = (b.lvl || 0) + 1; part('ring', b.x, b.y, 0, 0, .6, b.T.r + 26, '255,200,90');
     if (b.k === 'pad') b.hp += TT[b.turret].hp * .3;
-    if (b.k === 'hq') { b.hp += b.T.hp * .25; if (b.team === 0) toast(tr(b.lvl === 1 ? 'Command Core level {0}: unit limit {1}, Airfield unlocked.' : 'Command Core level {0}: unit limit {1}, Laser Array unlocked.', b.lvl + 1, capOf(0)), 'good'); }
+    if (b.k !== 'pad') b.hp += b.T.hp * .25; // every upgrade level adds a quarter of the structure's base hit points
+    if (b.k === 'hq') { if (b.team === 0) toast(tr(b.lvl === 1 ? 'Command Core level {0}: unit limit {1}, Airfield unlocked.' : 'Command Core level {0}: unit limit {1}, Laser Array unlocked.', b.lvl + 1, capOf(0)), 'good'); }
   }
   if (visAt(b.x, b.y)) for (let i = 0; i < 16; i++) { const a = rnd() * TAU; part('dust', b.x + Math.cos(a) * b.T.r, b.y + Math.sin(a) * b.T.r, Math.cos(a) * 46, Math.sin(a) * 46, 1.1 + rnd() * .5, 11, null, 9, 2); }
   if (b.team === 0) { sfx('build'); voice(b.k === 'hq' && u.kind !== 'fort' ? 'core_up' : 'upgraded'); }
@@ -1200,7 +1214,7 @@ function updEngineer(u, dt) {
   const f = u.fix;
   if (f) {
     if (f.dead || f.hp <= 0 || f.team !== u.team || f.hp >= maxHp(f)) { u.fix = null; return; }
-    f.hp = Math.min(maxHp(f), f.hp + (f.isB ? 30 : 16) * dt);
+    f.hp = Math.min(maxHp(f), f.hp + (f.isB ? 30 * hpF(f) : 16) * dt);
     if (rnd() < dt * 9 && visAt(f.x, f.y)) part('spark', f.x + (rnd() - .5) * 14, f.y + (rnd() - .5) * 14, (rnd() - .5) * 80, (rnd() - .5) * 80, .25, 2, null, 40 + rnd() * 50, f.isB ? BH[f.k] * .5 : 8, 240);
   }
 }
@@ -1356,7 +1370,6 @@ function updFog() {
 }
 
 /* ---------- construction, sorties and laser ---------- */
-const BUILD = { pad: 100, airfield: 450, laser: 600 }, NEEDL = { robot: 0, airfield: 1, laser: 2 }; // Core level each needs (0 = from the start)
 function canPlace(ti, k, x, y) {
   const m = G.map, T = BT[k]; if (x < 48 || y < 48 || x > m.WW - 48 || y > m.WH - 48) return false;
   const tx = x / TILE | 0, ty = y / TILE | 0, cx = (tx + .5) * TILE, cy = (ty + .5) * TILE, R = Math.max(0, Math.round(T.r / TILE * .8));
@@ -1382,7 +1395,7 @@ function place(ti, k, x, y, tk) {
   part('ring', b.x, b.y, 0, 0, .6, b.T.r + 26, '120,255,170'); for (let i = 0; i < 6; i++) part('dust', b.x + (rnd() - .5) * b.T.r, b.y + (rnd() - .5) * b.T.r, (rnd() - .5) * 30, (rnd() - .5) * 30, .9, 8, null, 8, 2);
   return b;
 }
-function sellTurret(b) { if (!b.turret) return false; G.teams[b.team].credits += Math.round(TT[b.turret].cost * .5); b.turret = null; b.hp = 0; b.lvl = 0; b.up = null; return true; }
+function sellTurret(b) { if (!b.turret) return false; G.teams[b.team].credits += Math.round(TT[b.turret].cost * .5); b.turret = null; b.hp = 0; b.lvl = 0; b.up = null; b.gone = true; return true; } // the pad goes with the turret: update() clears it off the map
 function launchSortie(ti, x, y) {
   const base = G.blds.find(b => b.team === ti && b.k === 'airfield' && b.hp > 0); if (!base) return;
   for (let i = 0; i < 3; i++) { const u = mkUnit('fighter', ti, base.x + (i - 1) * 16, base.y + (i - 1) * 10); u.life = 26; u.home = base; u.a = u.ta = Math.atan2(y - base.y, x - base.x); u.order = { k: 'move', path: [{ x: x + (i - 1) * 40, y: y + (i - 1) * 24 }], i: 0 }; }
@@ -1421,6 +1434,29 @@ function drawBeams() {
     for (const [w, al] of [[11, .22], [5, .6], [1.8, 1]]) { ctx.strokeStyle = w < 2 ? `rgba(255,255,255,${fl})` : `rgba(${col},${al * fl})`; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(X0, Y0); ctx.lineTo(X1, Y1); ctx.stroke(); }
     spr(SPR.glowW, X1, Y1, 22 + rnd() * 10, 1); spr(SPR.glowW, X0, Y0, 16, 1);
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.lineCap = 'butt';
+  }
+}
+// Auto repair on the map, while the player's Vanguard is selected with it switched on: a ring at its reach and a ring round each
+// structure it will mend and a wrench badge beside each of those structures. Both are drawn over the fog.
+function autoVan() { return G.sel.find(e => !e.isB && e.k === 'adv' && e.team === 0 && e.auto && !e.dead) || null; }
+function drawAutoRing() {
+  const u = autoVan(); if (!u) return;
+  tG(u.x, u.y, 0); ctx.setLineDash([14, 10]); ctx.lineDashOffset = -G.t * 10;
+  ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 4; circ(0, 0, AUTO_R); ctx.stroke();
+  ctx.strokeStyle = 'rgba(110,230,150,.75)'; ctx.lineWidth = 2; circ(0, 0, AUTO_R); ctx.stroke();
+  ctx.setLineDash([5, 5]); ctx.lineWidth = 1.8;
+  for (const b of G.blds) if (autoNeeds(u, b) && dist(u, b) <= AUTO_R) { tG(b.x, b.y, 0); circ(0, 0, b.T.r + 12); ctx.stroke(); }
+  ctx.setLineDash([]); ctx.lineDashOffset = 0;
+}
+function drawAutoMarks() {
+  const u = autoVan(); if (!u) return; tI();
+  for (const b of G.blds) {
+    if (!autoNeeds(u, b) || dist(u, b) > AUTO_R) continue;
+    const next = u.fixB === b || (u.order && u.order.auto === b), X = ix(b.x, b.y) + b.T.r + 12, Y = iy(b.x, b.y) - entH(b) - 18 + Math.sin(G.t * 3 + b.id) * 2, R = next ? 11 : 9;
+    ctx.fillStyle = 'rgba(8,18,14,.88)'; circ(X, Y, R); ctx.fill();
+    ctx.strokeStyle = next ? 'rgba(150,255,190,' + (.7 + .3 * Math.sin(G.t * 8)) + ')' : 'rgba(110,230,150,.9)'; ctx.lineWidth = next ? 2.4 : 1.6; circ(X, Y, R); ctx.stroke();
+    ctx.lineCap = 'round'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(X - 4.5, Y + 4.5); ctx.lineTo(X + .8, Y - .8); ctx.stroke(); // the wrench: a handle and an open jaw
+    ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X + 2.6, Y - 2.6, 3, -Math.PI * .05, Math.PI * 1.55); ctx.stroke(); ctx.lineCap = 'butt';
   }
 }
 function drawModeCursor() {
@@ -1520,6 +1556,7 @@ function aiThink(ti) {
 
 function update(dt) {
   G.t += dt; for (const tm of G.teams) tm.pend = 0;
+  if (G.blds.some(b => b.gone)) { G.blds = G.blds.filter(b => !b.gone); G.sel = G.sel.filter(e => !e.gone); }
   for (const b of G.blds) if (b.team >= 0) { if (b.lines) { for (const l of b.lines) if (l.paid) G.teams[b.team].pend++; } else if (b.paid) G.teams[b.team].pend++; }
   G.teams.forEach((tm, i) => { if (tm.res) { tm.res.t += dt; if (tm.res.t >= tm.res.dur) { tm[tm.res.k]++; if (i === 0) { toast(tr(tm.res.k === 'dmgU' ? 'Weapons research level {0} complete.' : 'Armour research level {0} complete.', tm[tm.res.k]), 'good'); sfx('cap'); voice('research'); } tm.res = null; } } });
   for (const tm of G.teams) { tm.count = 0; for (const k in tm.pw) if (tm.pw[k] > 0) tm.pw[k] = Math.max(0, tm.pw[k] - dt); }
@@ -1541,7 +1578,7 @@ function update(dt) {
 }
 
 /* ---------- drawing (isometric) ---------- */
-const K = .75, AIRH = 46, BH = { hq: 46, factory: 24, airpad: 8, refinery: 26, pad: 6, mine: 30, tech: 34, foundry: 30, airfield: 16, laser: 58, outpost: 24, robot: 28 }, SUNX = .7, SUNY = -.35;
+const K = .75, AIRH = 46, SUNX = .7, SUNY = -.35;
 let OX = 0, S = 1, CX = 0, CY = 0;
 const ix = (x, y) => (x - y) * K + OX, iy = (x, y) => (x + y) * K * .5;
 function unIso(X, Y) { X -= OX; return { x: X / (2 * K) + Y / K, y: Y / K - X / (2 * K) }; }
@@ -1597,7 +1634,7 @@ const WRECK = { c: '#44484c', d: '#2a2d30', l: '#5c6166' }, W1 = '#171c22', W2 =
    Every drawing in the game is a file under assets/ (see assets/README.md); nothing is drawn from shapes written in this script.
    Models are plan-view SVG files whose shapes carry a height (data-z). The code below loads them, extrudes them into the
    2.5D view and runs the small expressions (data-if, data-rot, data-fill ...) that animate them. */
-const ASSETS = { ready: false, dir: 'assets/', models: {}, fail: null }, FLAGS = {}, IC = {}, CUR = {};
+const ASSETS = { ready: false, dir: 'assets/', models: {}, uses: {}, fail: null }, FLAGS = {}, IC = {}, CUR = {};
 function loadText(url) {
   return new Promise((res, rej) => { const x = new XMLHttpRequest(); x.open('GET', url);
     x.onload = () => x.status === 200 || (x.status === 0 && x.responseText) ? res(x.responseText) : rej(new Error(url + ' (' + x.status + ')'));
@@ -1717,7 +1754,8 @@ function mDraw(n, M, x, y, zo, $, sh) {
 }
 async function loadAssets() {
   const D = ASSETS.dir, mf = JSON.parse(await loadText(D + 'manifest.json')), jobs = [], get = (p, fn) => jobs.push(loadText(D + p).then(fn));
-  for (const cat of ['buildings', 'turrets', 'units']) for (const k of mf[cat]) get(cat + '/' + k + '/model.svg', t => { ASSETS.models[cat + '/' + k] = mCompile(t, cat + '/' + k); });
+  const ucfg = {}, bcfg = {}, tcfg = {}; for (const [cat, to] of [['units', ucfg], ['buildings', bcfg], ['turrets', tcfg]]) for (const k of mf[cat]) get(cat + '/' + k + '/config.json', t => { to[k] = t; });
+  for (const cat of ['buildings', 'turrets', 'units']) for (const k of mf[cat]) get(cat + '/' + k + '/model.svg', t => { ASSETS.models[cat + '/' + k] = mCompile(t, cat + '/' + k); ASSETS.uses[cat + '/' + k] = [...new Set([...t.matchAll(/\bcfg\.([A-Za-z_]\w*)/g)].map(q => q[1]))]; });
   const sprite = t => { const w = +svgAttr(t, 'width', 64), h = +svgAttr(t, 'height', 64); return svgCanvas(t, w, h, 2).then(c => ({ c, w, h, ax: +svgAttr(t, 'data-ax', w / 2), ay: +svgAttr(t, 'data-ay', h) })); };
   for (const kind of ['rocks', 'trees']) { SPR[kind] = []; mf.props[kind].forEach((k, i) => get('props/' + k + '/sprite.svg', t => sprite(t).then(s => { SPR[kind][i] = s; }))); }
   for (const k in mf.fx) get('fx/' + mf.fx[k] + '/sprite.svg', t => svgCanvas(t, +svgAttr(t, 'width', 64), +svgAttr(t, 'height', 64), 1).then(c => { SPR[k] = c; }));
@@ -1727,6 +1765,9 @@ async function loadAssets() {
   for (const k of mf.icons) get('ui/icons/' + k + '/icon.svg', t => { IC[k] = t.trim().replace('<svg', '<svg class="ic" aria-hidden="true"'); });
   for (const k of mf.cursors) get('ui/cursors/' + k + '/cursor.svg', t => { CUR[k] = 'url("data:image/svg+xml,' + encodeURIComponent(t.trim()) + '") ' + svgAttr(t, 'data-hot', '16 16') + ', crosshair'; });
   await Promise.all(jobs);
+  for (const k of mf.units) addUnit(k, ucfg[k]); // in the manifest's order, whichever file arrived first
+  for (const k of mf.buildings) addBld(k, bcfg[k]); for (const k of mf.turrets) addTur(k, tcfg[k]);
+  for (const [cat, tab] of [['units', UT], ['buildings', BT], ['turrets', TT]]) for (const k of mf[cat]) checkAnim(cat + '/' + k, tab[k]);
 }
 const mkFlag = id => FLAGS[id] || FLAGS.t0;
 // Flags flown beside each Command Core, drawn from assets/flags.
@@ -1743,9 +1784,11 @@ function drawFlag(x, y, id, t) {
   }
 }
 // what a structure's model may read: its colours, level and state
+// "cfg" in a model's expressions is the "anim" block of the asset's config.json: its animation settings (checkAnim).
+const NOCFG = Object.freeze({});
 function bldVars(b) {
   const wreck = b.k !== 'pad' && b.hp <= 0, live = !wreck && b.team >= 0, tm = live ? G.teams[b.team] : null, pw = tm && tm.pw;
-  return { tc: wreck ? WRECK : b.team >= 0 ? TEAMC[b.team] : NEUT, L: b.lvl || 0, live, wreck, fort: !!b.fort, paid: !!b.paid, alive: b.hp > 0, ta: b.ta || 0, team: b.team, turret: !!b.turret, fresh: (b.cd || 0) < .6,
+  return { cfg: b.T.anim || NOCFG, tc: wreck ? WRECK : b.team >= 0 ? TEAMC[b.team] : NEUT, L: b.lvl || 0, live, wreck, fort: !!b.fort, paid: !!b.paid, alive: b.hp > 0, ta: b.ta || 0, team: b.team, turret: !!b.turret, fresh: (b.cd || 0) < .6,
     adv: b.k === 'hq' && live && tm.advT > 0 && !G.noVan ? 1 - clamp(tm.advT / 30, 0, 1) : -1, // progress of a Vanguard being rebuilt, or -1
     ready: !!pw && pw[b.k === 'laser' ? 'laser' : 'sortie'] <= 0, firing: b.k === 'laser' && G.beams.some(q => q.src === b && q.t > 0) };
 }
@@ -1759,7 +1802,8 @@ function bldShadow(b) { if (hfOn(b) && b.hf && b.hf.pic.top) return hfShadow(b);
    b.y + (my - D/2) * K) at height mz * K * .75. */
 const HF = { g: null, list: [], K: .5, RES: 1, MS: 50, OPEN: .9, SPD: 30, IN: 122, OUT: 246 }; // K: model units to world pixels. RES: picture pixels per model unit. MS: milliseconds between pictures of the structure. OPEN: seconds a door takes. SPD: speed of a tank leaving. IN, OUT: where it starts and stops (model y)
 let HFT = null; // a Heavy Factory is larger than the other factories and is walked round as a box
-const hfOn = b => b.k === 'factory' && b.ft === 2 && typeof HeavyFactory !== 'undefined';
+const HF_USE = false; // false: Heavy factories use the standard factory model (assets/buildings/factory); true: the HeavyFactory pack model
+const hfOn = b => HF_USE && b.k === 'factory' && b.ft === 2 && typeof HeavyFactory !== 'undefined';
 const hfGates = b => b.gates || (b.gates = [0, 1, 2].map(() => ({ door: 0, u: null }))); // door: 0 shut … 1 open. u: the tank driving out
 function hfLane(b, i) { const d = HeavyFactory.dims, y = m => b.y + (m - d.D / 2) * HF.K; return { x: b.x + (d.GX[i] - d.W / 2) * HF.K, y0: y(HF.IN), y1: y(HF.OUT), yd: y(d.D) }; } // the way out of gate i, on the map
 // pushes a point out of a box-shaped structure, sliding it towards the nearer corner so units go round
@@ -1845,20 +1889,19 @@ function drawBld(b) {
   if (hfOn(b) && drawHeavy(b)) return;
   const m = ASSETS.models['buildings/' + b.k], v = bldVars(b), x = b.x, y = b.y, t = G.t, A = m.anchors;
   drawModel(m, x, y, v);
-  if (b.k === 'pad') { if (b.turret) drawModel(ASSETS.models['turrets/' + b.turret], x, y, v); return; }
+  if (b.k === 'pad') { if (b.turret) { v.cfg = TT[b.turret].anim || NOCFG; drawModel(ASSETS.models['turrets/' + b.turret], x, y, v); } return; }
   // particles and the flag are effects, not part of the model; the model only marks where they start (its anchors)
   if (b.k === 'hq') {
-    if (v.adv >= 0 && rnd() < .3) part('spark', x + (rnd() - .5) * 30, y + (rnd() - .5) * 30, (rnd() - .5) * 60, (rnd() - .5) * 60, .3, 2, null, 30 + rnd() * 40, BH.hq + 16 + v.L * 14, 200);
+    if (v.adv >= 0 && rnd() < .3) part('spark', x + (rnd() - .5) * 30, y + (rnd() - .5) * 30, (rnd() - .5) * 60, (rnd() - .5) * 60, .3, 2, null, 30 + rnd() * 40, BH.hq + 16 + v.L * v.cfg.levelHeight, 200);
     if (b.hp > 0 && b.team >= 0) drawFlag(x + A.flag[0], y + A.flag[1], b.team === 0 ? (G.zone ? G.zone.id : (G.sk && G.sk.flag) || 'azure') : b.team === 1 ? 'crimson' : 't' + b.team, t);
-  } else if (b.k === 'factory') {
-    if (b.paid && !G.paused && rnd() < .15 && visAt(x, y)) part('smoke', x + A.smoke[0], y + A.smoke[1], (rnd() - .5) * 6, (rnd() - .5) * 6, 1.4, 4, null, 24, 44);
-  } else if (b.k === 'robot') {
-    if (v.live && b.paid) for (const sd of [-1, 1]) if (rnd() < .2) { const p = A[sd < 0 ? 'arm1' : 'arm2'], an = Math.sin(t * 1.6 + sd) * .9 + (sd > 0 ? Math.PI : 0); part('spark', x + p[0] + Math.cos(an) * 14, y + p[1] + Math.sin(an) * 14, (rnd() - .5) * 60, (rnd() - .5) * 60, .25, 2, null, 30, 22, 200); }
-  } else if (b.k === 'foundry') {
-    if (v.live && !G.paused && visAt(x, y)) for (const k of ['smoke1', 'smoke2']) if (rnd() < .06) part('smoke', x + A[k][0], y + A[k][1], (rnd() - .5) * 6, (rnd() - .5) * 6, 1.6, 5, null, 26, 48);
+  } else if (b.k === 'robot') { // sparks at the tips of the arms the model swings
+    const c = v.cfg; if (v.live && b.paid) for (const sd of [-1, 1]) if (rnd() < c.sparkChance) { const p = A[sd < 0 ? 'arm1' : 'arm2'], an = Math.sin(t * c.armSpeed + sd) * c.armSwing + (sd > 0 ? Math.PI : 0); part('spark', x + p[0] + Math.cos(an) * c.armReach, y + p[1] + Math.sin(an) * c.armReach, (rnd() - .5) * 60, (rnd() - .5) * 60, .25, 2, null, 30, 22, 200); }
   }
+  // smoke listed under "effects" in the structure's config: where (anchors in the model), when, how often and how it rises
+  if (b.T.effects && !G.paused && visAt(x, y)) for (const e of b.T.effects) if (e.type === 'smoke' && v[e.when]) for (const at of e.at) if (rnd() < e.chance) part('smoke', x + A[at][0], y + A[at][1], (rnd() - .5) * e.drift, (rnd() - .5) * e.drift, e.life, e.size, null, e.rise, e.z);
 }
-function planePos(u) { if (u.order) return [u.x, u.y, u.a]; const big = u.k === 'bomber', an = G.t * (big ? 1.05 : 1.6) + u.id * 1.7, R = big ? 36 : 26; return [u.x + Math.cos(an) * R, u.y + Math.sin(an) * R, an + Math.PI / 2]; }
+// an idle plane circles its spot: speed and radius come from its config
+function planePos(u) { if (u.order) return [u.x, u.y, u.a]; const c = u.T.anim, an = G.t * c.orbitSpeed + u.id * 1.7, R = c.orbitRadius; return [u.x + Math.cos(an) * R, u.y + Math.sin(an) * R, an + Math.PI / 2]; }
 // Screen-space tube between two points in the world (each with its own height): barrels, fuel drums, emitter rails.
 function tubeW(p, h0, q, h1, w, col, lite) {
   tI(); const X0 = ix(p[0], p[1]), Y0 = iy(p[0], p[1]) - h0, X1 = ix(q[0], q[1]), Y1 = iy(q[0], q[1]) - h1;
@@ -1868,11 +1911,11 @@ function tubeW(p, h0, q, h1, w, col, lite) {
 }
 function mixHex(a, b, t) { const p = h => [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16)), A = p(a), B = p(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
 // where a unit's model is drawn and which way it points
-function unitPose(u) { return u.T.jetp ? planePos(u) : u.k === 'adv' ? [u.x, u.y, u.a + (u.order ? 0 : Math.sin(G.t * .8 + u.id) * .1)] : [u.x, u.y, u.a]; }
+function unitPose(u) { return u.T.jetp ? planePos(u) : u.k === 'adv' ? [u.x, u.y, u.a + (u.order ? 0 : Math.sin(G.t * u.T.anim.swaySpeed + u.id) * u.T.anim.sway)] : [u.x, u.y, u.a]; }
 // what a unit's model may read
 function unitVars(u, a) {
   const tc = TEAMC[u.team]; if (!tc.m) tc.m = mixHex(tc.c, tc.l, .38);
-  return { tc, a, ta: u.ta || 0, id: u.id, odo: u.odo || 0, flash: u.flash || 0, team: u.team, fs: .45 + .55 * Math.abs(Math.cos(a) - Math.sin(a)) / 1.414,
+  return { cfg: u.T.anim || NOCFG, tc, a, ta: u.ta || 0, id: u.id, odo: u.odo || 0, flash: u.flash || 0, team: u.team, fs: .45 + .55 * Math.abs(Math.cos(a) - Math.sin(a)) / 1.414,
     alt: u.alt || AIRH, A: (u.alt || AIRH) + Math.sin(G.t * 2.4 + u.id) * (u.order ? .6 : 2), moving: !!u.order, busy: !!(!u.stalled && (u.capB || u.fixB)), cap: !!u.capB, site: !!u.site, docked: !!u.docked,
     arm: u.fix ? Math.atan2(u.fix.y - u.y, u.fix.x - u.x) : a + Math.PI };
 }
@@ -1901,7 +1944,7 @@ function drawUnit(u) {
     if (st === u.capB && st.cap > 0) { tG(st.x, st.y, 1); ctx.strokeStyle = 'rgba(90,170,255,.9)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, st.T.r + 10, -Math.PI / 2, -Math.PI / 2 + TAU * clamp(st.cap, 0, 1)); ctx.stroke(); }
   }
 }
-function entH(e) { return e.isB ? BH[e.k] + (e.turret ? 16 : 0) + (e.k === 'hq' ? (e.lvl || 0) * 14 : 0) + e.T.r * .5 : e.T.temp ? AIRH + 40 : e.T.air ? (e.alt || AIRH) + 16 : 22; }
+function entH(e) { return e.isB ? BH[e.k] + (e.turret ? 16 : 0) + (e.k === 'hq' ? (e.lvl || 0) * e.T.anim.levelHeight : 0) + e.T.r * .5 : e.T.temp ? AIRH + 40 : e.T.air ? (e.alt || AIRH) + 16 : 22; }
 function hpBar(e, sel) {
   const mh = maxHp(e), f = clamp(e.hp / mh, 0, 1); if (!sel && (f >= 1 || e.hp <= 0)) return;
   const w = Math.max(18, e.T.r * 1.5), X = ix(e.x, e.y), Y = iy(e.x, e.y) - entH(e) - 6;
@@ -2039,6 +2082,7 @@ function render() {
   drawBirds(m, now, vx0, vx1, vy0, vy1);
   drawEdgeFade(m);
   tG(0, 0, 0); ctx.drawImage(m.fogB, -m.MG * TILE, -m.MG * TILE, m.EW * TILE, m.EH * TILE);
+  drawAutoRing(); drawAutoMarks(); // over the fog, so the ring shows where the map is still dark
   tI();
   for (const b of G.blds) if (on(b) && (b.team === 0 || visAt(b.x, b.y))) {
     hpBar(b, G.sel.includes(b));
@@ -2160,16 +2204,20 @@ function panelHTML() {
   if (!e.isB) {
     const n = {}; let hp = 0, mh = 0; for (const u of sel) { n[u.k] = (n[u.k] || 0) + 1; hp += u.hp; mh += maxHp(u); }
     const one = sel.length === 1;
-    return `<h3>${one ? e.T.name : tr('{0} units', sel.length)}</h3><div class="sub">${one ? e.T.desc : Object.keys(n).map(k => n[k] + '× ' + UT[k].name).join(' · ')}</div><div class="bar"><i style="width:${hp / mh * 100}%"></i></div>${e.team === 0 && !e.T.convoy ? `<div class="acts ords"><button data-act="ord:stop">${IC.stop}${tr('Stop')}<small>X</small></button><button data-act="ord:hold" class="${sel.every(u => u.hold) ? 'on' : ''}">${IC.hold}${tr('Hold')}<small>Z</small></button><button data-act="ord:patrol" class="${G.mode === 'patrol' || sel.every(u => u.patrol) ? 'on' : ''}">${IC.patrol}${tr('Patrol')}<small>V</small></button><button data-act="ord:guard" class="${G.mode === 'guard' || sel.every(u => u.guard) ? 'on' : ''}">${IC.guard}${tr('Guard')}<small>C</small></button></div>` : ''}<div class="tip">${G.mode === 'patrol' ? tr('Click where the patrol should turn round.') + ' ' : G.mode === 'guard' ? tr('Click one of your units or structures to guard.') + ' ' : ''}${one && e.k === 'adv' && e.team === 0 ? tr('Right click a structure: yours to repair it, a neutral or knocked-out one to capture it, an enemy one to attack it. Right click your Command Core to dock.') + ' ' : ''}${one ? vetLine(e) + ' ' : tr('{0} veterans.', sel.filter(u => u.rank).length) + ' '}${tr('Right click moves or attacks; Ctrl+right click attack-moves.')}</div>`;
+    return `<h3>${one ? e.T.name : tr('{0} units', sel.length)}</h3><div class="sub">${one ? e.T.desc : Object.keys(n).map(k => n[k] + '× ' + UT[k].name).join(' · ')}</div><div class="bar"><i style="width:${hp / mh * 100}%"></i></div>${e.team === 0 && !e.T.convoy ? `<div class="acts ords"><button data-act="ord:stop">${IC.stop}${tr('Stop')}<small>X</small></button><button data-act="ord:hold" class="${sel.every(u => u.hold) ? 'on' : ''}">${IC.hold}${tr('Hold')}<small>Z</small></button><button data-act="ord:patrol" class="${G.mode === 'patrol' || sel.every(u => u.patrol) ? 'on' : ''}">${IC.patrol}${tr('Patrol')}<small>V</small></button><button data-act="ord:guard" class="${G.mode === 'guard' || sel.every(u => u.guard) ? 'on' : ''}">${IC.guard}${tr('Guard')}<small>C</small></button>${sel.some(u => u.k === 'adv') ? `<button data-act="ord:auto" title="${tr('The Vanguard flies to damaged structures inside its ring and repairs them: the nearest first, then tank factories, turrets and air structures.')}" class="wide ${sel.some(u => u.k === 'adv' && u.auto) ? 'on' : ''}">${IC.repair}${tr('Auto repair')}<small>Y</small></button>` : ''}</div>` : ''}<div class="tip">${G.mode === 'patrol' ? tr('Click where the patrol should turn round.') + ' ' : G.mode === 'guard' ? tr('Click one of your units or structures to guard.') + ' ' : ''}${one && e.k === 'adv' && e.team === 0 ? tr('Right click a structure: yours to repair it, a neutral or knocked-out one to capture it, an enemy one to attack it. Right click your Command Core to dock.') + ' ' : ''}${one ? vetLine(e) + ' ' : tr('{0} veterans.', sel.filter(u => u.rank).length) + ' '}${tr('Right click moves or attacks; Ctrl+right click attack-moves.')}</div>`;
   }
   const own = e.team === 0, tc = e.team >= 0 ? TEAMC[e.team] : NEUT, mh = maxHp(e), wreck = e.k !== 'pad' && e.hp <= 0;
   let h = `<h3>${e.k === 'pad' && e.turret ? TT[e.turret].name : e.k === 'factory' && e.lines ? tr(FTN[e.lvl || 0]) : e.T.name}</h3><div class="sub" style="color:${tc.c}">${tr(tc.n)}${wreck ? ' · ' + tr('knocked out') : ''}</div>`;
-  if (e.k !== 'pad' || e.turret) h += `<div class="bar"><i style="width:${clamp(e.hp / mh, 0, 1) * 100}%"></i></div>`;
+  if (e.k !== 'pad' || e.turret) { // health and defense head the panel
+    const def = defOf(e), n = v => Math.ceil(Math.max(0, v)).toLocaleString('en-US');
+    h += `<div class="stat"><span><svg class="si" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14S2 10 2 5.8A3.2 3.2 0 0 1 8 4.2 3.2 3.2 0 0 1 14 5.8C14 10 8 14 8 14z" fill="none" stroke="#5fd38a" stroke-width="1.6" stroke-linejoin="round"/></svg>${tr('Health points')}</span><b>${n(e.hp)} <i>/ ${n(mh)}</i></b></div><div class="bar"><i style="width:${clamp(e.hp / mh, 0, 1) * 100}%"></i></div><div class="stat" title="${tr('Each defense point takes 1% off incoming damage, up to {0}. Fortify adds {1}; each Armour research level adds {2}.', DEF_MAX, DEF_FORT, DEF_ARM)}"><span><svg class="si" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l5 1.8v4.2c0 3-2.1 5.2-5 6.4-2.9-1.2-5-3.4-5-6.4V3.6z" fill="none" stroke="#6cc4ff" stroke-width="1.6" stroke-linejoin="round"/></svg>${tr('Defense points')}</span><b>${def} <i>· ${tr('−{0}% damage', def)}</i></b></div>`;
+  }
   if (!own) return h + `<div class="tip">${tr(e.k === 'hq' ? 'Destroy it to win.' : e.team < 0 ? 'Move ground units next to it to capture.' : 'Knock it out, then capture it with ground units.')}</div>`;
   const l = e.lvl || 0, off = c => tm.credits >= c ? '' : 'off', adv = advNear(e), fc = fortCost(e);
-  const fortBtn = e.up ? '' : e.fort ? '<button class="off">' + tr('Fortified') + '</button>' : `<button data-act="fort:1" class="${off(fc)}" title="${tr('Raises hit points by 60%.')}">${IC.fort}${tr('Fortify')}<small>${tr('+60% HP')} · ${fc}</small></button>`;
+  const fortBtn = e.up ? '' : e.fort ? '<button class="off">' + tr('Fortified') + '</button>' : `<button data-act="fort:1" class="${off(fc)}" title="${tr('Adds {0} defense points.', DEF_FORT)}">${IC.fort}${tr('Fortify')}<small>${tr('+{0} Defense', DEF_FORT)} · ${fc}</small></button>`;
   const pwBtn = k => { const P = PW[k], cd = tm.pw[k]; return `<button data-act="pw:${k}" class="${G.mode === k ? 'on' : cd <= 0 && tm.credits >= P.cost ? '' : 'off'}">${IC[k]}${P.name}<small>${cd > 0 ? tr('{0}s', Math.ceil(cd)) : P.cost + ' · ' + P.key}</small></button>`; };
-  const upFill = () => `background-image:linear-gradient(90deg,rgba(108,196,255,.38) ${e.up.t / e.up.dur * 100}%,transparent ${e.up.t / e.up.dur * 100}%)`, lvlBtn = nm => e.up ? `<button class="on" style="${upFill()}">${tr(e.up.kind === 'fort' ? 'Fortifying' : 'Upgrading')}<small>${Math.round(e.up.t / e.up.dur * 100)}%</small></button>` : l >= lvlMax(e) ? `<button class="off">${tr('{0} MAX', nm)}</button>` : `<button data-act="lvl:1" class="${off(lvlCost(e))}">${IC.up}${tr('{0} Lv {1}', nm, l + 2)}<small>${lvlCost(e)} · ${tr('{0}s', Math.ceil(upTime(l) / (adv ? 2 : 1)))}</small></button>`;
+  const hpTip = tr('Each level also adds {0}% hit points to this structure.', e.k === 'pad' ? 30 : 25);
+  const upFill = () => `background-image:linear-gradient(90deg,rgba(108,196,255,.38) ${e.up.t / e.up.dur * 100}%,transparent ${e.up.t / e.up.dur * 100}%)`, lvlBtn = nm => e.up ? `<button class="on" style="${upFill()}">${tr(e.up.kind === 'fort' ? 'Fortifying' : 'Upgrading')}<small>${Math.round(e.up.t / e.up.dur * 100)}%</small></button>` : l >= lvlMax(e) ? `<button class="off">${tr('{0} MAX', nm)}</button>` : `<button data-act="lvl:1" class="${off(lvlCost(e))}" title="${hpTip}">${IC.up}${tr('{0} Lv {1}', nm, l + 2)}<small>${lvlCost(e)} · ${tr('{0}s', Math.ceil(upTime(l) / (adv ? 2 : 1)))}</small></button>`;
   if (e.k === 'factory' && e.lines) {
     const rate = buildRate(e), busy = !!e.up; h += '<div class="acts" style="grid-template-columns:1fr 58px">';
     e.lines.forEach((ln, i) => {
@@ -2181,13 +2229,13 @@ function panelHTML() {
       else { const c = LINE_RP[ln.lvl + 1], need = ln.lvl >= l, now = busy && e.up.kind === 'lineup' && e.up.i === i, nm = tr(CLSN[ln.lvl + 1]) + ' ' + R.name;
         h += `<button data-act="lineup:${i}" class="ib ${now ? 'on' : !busy && !need && (tm.rp || 0) >= c ? '' : 'off'}" title="${need ? tr('Upgrade the factory first.') : tr('Raise to {0}', nm) + ' · ' + tr('{0} research', c)}"${now ? ` style="background-image:linear-gradient(0deg,rgba(108,196,255,.42) ${e.up.t / e.up.dur * 100}%,transparent ${e.up.t / e.up.dur * 100}%)"` : ''}>${IC.up}<small>${now ? Math.round(e.up.t / e.up.dur * 100) + '%' : c}</small></button>`; }
     });
-    h += `</div><div class="acts" style="margin-top:6px">${!busy || e.up.kind === 'lvl' ? lvlBtn(tr('Factory')) : l >= lvlMax(e) ? `<button class="off">${tr('{0} MAX', tr('Factory'))}</button>` : `<button class="off">${IC.up}${tr('{0} Lv {1}', tr('Factory'), l + 2)}<small>${lvlCost(e)} · ${tr('{0}s', Math.ceil(upTime(l)))}</small></button>`}<button data-act="eng:1" class="${e.engQ ? 'on' : ''}" title="${UT.eng.desc}">${UT.eng.name}<small>${tr(e.engQ ? 'next off the line' : 'build one')}</small></button>${fortBtn || (e.fort ? '<button class="off">' + tr('Fortified') + '</button>' : e.up && e.up.kind === 'fort' ? `<button class="on" style="${upFill()}">${IC.fort}${tr('Fortifying')}<small>${Math.round(e.up.t / e.up.dur * 100)}%</small></button>` : `<button class="off">${IC.fort}${tr('Fortify')}<small>${tr('+60% HP')} · ${fc}</small></button>`)}</div>`;
+    h += `</div><div class="acts" style="margin-top:6px">${!busy || e.up.kind === 'lvl' ? lvlBtn(tr('Factory')) : l >= lvlMax(e) ? `<button class="off">${tr('{0} MAX', tr('Factory'))}</button>` : `<button class="off">${IC.up}${tr('{0} Lv {1}', tr('Factory'), l + 2)}<small>${lvlCost(e)} · ${tr('{0}s', Math.ceil(upTime(l)))}</small></button>`}<button data-act="eng:1" class="${e.engQ ? 'on' : ''}" title="${UT.eng.desc}">${UT.eng.name}<small>${tr(e.engQ ? 'next off the line' : 'build one')}</small></button>${fortBtn || (e.fort ? '<button class="off">' + tr('Fortified') + '</button>' : e.up && e.up.kind === 'fort' ? `<button class="on" style="${upFill()}">${IC.fort}${tr('Fortifying')}<small>${Math.round(e.up.t / e.up.dur * 100)}%</small></button>` : `<button class="off">${IC.fort}${tr('Fortify')}<small>${tr('+{0} Defense', DEF_FORT)} · ${fc}</small></button>`)}</div>`;
     h += `<div class="tip">${G.noProd ? '<b>' + tr('Production is offline in this mission.') + '</b> ' : ''}${tr('Each line builds its own tank over and over; click a line to pause it. Upgrade the factory with credits to allow a heavier class, then raise each line to it with research points (the arrow beside the line). This factory can reach {0} class.', tr(CLSN[e.ft]))} ${tm.count + tm.pend >= capOf(0) ? tr('Unit limit reached.') : tr('Units are free.')}</div>`;
   } else if (e.T.makes) {
     h += `<div class="bar prog"><i style="width:${e.paid ? e.pt / UT[e.prod].time * 100 : 0}%"></i></div><div class="acts">`;
     for (const k of e.T.makes) h += unlocked(e, k) ? `<button data-act="prod:${k}" class="${e.prod === k ? 'on' : ''}" title="${UT[k].desc}">${UT[k].name}<small>${limitHit(0, k) ? tr('max {0}', UT[k].max) : tr('{0}s', Math.round(UT[k].time / buildRate(e)))}</small></button>` : `<button class="off" title="${UT[k].desc}">${UT[k].name}<small>${tr('Line Lv {0}', UT[k].tier + 1)}</small></button>`;
     h += `<button data-act="prod:" class="${e.prod ? '' : 'on'}">${tr('Hold§production')}</button></div><div class="acts" style="margin-top:6px">${lvlBtn(tr('Line'))}${fortBtn}</div>`;
-    h += `<div class="tip">${G.noProd ? '<b>' + tr('Production is offline in this mission.') + '</b> ' : ''}${tr('Line level {0} of 3 · build speed ×{1}.', l + 1, buildRate(e).toFixed(2))} ${lineNext(e)} ${e.prod && !e.paid ? (limitHit(0, e.prod) ? tr('Only {0} of this unit at a time.', UT[e.prod].max) : tr('Unit limit reached.')) : tr('Units are free.')}</div>`;
+    h += `<div class="tip">${G.noProd ? '<b>' + tr('Production is offline in this mission.') + '</b> ' : ''}${tr('Line level {0} of 3 · build speed ×{1}.', l + 1, buildRate(e).toFixed(2))} ${lineNext(e)} ${l < lvlMax(e) ? hpTip + ' ' : ''}${e.prod && !e.paid ? (limitHit(0, e.prod) ? tr('Only {0} of this unit at a time.', UT[e.prod].max) : tr('Unit limit reached.')) : tr('Units are free.')}</div>`;
   } else if (e.k === 'hq') {
     h += `<div class="acts">`;
     for (const [k, nm] of [['dmgU', tr('Weapons')], ['arm', tr('Armour')]]) { const q = tm[k], c = upCost(q, tm); h += tm.res ? `<button class="off">${tm.res.k === k ? nm + ' … ' + tr('{0}s', Math.ceil(tm.res.dur - tm.res.t)) : tr('{0} (lab busy)', nm)}</button>` : q >= resMax(tm) ? `<button class="off">${tr('{0} MAX', nm)}</button>` : `<button data-act="up:${k}" class="${off(c)}">${IC.res}${tr('{0} Lv {1}', nm, q + 1)}<small>${c}</small></button>`; }
@@ -2232,6 +2280,7 @@ function act(a) {
     const us = ownSel();
     if (v === 'stop') { for (const u of us) { u.order = null; clearStanding(u); } }
     else if (v === 'hold') { const on = !us.every(u => u.hold); for (const u of us) { clearStanding(u); u.hold = on; u.order = null; } }
+    else if (v === 'auto') { const u = G.units.find(q => q.k === 'adv' && q.team === 0 && !q.dead); if (!u) { sfx('deny'); return; } u.auto = !u.auto; if (u.auto) u.hold = false; else if (u.order && u.order.auto) u.order = null; toast(u.auto ? 'Auto repair on.' : 'Auto repair off.', u.auto ? 'good' : ''); }
     else if (us.length) G.mode = G.mode === v ? null : v;
     sfx('ui');
   }
@@ -2380,6 +2429,7 @@ addEventListener('keydown', e => {
     case 'KeyF': act('speed'); break;
     case 'KeyM': setMute(!AU.on); break;
     case 'KeyG': act('adv'); break;
+    case 'KeyY': act('ord:auto'); break;
     case 'KeyH': { const hq = G.blds.find(b => b.k === 'hq' && b.team === 0); if (hq) { G.cam.x = hq.x; G.cam.y = hq.y; } break; }
     case 'Space': e.preventDefault(); if (G.alertPos) { G.cam.x = G.alertPos.x; G.cam.y = G.alertPos.y; } break;
     case 'Escape': if (!$('confirm').classList.contains('hidden')) { const n = document.querySelector('#confirm [data-c=no]'); if (n) n.click(); } else if (G.mode) G.mode = null; else { G.sel = []; } updHud(); break;
@@ -2439,7 +2489,7 @@ const MISSIONS = {
 };
 const ORDER = ['n1', 'n2', 'n4', 'n5', 'n3', 'c1', 'c2', 'c3', 'c4', 'c5', 's1', 's2', 's4', 's5', 's3'];
 const mapOf = (z, m) => m && m.map !== undefined ? m.map : z.map;
-for (const t of [UT, TT, BT, PW]) for (const k in t) trProps(t[k], ['name', 'desc']);
+for (const k in PW) trProps(PW[k], ['name', 'desc']); // units, structures and turrets get theirs when their configs are read
 for (const m of MAPS) trProps(m, ['name', 'desc']);
 for (const z of ZONES) { trProps(z, ['name', 'sub', 'mission', 'brief']); for (const m of MISSIONS[z.id]) trProps(m, ['mission', 'brief']); }
 const CAMP = { done: {}, vets: [], all: false };
@@ -2713,7 +2763,7 @@ function saveGame(auto) {
     blds: G.blds.map(b => ({ id: b.id, k: b.k, tx: b.x / TILE | 0, ty: b.y / TILE | 0, team: b.team, hp: R(b.hp), lvl: b.lvl || 0, fort: !!b.fort, turret: b.turret, ft: b.ft, lines: b.lines || null, engQ: b.engQ || 0, prod: b.prod, prevProd: b.prevProd || null, paid: b.paid, pt: R(b.pt), rally: b.rally, up: b.up || null, built: !!b.built, cap: b.cap, capTeam: b.capTeam, objTarget: !!b.objTarget, hill: !!b.hill, ta: R(b.ta) })),
     units: G.units.filter(u => !u.dead && !u.T.temp).map(u => {
       const o = u.order, last = o && o.path && o.path.length ? o.path[o.path.length - 1] : null;
-      return { id: u.id, k: u.k, team: u.team, x: R(u.x), y: R(u.y), a: R(u.a), hp: R(u.hp), kills: u.kills, rank: u.rank, spdM: u.spdM, hpM: u.hpM, dmgM: u.dmgM, regen: !!u.regen, hold: !!u.hold, patrol: u.patrol || null, guard: u.guard ? u.guard.id : 0, busy: u.busy, ord: !o ? null : o.k === 'atk' ? { k: 'atk', tgt: o.tgt ? o.tgt.id : 0 } : last ? { k: o.k, x: R(last.x), y: R(last.y) } : null };
+      return { id: u.id, k: u.k, team: u.team, x: R(u.x), y: R(u.y), a: R(u.a), hp: R(u.hp), kills: u.kills, rank: u.rank, spdM: u.spdM, hpM: u.hpM, dmgM: u.dmgM, regen: !!u.regen, hold: !!u.hold, auto: !!u.auto, patrol: u.patrol || null, guard: u.guard ? u.guard.id : 0, busy: u.busy, ord: !o ? null : o.k === 'atk' ? { k: 'atk', tgt: o.tgt ? o.tgt.id : 0 } : last ? { k: o.k, x: R(last.x), y: R(last.y) } : null };
     }),
     exp: Array.from(m.exp).join(''), groups: Object.fromEntries(Object.entries(G.groups).map(([k, g]) => [k, g.filter(u => !u.dead).map(u => u.id)]))
   };
@@ -2731,7 +2781,7 @@ function loadGame() {
   for (const q of d.blds) { const b = mkBld({ k: q.k, x: q.tx, y: q.ty, o: q.team }); Object.assign(b, { id: q.id, hp: q.hp, lvl: q.lvl, fort: q.fort, turret: q.turret, ft: q.ft, lines: q.lines || undefined, engQ: q.engQ || 0, prod: q.prod, prevProd: q.prevProd, paid: q.paid, pt: q.pt, rally: q.rally, up: q.up, built: q.built, cap: q.cap, capTeam: q.capTeam, objTarget: q.objTarget, hill: q.hill, ta: q.ta }); byId.set(b.id, b); }
   G.units = []; const pend = [];
   const heroSeen = {}; for (const q of d.units) { if (!UT[q.k]) continue; if (UT[q.k].hero) { if (heroSeen[q.team]) continue; heroSeen[q.team] = 1; } // a save from an older version may hold several: keep one per side
-    const u = mkUnit(q.k, q.team, q.x, q.y); Object.assign(u, { id: q.id, a: q.a, ta: q.a, hp: q.hp, kills: q.kills, rank: q.rank, spdM: q.spdM, hpM: q.hpM, dmgM: q.dmgM, regen: q.regen, hold: q.hold, patrol: q.patrol, busy: q.busy || 0 }); byId.set(u.id, u); pend.push([u, q]); }
+    const u = mkUnit(q.k, q.team, q.x, q.y); Object.assign(u, { id: q.id, a: q.a, ta: q.a, hp: q.hp, kills: q.kills, rank: q.rank, spdM: q.spdM, hpM: q.hpM, dmgM: q.dmgM, regen: q.regen, hold: q.hold, auto: !!q.auto, patrol: q.patrol, busy: q.busy || 0 }); byId.set(u.id, u); pend.push([u, q]); }
   for (const [u, q] of pend) {
     if (q.guard) u.guard = byId.get(q.guard) || null;
     if (q.ord) { if (q.ord.k === 'atk') { const t = byId.get(q.ord.tgt); if (t) u.order = { k: 'atk', tgt: t, path: null, i: 0, rp: 0 }; } else orderMove([u], q.ord.x, q.ord.y, q.ord.k === 'amove'); }
@@ -2761,7 +2811,7 @@ function applyLang(l) {
   for (const q of I18N) { if (q.el) q.el.setAttribute('title', tr(q.src)); else if (q.n.isConnected) q.n.nodeValue = q.lead + tr(q.src) + q.trail; }
   for (const b of document.querySelectorAll('[data-lang]')) b.classList.toggle('on', b.dataset.lang === LANG);
   $('bspeed').textContent = tr('Speed {0}×', G ? G.speed : 1); $('bmute').textContent = tr(AU.on ? 'Sound on' : 'Sound off'); $('bidle').textContent = tr('Idle {0}', 0);
-  buildMain(); buildSettings(); if (selZone) buildZones(); buildDiffs(); buildSkirmish(); if (G) updHud();
+  buildMain(); buildSettings(); if (selZone) buildZones(); buildDiffs(); if (ASSETS.ready) buildSkirmish(); if (G) updHud(); // the skirmish page names structures, which come with the assets
 }
 document.addEventListener('click', e => { const b = e.target.closest('[data-lang]'); if (b) { auInit(); sfx('ui'); applyLang(b.dataset.lang); } });
 $('slang').addEventListener('change', e => applyLang(e.target.value));
@@ -2812,7 +2862,7 @@ setInterval(() => { const n = performance.now(); if (!document.hidden && n - las
 
 // Load the assets, then let the game draw. Until then the loading screen stays up.
 { const box = $('loading'), lt = box.querySelector('.lt'), was = lt.textContent; box.classList.remove('hidden'); lt.textContent = tr('Loading assets…');
-  loadAssets().then(() => { ASSETS.ready = true; lt.textContent = was; box.classList.add('hidden'); },
+  loadAssets().then(() => { ASSETS.ready = true; buildSkirmish(); lt.textContent = was; box.classList.add('hidden'); },
     e => { ASSETS.fail = e; logErr('assets', e); box.querySelector('.spin').style.display = 'none'; lt.style.cssText = 'max-width:640px;text-align:center;line-height:1.5'; lt.textContent = 'The assets folder could not be read: ' + (e && e.message || e) + '. Start the game with "Play Steel Meridian.bat" or Steel Meridian.exe.'; }); }
 // small hook for debugging from the console
 $('vmus').value = AU.vol.m * 100; $('vfx').value = AU.vol.f * 100;
@@ -2827,5 +2877,5 @@ function thumb(kind, k, o) {
   } finally { S = keep[0]; CX = keep[1]; CY = keep[2]; OX = keep[3]; ctx.globalAlpha = 1; }
   const c = document.createElement('canvas'); c.width = c.height = px; c.getContext('2d').drawImage(cv, 0, 0, px, px, 0, 0, px, px); return c.toDataURL('image/png');
 }
-window.SM = { thumb,  get G() { return G; }, tr, applyLang, updHud, get LANG() { return LANG; }, AU, VO, voice, sfx, auInit, engineUpdate, start: startGame, render, UT, mkUnit, findPath, step: (n, dt) => { for (let i = 0; i < n; i++) update(dt || .05); } };
+window.SM = { thumb, BT, TT, cfg: { HQW, BH, BUILD, NEEDL }, defOf,  get G() { return G; }, tr, applyLang, updHud, get LANG() { return LANG; }, AU, VO, voice, sfx, auInit, engineUpdate, start: startGame, render, UT, mkUnit, findPath, step: (n, dt) => { for (let i = 0; i < n; i++) update(dt || .05); } };
 })();

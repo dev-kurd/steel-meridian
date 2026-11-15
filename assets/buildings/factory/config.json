@@ -1,0 +1,30 @@
+{
+  "name": "Tank Factory",
+  "hp": 2850,
+  "r": 38,
+  "makes": [],
+  "sight": 7,
+  "def": 10,
+  "height": 24,
+  "anim": {
+    "spinSpeed": 6,
+    "swingSpeed": 0.8,
+    "swing": 0.9,
+    "busyBlink": 8
+  },
+  "effects": [
+    {
+      "type": "smoke",
+      "at": [
+        "smoke"
+      ],
+      "when": "paid",
+      "chance": 0.15,
+      "drift": 6,
+      "life": 1.4,
+      "size": 4,
+      "rise": 24,
+      "z": 44
+    }
+  ]
+}

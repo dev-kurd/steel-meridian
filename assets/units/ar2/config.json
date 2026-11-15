@@ -1,0 +1,21 @@
+{
+  "name": "Heavy Bastion",
+  "desc": "Artillery. Long range area fire: strong against turrets and structures, weak against fast units.",
+  "tank": true,
+  "role": "ar",
+  "roleName": "Bastion",
+  "cls": 2,
+  "hp": 435,
+  "spd": 32,
+  "range": 273,
+  "dmg": 110,
+  "rof": 2.9,
+  "time": 29,
+  "sight": 8,
+  "kind": "arty",
+  "splash": 46,
+  "bmul": 1.8,
+  "tier": 2,
+  "cost": 0,
+  "r": 16
+}

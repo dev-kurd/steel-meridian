@@ -1,0 +1,12 @@
+{
+  "name": "Allied Outpost",
+  "hp": 9600,
+  "r": 34,
+  "sight": 8,
+  "def": 5,
+  "height": 24,
+  "anim": {
+    "flagSpeed": 4,
+    "flagSwing": 0.1
+  }
+}

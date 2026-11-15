@@ -1,0 +1,23 @@
+{
+  "name": "Light Skyguard",
+  "desc": "Air defence. Hits aircraft only.",
+  "tank": true,
+  "role": "ad",
+  "roleName": "Skyguard",
+  "cls": 0,
+  "hp": 150,
+  "spd": 74,
+  "range": 250,
+  "dmg": 14,
+  "rof": 0.26,
+  "time": 9,
+  "sight": 9,
+  "kind": "flak",
+  "airOnly": true,
+  "tier": 0,
+  "cost": 0,
+  "r": 11,
+  "anim": {
+    "radarSpeed": 3
+  }
+}

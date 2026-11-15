@@ -1,0 +1,12 @@
+{
+  "name": "Flak Battery",
+  "desc": "Air defence. Aircraft only.",
+  "hp": 800,
+  "range": 300,
+  "dmg": 20,
+  "rof": 0.22,
+  "cost": 180,
+  "kind": "flak",
+  "airOnly": true,
+  "def": 10
+}

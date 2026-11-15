@@ -1,0 +1,27 @@
+{
+  "name": "Vanguard",
+  "desc": "Command craft based on your Command Core. Sitting over a structure it captures it if it is neutral or knocked out, or repairs it if it is yours. Its rockets do five times damage to enemy structures. Being hit stops its work for 3 seconds. If it is shot down, a new one is ready at the Core after 30 seconds.",
+  "air": true,
+  "hero": true,
+  "hp": 600,
+  "spd": 105,
+  "range": 120,
+  "dmg": 24,
+  "rof": 2,
+  "cost": 0,
+  "time": 0,
+  "r": 21,
+  "sight": 9,
+  "kind": "missile",
+  "noAir": true,
+  "bmul": 5,
+  "demo": true,
+  "anim": {
+    "ringSpeed": 2.2,
+    "ringSpeedBusy": 5,
+    "rotorSpeed": 26,
+    "dishSpeed": 3.2,
+    "swaySpeed": 0.8,
+    "sway": 0.1
+  }
+}

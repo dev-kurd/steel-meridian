@@ -73,7 +73,7 @@
     <circle cx="2.6" cy="11.812" r="0.7" data-z="16.8" fill="#c94a3a"/>
     <circle cx="2.6" cy="13.312" r="0.7" data-z="16.8" fill="#c94a3a"/>
     <line x1="-4.352" y1="0" x2="-4.352" y2="0" class="strut" data-z="15.4;20.4" stroke="#aab4be" stroke-width="1"/>
-    <g transform="translate(-4.352 0)" data-rot="t*3+id-ta">
+    <g transform="translate(-4.352 0)" data-rot="t*cfg.radarSpeed+id-ta">
       <rect x="-3.4" y="-1" width="6.8" height="2" data-z="20.4" fill="#cfd7de"/>
     </g>
   </g>

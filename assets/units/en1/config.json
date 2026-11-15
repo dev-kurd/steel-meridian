@@ -1,0 +1,20 @@
+{
+  "name": "Medium Prism",
+  "desc": "Energy tank. An instant, accurate beam with long range. Ground targets only.",
+  "tank": true,
+  "role": "en",
+  "roleName": "Prism",
+  "cls": 1,
+  "hp": 289,
+  "spd": 48,
+  "range": 211,
+  "dmg": 64,
+  "rof": 1.7,
+  "time": 21,
+  "sight": 9,
+  "kind": "laser",
+  "noAir": true,
+  "tier": 1,
+  "cost": 0,
+  "r": 13
+}

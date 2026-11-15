@@ -1,0 +1,13 @@
+{
+  "name": "Airfield",
+  "hp": 2400,
+  "r": 38,
+  "sight": 7,
+  "def": 10,
+  "height": 16,
+  "buildCost": 450,
+  "needCore": 1,
+  "anim": {
+    "lightSpeed": 8
+  }
+}

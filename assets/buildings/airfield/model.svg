@@ -14,24 +14,24 @@
   <rect x="27" y="0.5" width="5" height="1.4" data-z="4" fill="rgba(255,255,255,.7)"/>
   <rect x="-32" y="3.5" width="5" height="1.4" data-z="4" fill="rgba(255,255,255,.7)"/>
   <rect x="27" y="3.5" width="5" height="1.4" data-z="4" fill="rgba(255,255,255,.7)"/>
-  <circle cx="-28" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==0?tc.l:'#4b545d'"/>
-  <circle cx="-28" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==0?tc.l:'#4b545d'"/>
-  <circle cx="-20.6" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==1?tc.l:'#4b545d'"/>
-  <circle cx="-20.6" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==1?tc.l:'#4b545d'"/>
-  <circle cx="-13.2" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==2?tc.l:'#4b545d'"/>
-  <circle cx="-13.2" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==2?tc.l:'#4b545d'"/>
-  <circle cx="-5.8" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==3?tc.l:'#4b545d'"/>
-  <circle cx="-5.8" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==3?tc.l:'#4b545d'"/>
-  <circle cx="1.6" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==4?tc.l:'#4b545d'"/>
-  <circle cx="1.6" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==4?tc.l:'#4b545d'"/>
-  <circle cx="9" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==5?tc.l:'#4b545d'"/>
-  <circle cx="9" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==5?tc.l:'#4b545d'"/>
-  <circle cx="16.4" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==6?tc.l:'#4b545d'"/>
-  <circle cx="16.4" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==6?tc.l:'#4b545d'"/>
-  <circle cx="23.8" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==7?tc.l:'#4b545d'"/>
-  <circle cx="23.8" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==7?tc.l:'#4b545d'"/>
-  <circle cx="31.2" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==8?tc.l:'#4b545d'"/>
-  <circle cx="31.2" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*8)%9==8?tc.l:'#4b545d'"/>
+  <circle cx="-28" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==0?tc.l:'#4b545d'"/>
+  <circle cx="-28" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==0?tc.l:'#4b545d'"/>
+  <circle cx="-20.6" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==1?tc.l:'#4b545d'"/>
+  <circle cx="-20.6" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==1?tc.l:'#4b545d'"/>
+  <circle cx="-13.2" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==2?tc.l:'#4b545d'"/>
+  <circle cx="-13.2" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==2?tc.l:'#4b545d'"/>
+  <circle cx="-5.8" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==3?tc.l:'#4b545d'"/>
+  <circle cx="-5.8" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==3?tc.l:'#4b545d'"/>
+  <circle cx="1.6" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==4?tc.l:'#4b545d'"/>
+  <circle cx="1.6" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==4?tc.l:'#4b545d'"/>
+  <circle cx="9" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==5?tc.l:'#4b545d'"/>
+  <circle cx="9" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==5?tc.l:'#4b545d'"/>
+  <circle cx="16.4" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==6?tc.l:'#4b545d'"/>
+  <circle cx="16.4" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==6?tc.l:'#4b545d'"/>
+  <circle cx="23.8" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==7?tc.l:'#4b545d'"/>
+  <circle cx="23.8" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==7?tc.l:'#4b545d'"/>
+  <circle cx="31.2" cy="-9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==8?tc.l:'#4b545d'"/>
+  <circle cx="31.2" cy="9" r="1.3" data-z="4" fill="#b5dcff" data-fill="live&amp;&amp;floor(t*cfg.lightSpeed)%9==8?tc.l:'#4b545d'"/>
   <g data-if="ready" transform="translate(-8 13.68) rotate(-28.648)">
     <polygon points="10,2 -5,9 -3,2 -5,-5" data-z="4" fill="rgba(0,0,0,.3)"/>
     <polygon points="9,0 -6,7 -4,0 -6,-7" data-z="4" fill="#42a5ff" data-fill="tc.c"/>

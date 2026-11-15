@@ -1,0 +1,20 @@
+{
+  "name": "Heavy Lancer",
+  "desc": "Battle tank. A turret gun for fighting other vehicles.",
+  "tank": true,
+  "role": "bt",
+  "roleName": "Lancer",
+  "cls": 2,
+  "hp": 551,
+  "spd": 43,
+  "range": 174,
+  "dmg": 55,
+  "rof": 1.1,
+  "time": 22,
+  "sight": 7,
+  "kind": "shell",
+  "tier": 2,
+  "cost": 0,
+  "r": 16,
+  "bmul": 1.3
+}

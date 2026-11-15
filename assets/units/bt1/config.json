@@ -1,0 +1,19 @@
+{
+  "name": "Medium Lancer",
+  "desc": "Battle tank. A turret gun for fighting other vehicles.",
+  "tank": true,
+  "role": "bt",
+  "roleName": "Lancer",
+  "cls": 1,
+  "hp": 323,
+  "spd": 56,
+  "range": 162,
+  "dmg": 35.2,
+  "rof": 1.1,
+  "time": 14,
+  "sight": 7,
+  "kind": "shell",
+  "tier": 1,
+  "cost": 0,
+  "r": 13
+}

@@ -1,0 +1,21 @@
+{
+  "name": "Medium Scorcher",
+  "desc": "Flame tank. Short range; burns everything in a small area. Ground targets only.",
+  "tank": true,
+  "role": "fl",
+  "roleName": "Scorcher",
+  "cls": 1,
+  "hp": 340,
+  "spd": 53,
+  "range": 93,
+  "dmg": 9.6,
+  "rof": 0.14,
+  "time": 16,
+  "sight": 7,
+  "kind": "flame",
+  "splash": 27,
+  "noAir": true,
+  "tier": 1,
+  "cost": 0,
+  "r": 13
+}

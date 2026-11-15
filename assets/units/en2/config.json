@@ -1,0 +1,20 @@
+{
+  "name": "Heavy Prism",
+  "desc": "Energy tank. An instant, accurate beam with long range. Ground targets only.",
+  "tank": true,
+  "role": "en",
+  "roleName": "Prism",
+  "cls": 2,
+  "hp": 493,
+  "spd": 37,
+  "range": 226,
+  "dmg": 100,
+  "rof": 1.7,
+  "time": 31,
+  "sight": 9,
+  "kind": "laser",
+  "noAir": true,
+  "tier": 2,
+  "cost": 0,
+  "r": 16
+}

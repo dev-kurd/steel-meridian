@@ -1,0 +1,16 @@
+{
+  "name": "Engineer",
+  "desc": "Unarmed. Repairs friendly units and structures nearby and captures three times faster.",
+  "hp": 150,
+  "spd": 72,
+  "range": 0,
+  "dmg": 0,
+  "rof": 1,
+  "cost": 0,
+  "time": 9,
+  "r": 11,
+  "sight": 7,
+  "kind": "none",
+  "unarmed": true,
+  "wheeled": true
+}

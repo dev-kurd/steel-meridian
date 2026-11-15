@@ -29,7 +29,7 @@
       <rect x="0" y="-8" width="8" height="2.6"/>
       <rect x="0" y="5.4" width="8" height="2.6"/>
     </g>
-    <g data-rot="t*3-ta">
+    <g data-rot="t*cfg.radarSpeed-ta">
       <rect x="-4" y="-0.8" width="8" height="1.6" data-z="22" fill="#cfd6dd"/>
     </g>
     <circle cx="1" cy="0" r="3.4" data-z="15;18" fill="#1d5c9c" data-fill="tc.d"/>

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-24 -24 48 48" width="192" height="192" data-kind="sm-model">
   <title>Swift jet fighter</title>
-  <g data-rot="a" data-lift="68+sin(t*2+id)*1.5">
+  <g data-rot="a" data-lift="68+sin(t*cfg.bobSpeed+id)*cfg.bob">
     <polygon points="17,0 -11,12 -7,2.5 -13,2.5 -13,-2.5 -7,-2.5 -11,-12" class="shadow" data-shadow="flat" data-off="0;0" data-z="64" fill="rgba(0,0,0,0.24)"/>
     <polygon points="17,0 -11,12 -7,2.5 -13,2.5 -13,-2.5 -7,-2.5 -11,-12" data-z="0;2" fill="#1d5c9c" data-fill="tc.d"/>
     <polygon points="17,0 -11,12 -7,2.5 -13,2.5 -13,-2.5 -7,-2.5 -11,-12" data-z="3" fill="#42a5ff" data-fill="tc.c" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>

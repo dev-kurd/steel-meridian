@@ -1,0 +1,17 @@
+{
+  "name": "Supply Truck",
+  "desc": "Convoy vehicle. Unarmed; it follows its own route.",
+  "hp": 460,
+  "spd": 34,
+  "range": 0,
+  "dmg": 0,
+  "rof": 1,
+  "cost": 0,
+  "time": 0,
+  "r": 12,
+  "sight": 6,
+  "kind": "none",
+  "unarmed": true,
+  "wheeled": true,
+  "convoy": true
+}

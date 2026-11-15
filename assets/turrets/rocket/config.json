@@ -1,0 +1,15 @@
+{
+  "name": "Rocket Battery",
+  "desc": "Fires a salvo of four rockets that blankets an area. Ground targets only.",
+  "hp": 780,
+  "range": 340,
+  "minRange": 70,
+  "dmg": 26,
+  "rof": 3.8,
+  "cost": 300,
+  "kind": "missile",
+  "splash": 36,
+  "noAir": true,
+  "salvo": 4,
+  "def": 10
+}

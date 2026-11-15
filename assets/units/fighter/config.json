@@ -1,0 +1,16 @@
+{
+  "name": "Falcon",
+  "desc": "Sortie fighter. Returns to the Airfield after about 25 seconds.",
+  "air": true,
+  "temp": true,
+  "hp": 170,
+  "spd": 240,
+  "range": 165,
+  "dmg": 15,
+  "rof": 0.22,
+  "cost": 0,
+  "time": 0,
+  "r": 13,
+  "sight": 8,
+  "kind": "bullet"
+}

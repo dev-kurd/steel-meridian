@@ -1,0 +1,20 @@
+{
+  "name": "Warden",
+  "desc": "Air-defence robot. Hits aircraft only.",
+  "hp": 140,
+  "spd": 74,
+  "range": 240,
+  "dmg": 15,
+  "rof": 0.3,
+  "cost": 0,
+  "time": 9,
+  "r": 9,
+  "sight": 9,
+  "kind": "flak",
+  "airOnly": true,
+  "bot": true,
+  "tier": 1,
+  "anim": {
+    "radarSpeed": 3
+  }
+}

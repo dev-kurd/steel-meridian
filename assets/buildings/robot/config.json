@@ -1,0 +1,20 @@
+{
+  "name": "Robot Works",
+  "hp": 2700,
+  "r": 36,
+  "makes": [
+    "bot",
+    "botaa",
+    "botl"
+  ],
+  "sight": 7,
+  "def": 10,
+  "height": 28,
+  "needCore": 0,
+  "anim": {
+    "armSpeed": 1.6,
+    "armSwing": 0.9,
+    "armReach": 14,
+    "sparkChance": 0.2
+  }
+}

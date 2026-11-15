@@ -1,0 +1,12 @@
+{
+  "name": "Missile Turret",
+  "desc": "Long range. Double damage to aircraft.",
+  "hp": 720,
+  "range": 290,
+  "dmg": 48,
+  "rof": 1.9,
+  "cost": 250,
+  "kind": "missile",
+  "airMul": 2,
+  "def": 10
+}

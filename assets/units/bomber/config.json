@@ -1,0 +1,25 @@
+{
+  "name": "Anvil",
+  "desc": "Bomber. Slow and tough; heavy bombs wreck ground units and structures. Cannot hit aircraft.",
+  "air": true,
+  "jetp": true,
+  "hp": 320,
+  "spd": 92,
+  "range": 115,
+  "dmg": 80,
+  "rof": 3,
+  "cost": 0,
+  "time": 24,
+  "r": 16,
+  "sight": 9,
+  "kind": "arty",
+  "splash": 46,
+  "bmul": 1.6,
+  "tier": 2,
+  "anim": {
+    "bobSpeed": 2,
+    "bob": 1.5,
+    "orbitSpeed": 1.05,
+    "orbitRadius": 36
+  }
+}

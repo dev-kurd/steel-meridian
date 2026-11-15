@@ -1,0 +1,14 @@
+{
+  "name": "Artillery",
+  "desc": "Very long range area fire. Ground only, cannot hit close targets.",
+  "hp": 760,
+  "range": 430,
+  "minRange": 120,
+  "dmg": 85,
+  "rof": 3.4,
+  "cost": 320,
+  "kind": "arty",
+  "splash": 46,
+  "noAir": true,
+  "def": 10
+}

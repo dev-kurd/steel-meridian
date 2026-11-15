@@ -1,0 +1,13 @@
+{
+  "name": "Laser Array",
+  "hp": 2100,
+  "r": 30,
+  "sight": 8,
+  "def": 10,
+  "height": 58,
+  "buildCost": 600,
+  "needCore": 2,
+  "anim": {
+    "spinSpeed": 2
+  }
+}

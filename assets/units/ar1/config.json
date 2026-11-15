@@ -1,0 +1,21 @@
+{
+  "name": "Medium Bastion",
+  "desc": "Artillery. Long range area fire: strong against turrets and structures, weak against fast units.",
+  "tank": true,
+  "role": "ar",
+  "roleName": "Bastion",
+  "cls": 1,
+  "hp": 255,
+  "spd": 42,
+  "range": 254,
+  "dmg": 70.4,
+  "rof": 2.9,
+  "time": 19,
+  "sight": 8,
+  "kind": "arty",
+  "splash": 41,
+  "bmul": 1.8,
+  "tier": 1,
+  "cost": 0,
+  "r": 13
+}

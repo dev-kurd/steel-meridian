@@ -1,0 +1,23 @@
+{
+  "name": "Heavy Skyguard",
+  "desc": "Air defence. Hits aircraft only.",
+  "tank": true,
+  "role": "ad",
+  "roleName": "Skyguard",
+  "cls": 2,
+  "hp": 435,
+  "spd": 46,
+  "range": 290,
+  "dmg": 35,
+  "rof": 0.26,
+  "time": 22,
+  "sight": 9,
+  "kind": "flak",
+  "airOnly": true,
+  "tier": 2,
+  "cost": 0,
+  "r": 16,
+  "anim": {
+    "radarSpeed": 3
+  }
+}

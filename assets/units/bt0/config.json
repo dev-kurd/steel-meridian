@@ -1,0 +1,19 @@
+{
+  "name": "Light Lancer",
+  "desc": "Battle tank. A turret gun for fighting other vehicles.",
+  "tank": true,
+  "role": "bt",
+  "roleName": "Lancer",
+  "cls": 0,
+  "hp": 190,
+  "spd": 70,
+  "range": 150,
+  "dmg": 22,
+  "rof": 1.1,
+  "time": 9,
+  "sight": 7,
+  "kind": "shell",
+  "tier": 0,
+  "cost": 0,
+  "r": 11
+}

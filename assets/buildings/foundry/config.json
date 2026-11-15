@@ -1,0 +1,29 @@
+{
+  "name": "Foundry",
+  "hp": 2550,
+  "r": 36,
+  "sight": 6,
+  "def": 10,
+  "height": 30,
+  "anim": {
+    "spinSpeed": 1.2,
+    "spinSpeed2": 1.8,
+    "glowSpeed": 5
+  },
+  "effects": [
+    {
+      "type": "smoke",
+      "at": [
+        "smoke1",
+        "smoke2"
+      ],
+      "when": "live",
+      "chance": 0.06,
+      "drift": 6,
+      "life": 1.6,
+      "size": 5,
+      "rise": 26,
+      "z": 48
+    }
+  ]
+}

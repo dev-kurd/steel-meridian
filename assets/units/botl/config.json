@@ -1,0 +1,16 @@
+{
+  "name": "Arc",
+  "desc": "Laser robot. Heavy damage to both ground and air targets.",
+  "hp": 230,
+  "spd": 60,
+  "range": 200,
+  "dmg": 48,
+  "rof": 1.2,
+  "cost": 0,
+  "time": 18,
+  "r": 10,
+  "sight": 9,
+  "kind": "laser",
+  "bot": true,
+  "tier": 2
+}

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-24 -24 48 48" width="192" height="192" data-kind="sm-model">
   <title>Kestrel gunship</title>
-  <g data-rot="a" data-lift="46+sin(t*3+id)*1.5">
+  <g data-rot="a" data-lift="46+sin(t*cfg.bobSpeed+id)*cfg.bob">
     <g class="shadow" data-shadow="flat" data-off="0;0" data-z="46" fill="rgba(0,0,0,0.26)">
       <rect x="-17" y="-1.5" width="13" height="3"/>
       <rect x="-19" y="-5" width="3" height="10"/>
@@ -28,11 +28,11 @@
     <rect x="-6" y="-1" width="5" height="2" data-z="6" fill="#b5dcff" data-fill="tc.l"/>
     <rect x="10" y="-1" width="6" height="2" data-z="6" fill="#1c2127"/>
     <rect x="-17" y="-1.5" width="12" height="3" data-z="6" fill="#1d5c9c" data-fill="tc.d"/>
-    <g transform="translate(-18 0)" data-rot="t*40">
+    <g transform="translate(-18 0)" data-rot="t*cfg.tailRotorSpeed">
       <line x1="-4" y1="0" x2="4" y2="0" data-z="7" fill="none" stroke="rgba(20,24,28,.7)" stroke-width="1.2"/>
     </g>
     <circle cx="18" cy="0" class="glow" r="9" data-z="5" data-glow="W" opacity="1" fill="#fff0b4" data-if="flash&gt;0"/>
-    <g data-rot="t*34">
+    <g data-rot="t*cfg.rotorSpeed">
       <circle cx="0" cy="0" r="16" data-z="10" fill="rgba(220,230,240,.13)"/>
       <path d="M-16 0L16 0M0 -16L0 16" data-z="10" fill="none" stroke="rgba(20,24,28,.65)" stroke-width="1.8"/>
       <circle cx="0" cy="0" r="2" data-z="10" fill="#1c2127"/>

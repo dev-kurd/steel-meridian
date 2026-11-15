@@ -1,0 +1,12 @@
+{
+  "name": "Tech Lab",
+  "hp": 2100,
+  "r": 32,
+  "sight": 7,
+  "def": 5,
+  "height": 34,
+  "anim": {
+    "spinSpeed": 1.6,
+    "lightSpeed": 2
+  }
+}

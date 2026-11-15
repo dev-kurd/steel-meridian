@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -30 60 60" width="240" height="240" data-kind="sm-model">
   <title>Anvil bomber</title>
-  <g data-rot="a" data-lift="60+sin(t*2+id)*1.5">
+  <g data-rot="a" data-lift="60+sin(t*cfg.bobSpeed+id)*cfg.bob">
     <polygon points="15,0 4,-7 -2,-24 -10,-24 -7,-6 -17,-4 -17,4 -7,6 -10,24 -2,24 4,7" class="shadow" data-shadow="flat" data-off="0;0" data-z="64" fill="rgba(0,0,0,0.24)"/>
     <polygon points="15,0 4,-7 -2,-24 -10,-24 -7,-6 -17,-4 -17,4 -7,6 -10,24 -2,24 4,7" data-z="0;3" fill="#1d5c9c" data-fill="tc.d"/>
     <polygon points="15,0 4,-7 -2,-24 -10,-24 -7,-6 -17,-4 -17,4 -7,6 -10,24 -2,24 4,7" data-z="4" fill="#42a5ff" data-fill="tc.c" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>

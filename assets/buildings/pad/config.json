@@ -1,0 +1,9 @@
+{
+  "name": "Turret Pad",
+  "hp": 1,
+  "r": 18,
+  "sight": 7,
+  "def": 10,
+  "height": 6,
+  "buildCost": 100
+}

@@ -1,0 +1,21 @@
+{
+  "name": "Light Scorcher",
+  "desc": "Flame tank. Short range; burns everything in a small area. Ground targets only.",
+  "tank": true,
+  "role": "fl",
+  "roleName": "Scorcher",
+  "cls": 0,
+  "hp": 200,
+  "spd": 66,
+  "range": 86,
+  "dmg": 6,
+  "rof": 0.14,
+  "time": 10,
+  "sight": 7,
+  "kind": "flame",
+  "splash": 22,
+  "noAir": true,
+  "tier": 0,
+  "cost": 0,
+  "r": 11
+}

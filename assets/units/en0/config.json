@@ -1,0 +1,20 @@
+{
+  "name": "Light Prism",
+  "desc": "Energy tank. An instant, accurate beam with long range. Ground targets only.",
+  "tank": true,
+  "role": "en",
+  "roleName": "Prism",
+  "cls": 0,
+  "hp": 170,
+  "spd": 60,
+  "range": 195,
+  "dmg": 40,
+  "rof": 1.7,
+  "time": 13,
+  "sight": 9,
+  "kind": "laser",
+  "noAir": true,
+  "tier": 0,
+  "cost": 0,
+  "r": 11
+}

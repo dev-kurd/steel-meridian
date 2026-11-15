@@ -25,5 +25,5 @@
     <circle cx="0" cy="0" r="6" data-z="26" fill="#cfd6dd" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
   </g>
   <line x1="-13.6" y1="-13.6" x2="-13.6" y2="-13.6" class="strut" data-z="22;46" stroke="#c9d1d9" stroke-width="1.4"/>
-  <polygon points="0,0 15,4 0,9" class="billboard" data-at="-13.6;-13.6" data-z="46" fill="#44484c" data-fill="wreck?'#44484c':'#3f8f52'" data-if="!wreck" data-rot="sin(t*4)*.1"/>
+  <polygon points="0,0 15,4 0,9" class="billboard" data-at="-13.6;-13.6" data-z="46" fill="#44484c" data-fill="wreck?'#44484c':'#3f8f52'" data-if="!wreck" data-rot="sin(t*cfg.flagSpeed)*cfg.flagSwing"/>
 </svg>

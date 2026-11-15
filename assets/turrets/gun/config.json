@@ -1,0 +1,11 @@
+{
+  "name": "Gun Turret",
+  "desc": "Rapid fire. Hits ground and air.",
+  "hp": 840,
+  "range": 195,
+  "dmg": 13,
+  "rof": 0.35,
+  "cost": 150,
+  "kind": "bullet",
+  "def": 10
+}

@@ -1,0 +1,23 @@
+{
+  "name": "Medium Skyguard",
+  "desc": "Air defence. Hits aircraft only.",
+  "tank": true,
+  "role": "ad",
+  "roleName": "Skyguard",
+  "cls": 1,
+  "hp": 255,
+  "spd": 59,
+  "range": 270,
+  "dmg": 22.4,
+  "rof": 0.26,
+  "time": 14,
+  "sight": 9,
+  "kind": "flak",
+  "airOnly": true,
+  "tier": 1,
+  "cost": 0,
+  "r": 13,
+  "anim": {
+    "radarSpeed": 3
+  }
+}

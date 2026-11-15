@@ -1,0 +1,12 @@
+{
+  "name": "Cannon",
+  "desc": "Heavy shells. Ground targets only.",
+  "hp": 1300,
+  "range": 215,
+  "dmg": 70,
+  "rof": 1.6,
+  "cost": 220,
+  "kind": "shell",
+  "noAir": true,
+  "def": 10
+}

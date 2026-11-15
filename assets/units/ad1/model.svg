@@ -63,7 +63,7 @@
     <line x1="1.5" y1="8.036" x2="14.5" y2="8.036" class="tube" data-z="11.6;17.6" stroke="#1c2127" stroke-width="1.1"/>
     <line x1="1.5" y1="8.036" x2="14.5" y2="8.036" class="tube" data-z="13.9;19.9" stroke="#1c2127" stroke-width="1.1"/>
     <line x1="-3.595" y1="0" x2="-3.595" y2="0" class="strut" data-z="14.2;19.2" stroke="#aab4be" stroke-width="1"/>
-    <g transform="translate(-3.595 0)" data-rot="t*3+id-ta">
+    <g transform="translate(-3.595 0)" data-rot="t*cfg.radarSpeed+id-ta">
       <rect x="-3.4" y="-1" width="6.8" height="2" data-z="19.2" fill="#cfd7de"/>
     </g>
   </g>
