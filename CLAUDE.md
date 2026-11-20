@@ -88,7 +88,8 @@ Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and 
 ## Not decided yet (ask first)
 Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Flamer flame jet and Special
 beam effects · Gatling spin, Achilles strike, spinning radar · where the packed unit sheets live (repo or not) · tank track frames
-stored as overlays or whole hulls · the other improvements the owner wants inside the walker models (not listed yet).
+stored as overlays or whole hulls · the other improvements the owner wants inside the walker models (not listed yet) · how mockups
+are shown when a session cannot publish to a design canvas (pictures or a page in the session, or do the mockup in claude.ai).
 
 ## Current order of work (owner, 2026-11-20)
 1. **Finish the Panzer tanks first:** bake on the PC, pack, check (`docs/tanks/README.md`, "Next steps").

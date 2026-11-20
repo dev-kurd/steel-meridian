@@ -105,12 +105,12 @@ The frame size is chosen per size and weapon so the longest barrel fits; sprites
 ## 9. Files and tools
 - **The Walkers folder is not touched while its bake runs.** At 12:07 on 2026-11-19 the bake was still running there, owned by another
   chat. This work only took a read-only copy of `walker_lib.py` (md5 `2f2f0ee42681f45e7d33b6bb65db62be`); it wrote nothing there and queued no jobs.
-- New folder beside it: `C:\Users\khala\Desktop\temp\Game Dev\StateOfWar-Tanks`, **created 2026-11-19** (contents in section 17; `bake/`,
-  `sheets/`, `tools/` and `jobs/` come with the bake). A new chat needs the folder connected again; this chat was given the parent
-  folder `Game Dev` for it and wrote only inside `StateOfWar-Tanks`.
+- New folder beside it: `C:\Users\khala\Desktop\temp\Game Dev\StateOfWar-Tanks`, **created 2026-11-19** (contents in section 17; `bake/`
+  and `sheets/` come with the bake). **Since 2026-11-20 the same files are in the repo under `docs/tanks/source/`, which is the source of
+  truth** (section 19). The round 1 chat was given the parent folder `Game Dev` and wrote only inside `StateOfWar-Tanks`.
 - **Where the code is:** `tank_lib.py` (the model: chassis, Panzer turret, layers, damage, split check, track frames, save functions),
   `sow_common.py` and `build_tanks.py` are in that folder. `mock.py` (the mockup renders), `compose.py` and `prep2.py` (image preparation)
-  exist only in the cloud workspace of the round 1 chat. `tank_lib.py` imports `sow_common.py` for colours, materials, mesh helpers,
+  are in `mockup/` (saved on 2026-11-20; until then they were only in the round 1 chat's cloud workspace). `tank_lib.py` imports `sow_common.py` for colours, materials, mesh helpers,
   world, camera and render setup, and adds its own materials (`paintp` thin painted plates, `rubber`, `track`, `olive`, `canvas`, `glass`,
   `lamp`, `tail`), its own damage shader (`make_metal_t`, `tank_materials`; see 16) and helpers (`B`, `BC`, `P`, `C`, `m_loft`, `studs`,
   `Slope`, `strip`, `grille`, `m_pipe`, `pipe`, `clamps`).
@@ -258,10 +258,10 @@ Folder `C:\Users\khala\Desktop\temp\Game Dev\StateOfWar-Tanks` (3.9 MB):
   - Team mask against real renders (Medium, 32 samples, CPU): green mean 2.56, blue 2.98, red 2.89 out of 255; 99% of pixels within
     34–38 (includes render noise). Same range as the Walkers.
   - Track loop, damage states and wreck: boards 2 and 6.
-- **Not part of this build:** the other four weapon types, the bake, the packed sheets, the game data tables per direction (turret pivot
-  and muzzle points on screen), UV maps.
-- **Next steps, in order:** mockup round 2 (Artillery, Anti-Air, Flamer, Special) → approval → build those models → bake everything on
-  the PC (needs the listener in Blender and the Walkers' bake finished) → pack → demo and docs.
+- **Not part of this build:** the other four weapon types, the packed sheets, UV maps. (The bake scripts and the per-direction data
+  tables for the game, turret pivot and muzzle points on screen, were added on 2026-11-20: section 18.)
+- **Next steps:** this plan (round 2 before any bake, through the Blender listener) was **replaced on 2026-11-20**. The Panzer set is
+  baked first, with `bake_panzer.bat`, which starts Blender itself (no listener). Current steps: section 19.
 
 ## 18. The Panzer bake (2026-11-20; ready, not yet run on the PC)
 The user asked to bake the Panzer set (Light, Medium, Heavy hull + Panzer turret) before mockup round 2.
