@@ -10,7 +10,7 @@ window.createSfx = function (base) {
     bigboom: ['bigboom_1.wav', 'bigboom_2.wav'], laser: ['laser_1.wav'] };
   const PITCH = [1.22, 1, 0.82];                             // light, medium, heavy
   const rnd = (a, b) => a + Math.random() * (b - a);
-  let ctx = null, master = null, noiseBuf = null, on = true, vol = 0.7, ends = [];
+  let ctx = null, master = null, noiseBuf = null, on = true, vol = 0.7, ends = [], gravMode = 'rec';
   const smp = {}, last = {}, loops = {};
 
   function unlock() {                                        // browsers allow sound only after a click or a key
@@ -92,8 +92,21 @@ window.createSfx = function (base) {
       noise(d, t, 0.09, { type: 'highpass', f0: 2200, g: 0.7 }); tone(d, t, 0.55, { type: 'sawtooth', f0: 980, f1: 55, g: 0.4 });
       tone(d, t, 0.7, { f0: 75, f1: 32, g: 0.9 }); noise(d, t, 0.7, { type: 'bandpass', q: 3, f0: 3200, f1: 300, g: 0.25 });
     },
-    gravfire(d, t) { tone(d, t, 0.55, { f0: 48, f1: 150, g: 0.8, att: 0.12 }); tone(d, t, 0.8, { type: 'triangle', f0: 320, f1: 80, g: 0.3, att: 0.05 }); noise(d, t, 0.6, { f0: 180, f1: 500, g: 0.4, att: 0.25 }); },
+    // Graviton (Heavy Special). Two versions to compare (owner, 2026-11-21: the first, fully synthesised one was not good).
+    // 'rec' is built from the game's recordings, as the Panzer gun is: the laser recording played at half speed for a heavy
+    // beam, with a slowed artillery shot as the kick; on landing a short rush, then the big explosion recordings played slow.
+    gravfire(d, t, o) {
+      if (gravMode === 'rec' && smp.laser && smp.laser.length && smp.arty && smp.arty.length) {
+        sample(d, t, 'laser', { rate: 0.5, g: 0.6, cut: Math.max(0.5, Math.min(1.8, o.dur || 1.2)) }); sample(d, t, 'arty', { rate: 0.85, g: 0.4, cut: 0.55 });
+        tone(d, t, 0.5, { f0: 70, f1: 38, g: 0.7, att: 0.01 }); return;
+      }
+      tone(d, t, 0.55, { f0: 48, f1: 150, g: 0.8, att: 0.12 }); tone(d, t, 0.8, { type: 'triangle', f0: 320, f1: 80, g: 0.3, att: 0.05 }); noise(d, t, 0.6, { f0: 180, f1: 500, g: 0.4, att: 0.25 }); },
     gravimp(d, t) {                                          // Graviton lands: the air is sucked in, then the blast
+      if (gravMode === 'rec' && smp.bigboom && smp.bigboom.length && smp.boom && smp.boom.length) {
+        noise(d, t, 0.46, { type: 'bandpass', q: 1.5, f0: 220, f1: 2600, g: 0.4, att: 0.42 });
+        const b = t + 0.45; sample(d, b, 'bigboom', { rate: 0.75, g: 1 }); sample(d, b, 'boom', { rate: 0.6, g: 0.6 }); tone(d, b, 1.1, { f0: 85, f1: 24, g: 0.9, att: 0.004 });
+        return;
+      }
       noise(d, t, 0.46, { type: 'bandpass', q: 1.5, f0: 180, f1: 3400, g: 0.55, att: 0.42 }); tone(d, t, 0.46, { f0: 60, f1: 420, g: 0.4, att: 0.42 });
       const b = t + 0.45; tone(d, b, 1.3, { f0: 95, f1: 22, g: 1 }); noise(d, b, 1.1, { f0: 800, f1: 60, g: 0.8 }); tone(d, b, 0.5, { type: 'sawtooth', f0: 600, f1: 70, g: 0.25 });
     },
@@ -127,5 +140,5 @@ window.createSfx = function (base) {
   function loop(name, level) { const l = loops[name]; if (ctx && l) l.g.gain.setTargetAtTime(Math.max(0, Math.min(1, level)) * l.max, ctx.currentTime, 0.09); }
   function setOn(v) { on = v; if (master) master.gain.setTargetAtTime(on ? vol : 0, ctx.currentTime, 0.03); }
   function setVolume(v) { vol = v; if (master && on) master.gain.setTargetAtTime(vol, ctx.currentTime, 0.03); }
-  return { unlock, play, loop, setOn, setVolume, ready: () => !!ctx && ctx.state === 'running', samples: () => Object.values(smp).reduce((a, l) => a + l.length, 0) };
+  return { unlock, play, loop, setOn, setVolume, setGrav: (v) => { gravMode = v; }, grav: () => gravMode, ready: () => !!ctx && ctx.state === 'running', samples: () => Object.values(smp).reduce((a, l) => a + l.length, 0) };
 };

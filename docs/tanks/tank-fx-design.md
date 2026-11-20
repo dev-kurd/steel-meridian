@@ -110,7 +110,7 @@ synthesises the rest in the browser, so it adds no sound files. Size changes the
 | Flame jet | synthesised roar that runs while any flamer fires (one shared sound, louder with more flamers) |
 | Laser | `laser_1.wav` (cut short) + a synthesised zap |
 | Fusion-Lambda | synthesised: rising whine while it charges, then a crack with a falling tone and a deep thud |
-| Graviton | synthesised: a deep swelling hum when fired; on landing a rising rush (the air being sucked in), then a very deep blast |
+| Graviton | Two versions to compare in the demo (owner, 2026-11-21: the first one was not good). **Recorded mix** (default): built from the game's recordings like the Panzer gun: `laser_1.wav` at half speed for a heavy beam while the ball flies, a slowed `arty` shot as the kick; on landing a short rising rush, then `bigboom` and `boom` played slow with a deep thump. **Original**: fully synthesised (a deep swelling hum, a rising rush, a very deep blast) |
 | Tank destroyed | `boom` (Heavy: `bigboom`) + low thump + falling-metal clanks |
 | Burning tank | synthesised fire crackle |
 | Engines | synthesised low rumble (one shared sound, louder with more tanks moving on screen) |

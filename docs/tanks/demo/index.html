@@ -43,6 +43,7 @@
   <div class="row" id="fire"><span class="l">Firing (effects mockup)</span></div>
   <div class="row"><button id="kill">Destroy one tank</button></div>
   <div class="row" id="ashell"><span class="l">Artillery shell (compare)</span></div>
+  <div class="row" id="gsnd"><span class="l">Heavy Special sound (compare)</span></div>
   <div class="row">
     <label><input id="snd" type="checkbox" checked> Sound</label>
     <input id="vol" type="range" min="0" max="1" step="0.05" value="0.7" style="flex:1" title="Volume">
@@ -427,7 +428,7 @@ class Batcher {
     } else {                                                             // Special, Heavy: Graviton. A slow orb, then an implosion and a blast
       // a beam from the muzzle to the target, and the ball rides along it
       const p0 = m.slice(), p1 = [tx, ty, Math.max(0.9, tz)], d = Math.hypot(tx - m[0], ty - m[1], p1[2] - m[2]) || 1;
-      fx.muzzleFlash(m, ta, 0, 1.5, 'cyan'); snd('gravfire', t.x, t.y); addShake(0.2, t.x, t.y);
+      fx.muzzleFlash(m, ta, 0, 1.5, 'cyan'); snd('gravfire', t.x, t.y, { dur: d / 13 }); addShake(0.2, t.x, t.y);
       fx.spawn('add', { tex: fx.T.glow, x: m[0], y: m[1], z: m[2], life: 0.3, s0: 3.2, s1: 4.4, c0: 0xff4030, a0: 0.9, tout: 0.2, must: true });
       shots.push({ type: 'orb', x: m[0], y: m[1], z: m[2], p0, p1, u: 0, d0: d, from: t, team: t.team, dmg: W.dmg[si],
         halo: fx.beam(p0, p1, { w: 2.6, col: 0xd01818, life: Infinity, hold: true, alpha: 0.5, core: 0 }),
@@ -634,6 +635,8 @@ class Batcher {
     fireMode = v; for (const t of tanks) { t.hp = t.max; t.deadT = 0; t.tgt = null; t.q.length = 0; t.charge = 0; } for (const d of drones) { d.hp = d.max; d.deadT = 0; }
   });
   document.getElementById('kill').onclick = () => { const live = tanks.filter((t) => stateOf(t) < 3 && onScreen(t.x, t.y)); if (live.length) kill(live[(Math.random() * live.length) | 0]); };
+  // click a name to hear it: the shot, then the landing
+  group('gsnd', [['rec', 'Recorded mix'], ['orig', 'Original']], () => sfx.grav(), (v) => { sfx.setGrav(v); sfx.unlock(); setTimeout(() => sfx.play('gravfire', { dur: 1.1 }), 60); setTimeout(() => sfx.play('gravimp'), 1200); });
   group('ashell', [['bullet', 'Bullet'], ['sphere', 'Sphere']], () => shellMode, (v) => { shellMode = v; });
   document.getElementById('snd').onchange = (e) => sfx.setOn(e.target.checked);
   document.getElementById('vol').oninput = (e) => sfx.setVolume(+e.target.value);
