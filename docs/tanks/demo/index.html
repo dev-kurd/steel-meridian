@@ -39,6 +39,7 @@
   </div>
   <div class="row" id="fire"><span class="l">Firing (effects mockup)</span></div>
   <div class="row"><button id="kill">Destroy one tank</button></div>
+  <div class="row" id="psnd"><span class="l">Panzer gun sound (compare)</span></div>
   <div class="row">
     <label><input id="snd" type="checkbox" checked> Sound</label>
     <input id="vol" type="range" min="0" max="1" step="0.05" value="0.7" style="flex:1" title="Volume">
@@ -391,8 +392,10 @@ class Batcher {
       fx.muzzleFlash(m, ta, el, k); fx.ring([m[0], m[1], 0], 2.2 * k, 0xd8c8a8, 0.5);
       for (let i = 0; i < 5; i++) fx.dust([t.x + rnd(-1.5, 1.5), t.y + rnd(-1.5, 1.5), 0], 1.3);
       snd('arty', t.x, t.y, { size: si }); addShake(0.12 + si * 0.06, t.x, t.y);
-      shots.push({ type: 'arty', p0: m, c, p1: [px, py, 0], x: m[0], y: m[1], z: m[2], u: 0, tr: 0, T: 1.1 + dist / 24, si, team: t.team, dmg: W.dmg[si], splash: W.splash[si], k,
-        h: fx.spawn('smoke', { tex: fx.T.shell, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: [0.95, 1.25, 1.6][si] }),     // bigger shell on a bigger tank
+      shots.push({ type: 'arty', p0: m, c, p1: [px, py, 0], x: m[0], y: m[1], z: m[2], u: 0, tr: 0, T: 0.7 + dist / 38, si, len: [0.62, 0.76, 0.9][si], team: t.team, dmg: W.dmg[si], splash: W.splash[si], k,
+        // motion blur: a soft dark streak drawn behind the shell, three shell lengths long; the shell itself is a little see-through
+        bl: fx.spawn('smoke', { tex: fx.T.spark, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: [0.62, 0.76, 0.9][si] * 3.4, ax: 0.8, c0: 0x4c5058, a0: 0.5 }),
+        h: fx.spawn('smoke', { tex: fx.T.shell, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: [0.62, 0.76, 0.9][si], a0: 0.88 }),     // bigger shell on a bigger tank
         sh: fx.spawn('decal', { tex: fx.T.dot, held: true, flat: true, life: Infinity, must: true, x: m[0], y: m[1], z: 0, s0: [0.7, 0.9, 1.1][si], c0: 0x000000, a0: 0.3 }) });
     } else if (w === 'antiair') {
       // a rocket with a body: it leaves its own tube along the tube's angle, burns a flame behind it, then turns to the target
@@ -420,8 +423,10 @@ class Batcher {
       // a beam from the muzzle to the target, and the ball rides along it
       const p0 = m.slice(), p1 = [tx, ty, Math.max(0.9, tz)], d = Math.hypot(tx - m[0], ty - m[1], p1[2] - m[2]) || 1;
       fx.muzzleFlash(m, ta, 0, 1.5, 'cyan'); snd('gravfire', t.x, t.y); addShake(0.2, t.x, t.y);
+      fx.spawn('add', { tex: fx.T.glow, x: m[0], y: m[1], z: m[2], life: 0.3, s0: 3.2, s1: 4.4, c0: 0xff4030, a0: 0.9, tout: 0.2, must: true });
       shots.push({ type: 'orb', x: m[0], y: m[1], z: m[2], p0, p1, u: 0, d0: d, from: t, team: t.team, dmg: W.dmg[si],
-        beam: fx.beam(p0, p1, { w: 0.36, col: 0x40dcff, life: Infinity, hold: true }),
+        halo: fx.beam(p0, p1, { w: 2.6, col: 0xd01818, life: Infinity, hold: true, alpha: 0.5, core: 0 }),
+        beam: fx.beam(p0, p1, { w: 1.05, col: 0xff4a32, life: Infinity, hold: true, core: 0xffe6d8 }), pulse: 0,
         h: fx.spawn('add', { tex: fx.T.glow, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: 3.4, c0: 0x66dcff }),
         core: fx.spawn('smoke', { tex: fx.T.glow, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: 1.5, c0: 0x000000 }) });
     }
@@ -468,8 +473,8 @@ class Batcher {
         s.u += dt / s.T; const u = Math.min(1, s.u), a = (1 - u) * (1 - u), b = 2 * u * (1 - u), e = u * u, ox = s.x, oy = s.y, oz = s.z;
         s.x = a * s.p0[0] + b * s.c[0] + e * s.p1[0]; s.y = a * s.p0[1] + b * s.c[1] + e * s.p1[1]; s.z = a * s.p0[2] + b * s.c[2] + e * s.p1[2];
         fx.aim(s.h, (1 - u) * (s.c[0] - s.p0[0]) + u * (s.p1[0] - s.c[0]), (1 - u) * (s.c[1] - s.p0[1]) + u * (s.p1[1] - s.c[1]), (1 - u) * (s.c[2] - s.p0[2]) + u * (s.p1[2] - s.c[2]));   // nose first
-        s.sh.x = s.x; s.sh.y = s.y;
-        s.tr -= Math.hypot(s.x - ox, s.y - oy, s.z - oz); if (s.tr <= 0) { s.tr = 0.7; fx.trail([ox, oy, oz], 0.75 + s.si * 0.3, 0x8f8a80); }      // smoke behind the shell
+        s.sh.x = s.x; s.sh.y = s.y; s.bl.x = s.x; s.bl.y = s.y; s.bl.z = s.z; s.bl.rot = s.h.rot; s.bl.sx = s.h.sx;
+        s.tr -= Math.hypot(s.x - ox, s.y - oy, s.z - oz); if (s.tr <= 0) { s.tr = 0.9; fx.trail([ox, oy, oz], 0.6 + s.si * 0.2, 0x8f8a80); }      // smoke behind the shell
         if (!s.wh && (1 - u) * s.T < 0.85) { s.wh = true; snd('whistle', s.p1[0], s.p1[1], { dur: (1 - u) * s.T }); }
         if (u >= 1) { done = true; fx.explosion(s.p1, s.k); snd('boom', s.x, s.y, { size: s.si }); addShake(0.35 + s.si * 0.12, s.x, s.y); hurtAt(s.x, s.y, s.splash, s.dmg, s.team); }
       } else if (s.type === 'rocket') {                                  // a rocket that speeds up and turns towards its target, leaving white smoke
@@ -487,15 +492,23 @@ class Batcher {
         s.u = Math.min(1, s.u + 13 * dt / s.d0);
         s.x = s.p0[0] + (s.p1[0] - s.p0[0]) * s.u; s.y = s.p0[1] + (s.p1[1] - s.p0[1]) * s.u; s.z = s.p0[2] + (s.p1[2] - s.p0[2]) * s.u;
         s.core.x = s.x; s.core.y = s.y; s.core.z = s.z;
+        const bx = s.p1[0] - s.p0[0], by = s.p1[1] - s.p0[1], bz = s.p1[2] - s.p0[2];
+        s.pulse -= dt;
+        if (s.pulse <= 0) {                                              // red rings run along the beam from the muzzle to the ball
+          s.pulse = 0.09; const v = 34 / s.d0, life = Math.min(0.6, s.u * s.d0 / 34);
+          if (life > 0.05) fx.spawn('add', { tex: fx.T.ring, x: s.p0[0], y: s.p0[1], z: s.p0[2], vx: bx * v, vy: by * v, vz: bz * v, life, s0: 0.5, s1: 1.15, sx: 0.5, c0: 0xff6a4a, a0: 0.8, tin: 0.1, tout: 0.8, must: true });
+        }
+        if (Math.random() < 40 * dt) { const q = Math.random() * s.u;    // red sparks jump off the beam
+          fx.spawn('add', { tex: fx.T.spark, streak: true, x: s.p0[0] + bx * q, y: s.p0[1] + by * q, z: s.p0[2] + bz * q, vx: rnd(-3, 3), vy: rnd(-3, 3), vz: rnd(-1, 3), life: 0.28, s0: 0.45, s1: 0.12, c0: 0xff7a50 }); }
         if (Math.random() < 30 * dt) fx.spawn('add', { tex: fx.T.spark, streak: true, x: s.x, y: s.y, z: s.z, vx: rnd(-2.5, 2.5), vy: rnd(-2.5, 2.5), vz: rnd(-1.5, 1.5), life: 0.35, s0: 0.5, s1: 0.15, c0: 0x8fe9ff });
         if (s.u >= 1) {
-          done = true; s.core.life = 0; s.beam.life = 0; const p = [s.x, s.y, s.z], R = 4, team = s.team, dmg = s.dmg;
+          done = true; s.core.life = 0; s.beam.life = 0; s.halo.life = 0; const p = [s.x, s.y, s.z], R = 4, team = s.team, dmg = s.dmg;
           fx.implosion(p, R); snd('gravimp', s.x, s.y);
           later.push({ t: 0.45, fn: () => { fx.gravBlast(p, R); addShake(0.9, p[0], p[1]); hurtAt(p[0], p[1], R + 0.5, dmg, team); } });
         }
       }
       if (s.h) { s.h.x = s.x; s.h.y = s.y; s.h.z = s.z; }
-      if (done) { for (const k of ['h', 'sh', 'fl', 'gl']) if (s[k]) s[k].life = 0; shots.splice(i, 1); }
+      if (done) { for (const k of ['h', 'sh', 'fl', 'gl', 'bl']) if (s[k]) s[k].life = 0; shots.splice(i, 1); }
     }
     for (const d of drones) {                                            // target drones circle over the field during a battle
       if (d.deadT > 0) { d.deadT -= dt; if (d.deadT <= 0) d.hp = d.max; }
@@ -613,6 +626,7 @@ class Batcher {
     fireMode = v; for (const t of tanks) { t.hp = t.max; t.deadT = 0; t.tgt = null; t.q.length = 0; t.charge = 0; } for (const d of drones) { d.hp = d.max; d.deadT = 0; }
   });
   document.getElementById('kill').onclick = () => { const live = tanks.filter((t) => stateOf(t) < 3 && onScreen(t.x, t.y)); if (live.length) kill(live[(Math.random() * live.length) | 0]); };
+  group('psnd', [['new', 'New'], ['rec', 'Recording'], ['both', 'Both']], () => sfx.cannon(), (v) => sfx.setCannon(v));
   document.getElementById('snd').onchange = (e) => sfx.setOn(e.target.checked);
   document.getElementById('vol').oninput = (e) => sfx.setVolume(+e.target.value);
   for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, () => sfx.unlock());
@@ -647,7 +661,7 @@ class Batcher {
     info: () => ({ res, waiting, sprites, calls: [tanksMesh.calls, shadowMesh.calls], sheetsLoaded, sheetsLoading, fx: fx.count(), shots: shots.length, sound: sfx.ready(), samples: sfx.samples() }),
     // for testing the effects: point the "mouse" at a place on the ground, set the firing mode, run frames with effects
     mouseAt: (gx, gy) => { mouse.on = true; mouse.gx = mouseGround.x = mouseAir.x = gx; mouse.gy = mouseGround.y = mouseAir.y = gy; }, setFire: (v) => { fireMode = v; },
-    run: (n = 1, dt = 1 / 60) => { for (let i = 0; i < n; i++) { update(dt); fx.update(dt); shake *= Math.exp(-6 * dt); } draw(); return { fx: fx.count(), shots: shots.length }; },
+    run: (n = 1, dt = 1 / 60) => { for (let i = 0; i < n; i++) { update(dt); fx.update(dt); shake *= Math.exp(-6 * dt); } draw(); app.render(); return { fx: fx.count(), shots: shots.length }; },
     kill: () => document.getElementById('kill').onclick(), pause: (v) => { paused = v; }, tanks: () => tanks, sfx };   // for testing from the console
   const stats = document.getElementById('stats'); let fps = 60, statT = 0;
   app.ticker.add((tk) => {

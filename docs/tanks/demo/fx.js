@@ -180,13 +180,14 @@ window.createFx = function (PIXI, cfg) {
       if (b.age >= b.life) { for (const s of [b.s1, b.s2]) { s.visible = false; pools.add.push(s); } beams.splice(i, 1); continue; }
       const t = b.age / b.life, [x0, y0] = proj(...b.p0), [x1, y1] = proj(...b.p1), len = Math.hypot(x1 - x0, y1 - y0), a = Math.atan2(y1 - y0, x1 - x0);
       const w = b.w * ppm * (b.hold ? 0.85 + 0.15 * Math.sin(b.age * 90) : 1 - t * 0.7), al = b.hold ? 1 - smooth(0.75, 1, t) : 1 - t * t;
-      b.s1.position.set(x0, y0); b.s1.rotation = a; b.s1.scale.set(len / 8, w / 32); b.s1.alpha = al * 0.85; b.s1.tint = b.col;
-      b.s2.position.set(x0, y0); b.s2.rotation = a; b.s2.scale.set(len / 8, w * 0.38 / 32); b.s2.alpha = al; b.s2.tint = 0xffffff;
+      b.s1.position.set(x0, y0); b.s1.rotation = a; b.s1.scale.set(len / 8, w / 32); b.s1.alpha = al * b.alpha; b.s1.tint = b.col;
+      b.s2.position.set(x0, y0); b.s2.rotation = a; b.s2.scale.set(len / 8, w * 0.38 / 32); b.s2.alpha = b.core ? al : 0; b.s2.tint = b.core || 0xffffff;
     }
   }
-  // a beam between two points: coloured outside, white core. o: w (metres), col, life, hold (steady, then a quick fade)
+  // a beam between two points: coloured outside, light core. o: w (metres), col, life, hold (steady, then a quick fade),
+  // alpha (of the coloured part), core (its colour; 0 = no core)
   function beam(p0, p1, o) {
-    const b = { p0, p1, w: o.w, col: o.col, life: o.life, hold: !!o.hold, age: 0, s1: sprite('add'), s2: sprite('add') };
+    const b = { p0, p1, w: o.w, col: o.col, life: o.life, hold: !!o.hold, alpha: o.alpha || 0.85, core: o.core === undefined ? 0xffffff : o.core, age: 0, s1: sprite('add'), s2: sprite('add') };
     for (const s of [b.s1, b.s2]) { s.texture = T.beam; s.anchor.set(0, 0.5); }
     beams.push(b); return b;
   }
@@ -271,8 +272,22 @@ window.createFx = function (PIXI, cfg) {
     spawn('add', { tex: T.glow, x: p[0] + Math.cos(ang) * 0.2, y: p[1] + Math.sin(ang) * 0.2, z: p[2], life: 0.07, s0: 1.1 * k, c0: 0xffe6a0, a0: 0.8, tout: 0.3 });
   }
   function groundFire(p, life, k) {                         // a patch of ground left burning
-    spawn('add', { frames: pick(T.flame), fps: 18, x: p[0], y: p[1], z: 0, life, s0: 1.15 * k, s1: 0.8 * k, ay: 0.94, tin: 0.12, tout: 0.6, a0: 0.9 });
-    scorch(p, 1.6 * k);
+    // a burnt patch with a glow lying on it, a cluster of low wide flames of different sizes that die one by one, embers and dark smoke
+    scorch(p, 2.3 * k);
+    spawn('add', { tex: T.glow, flat: true, x: p[0], y: p[1], z: 0, life: life * 1.1, s0: 3 * k, s1: 2 * k, c0: 0xff7a1e, a0: 0.5, tin: 0.15, tout: 0.45 });
+    for (let i = 0; i < 4; i++) {                           // the burning bed: soft fire-coloured puffs low on the ground
+      const a = rnd(0, TAU), r = rnd(0, 0.6) * k;
+      spawn('add', { tex: pick(T.smoke), x: p[0] + Math.cos(a) * r, y: p[1] + Math.sin(a) * r, z: 0.15, vz: rnd(0.1, 0.3), life: life * rnd(0.7, 1), s0: rnd(0.9, 1.3) * k, s1: rnd(1.2, 1.6) * k,
+        a0: 0.42, c0: 0xffb048, c1: 0x9a2606, tin: 0.15, tout: 0.5, rot: rnd(0, TAU), vr: rnd(-1.2, 1.2) });
+    }
+    const n = 2 + ((Math.random() * 2) | 0);                // a few bigger tongues of flame on top
+    for (let i = 0; i < n; i++) {
+      const a = rnd(0, TAU), r = rnd(0, 0.55) * k, s = rnd(0.6, 0.95) * k * (1 - r / k * 0.35);
+      spawn('add', { frames: pick(T.flame), fps: rnd(14, 20), age: rnd(0, 0.05), x: p[0] + Math.cos(a) * r, y: p[1] + Math.sin(a) * r, z: 0, life: life * rnd(0.55, 1.1), s0: s, s1: s * 0.6, sx: rnd(1.2, 1.6),
+        ay: 0.94, tin: 0.18, tout: 0.55, a0: 0.85 });
+    }
+    for (let i = 0; i < 2; i++) ember([p[0] + rnd(-0.5, 0.5) * k, p[1] + rnd(-0.5, 0.5) * k, 0]);
+    smoke([p[0], p[1], 0.3], 0.9 * k, 0x1c1a18, 0.3, { life: life * 1.3, tin: 0.4, vz: rnd(0.7, 1.2) });
   }
   const fireOn = (k) => spawn('add', { frames: pick(T.flame), fps: 16, life: Infinity, held: true, s0: 0.95 * k, ay: 0.94, a0: 0.85, must: true });   // flame carried by a burning tank
   function chargeIn(p, k) {                                 // energy gathering at a muzzle (call every frame while charging)

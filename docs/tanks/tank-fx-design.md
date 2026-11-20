@@ -1,7 +1,9 @@
 # Tank effects and sounds: design note
 
 **Status (2026-11-21): proposal with a working mockup. Nothing here is approved yet.** First review by the owner on 2026-11-21:
-three changes asked for and made (Anti-Air rockets, Artillery shell, Graviton beam), marked "owner" below. The mockup is the tank demo page
+three changes asked for and made (Anti-Air rockets, Artillery shell, Graviton beam), marked "owner" below.
+Second review the same day: a new Panzer gun sound (three versions to compare in the demo), a smaller and faster artillery shell
+with motion blur, a heavier red Graviton beam with the ball kept cyan, and a reworked ground fire for the Flamer. The mockup is the tank demo page
 (`demo/`, start it with `demo/run_demo.bat`): every effect and sound below can be seen and heard there. The numbers (ranges,
 reload times, damage) are **demo values chosen to show the effects, not game balance**.
 
@@ -17,7 +19,7 @@ many, not what kind.
 | Type | Role (from the manual) | The shot | Light | Medium | Heavy |
 |---|---|---|---|---|---|
 | **Panzer** | Main battle tank | A fast straight shell with a short bright streak | 1 barrel, single shots | 2 barrels, firing in turn, quick | 3 barrels, a salvo of 3 one after another, then a long reload |
-| **Artillery** | Long range, slow fire, best against things that stand still | A shell on a high arc. It **leaves along the barrel** (the barrel's own angle and direction) and bends down to the target; a visible shell that flies nose first, **bigger on a bigger tank**, with a thin smoke trail behind it (owner). Its shadow runs on the ground, it whistles down. Cannot hit close targets (minimum range) | small shell, small blast | bigger shell and blast | two barrels, two of the biggest shells a moment apart |
+| **Artillery** | Long range, slow fire, best against things that stand still | A shell on a high arc. It **leaves along the barrel** (the barrel's own angle and direction) and bends down to the target; a visible shell that flies nose first, **bigger on a bigger tank**, with a thin smoke trail and a motion-blur streak behind it (owner; the shell was first too large and too slow, now 0.6 / 0.75 / 0.9 m long and about a third faster). Its shadow runs on the ground, it whistles down. Cannot hit close targets (minimum range) | small shell, small blast | bigger shell and blast | two barrels, two of the biggest shells a moment apart |
 | **Anti-Air** | Protects against aircraft | **Real rockets** (owner): each one is a small rocket body with a red nose that comes out of its own tube along the tube's angle, with a flame behind it; no gun flash. It speeds up, turns towards the target and bursts in the air. White smoke trails. Fires at air targets only | 3 rockets | 4 rockets | 6 rockets |
 | **Flamer** | Short range, constant flame, heavy damage | A constant jet of fire while the target is in range; the ground at the end keeps burning for a moment | small jet | longer jet | two nozzles, widest and longest jet |
 | **Special** | Energy weapons (fixed cyan glow) | Three different weapons, see below | **Laser** | **Fusion-Lambda** | **Graviton** |
@@ -27,8 +29,10 @@ The three Special weapons:
 - **Medium, Fusion-Lambda particle cannon** ("fires through any obstacle"): half a second of charging (cyan sparks pulled into
   the muzzle, a rising whine), then a thick lance that goes **through everything on its line**, to the end of its reach. Rings
   run along the beam, every tank on the line is hit, strong recoil.
-- **Heavy, Graviton particle launcher** ("one of the most powerful known weapons"): **a beam and a ball** (owner): a thin cyan
-  beam joins the muzzle to the target, and a slow cyan ball with a black core rides along it. Where the ball
+- **Heavy, Graviton particle launcher** ("one of the most powerful known weapons"): **a beam and a ball** (owner): a heavy **red** beam
+  (a wide soft red glow, a bright red beam and a pale core, with red rings running along it and red sparks jumping off) joins the
+  muzzle to the target, and a slow **cyan** ball with a black core rides along it. Red is a second fixed weapon colour, used only
+  here, so the Graviton cannot be mistaken for the Light's laser. Where the ball
   lands, everything is pulled to one point for half a second (sparks fly inwards, a black sphere grows, the sound is sucked in),
   then the blast: a big cyan burst, two shock rings, debris, a wide scorch mark, the strongest screen shake in the game.
 
@@ -57,7 +61,8 @@ flash and smoke out of the back of the launcher. Energy weapons flash cyan and t
 - Artillery shell: the big fireball (flipbook), a flash, a shock ring on the ground, sparks, flying debris, a column of dark
   smoke, a large scorch mark, screen shake.
 - Rocket: a burst in the air: small fireball, a ball of grey smoke, sparks.
-- Flame: patches of ground fire (the looping flame flipbook) that burn for one to two seconds, each with a scorch mark.
+- Flame: burning ground (owner: reworked). Each patch is a scorch mark with an orange glow lying on it, a bed of soft
+  fire-coloured puffs, two or three wide tongues of flame (the looping flipbook) that die one by one, embers and dark smoke.
 - Energy: a cyan burst and cyan sparks.
 
 **Damage states (the approved style: few orange spots, more black and smoky):**
@@ -95,7 +100,7 @@ synthesises the rest in the browser, so it adds no sound files. Size changes the
 
 | Sound | Source in the mockup |
 |---|---|
-| Panzer gun | `shell_1..3.wav` + a synthesised low thump |
+| Panzer gun | Three versions to compare in the demo (owner: the recording was not good). **New** (default): fully synthesised cannon: sharp crack, short blast, deep thump, rolling echo, breech closing. **Recording**: `shell_1..3.wav` + a low thump (the first version). **Both**: the new cannon with the recording quietly under it |
 | Artillery gun | `arty_1..2.wav` + a deeper thump and a rumbling tail |
 | Artillery shell coming down | synthesised falling whistle |
 | Artillery shell lands | `boom_1..3.wav` + low thump |
@@ -120,10 +125,12 @@ about 28 sounds play at once, and the same sound is not started twice within 35 
    aircraft). Should it also be able to hit tanks or buildings, weakly?
 3. **Synthesised sounds:** keep them synthesised in the game (no files, easy to tune) or turn the approved ones into WAV files
    in `sounds/` like the others (anyone can then replace a file)?
-4. **Screen shake:** keep it (it can be switched off in the demo), and how strong?
-5. **Drawing effects in front of and behind tanks:** worth sorting flames and smoke with the tanks in the game, or is "above
+4. **Panzer gun sound:** which of the three versions (New, Recording, Both), or should it be something else, for example a
+   real recorded cannon with a proper licence?
+5. **Screen shake:** keep it (it can be switched off in the demo), and how strong?
+6. **Drawing effects in front of and behind tanks:** worth sorting flames and smoke with the tanks in the game, or is "above
    everything" good enough?
-6. Which effects need a second look: too big, too small, too bright, too long?
+7. Which effects need a second look: too big, too small, too bright, too long?
 
 ## 5. Next steps after approval
 
