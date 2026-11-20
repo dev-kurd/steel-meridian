@@ -116,6 +116,12 @@ window.createFx = function (PIXI, cfg) {
   gen('ring', 128, 128, (u, v) => white(Math.exp(-Math.pow((rad(u, v) - 0.82) / 0.07, 2))));
   gen('spark', 32, 8, (u, v) => white(Math.exp(-Math.pow((v * 2 - 1) / 0.45, 2)) * smooth(0, 0.75, u) * (1 - smooth(0.8, 1, u))));
   gen('beam', 8, 32, (u, v) => white(Math.exp(-Math.pow((v * 2 - 1) / 0.42, 2))));
+  // a rocket and an artillery shell, seen from the side, nose to the right (drawn in their own colours, turned along their flight)
+  const body = (W, H, half, colour) => (u, v) => { const y = v * 2 - 1, w = half(u), a = clamp01((w - Math.abs(y)) * H * 0.5); if (a <= 0) return ZERO; const c = colour(u, y); return [c[0], c[1], c[2], a * 255]; };
+  gen('rocket', 40, 10, body(40, 10, (u) => (u < 0.16 ? 1 : u > 0.76 ? 0.08 + 0.5 * (1 - u) / 0.24 : 0.58),
+    (u, y) => { const l = 1 - y * 0.25; return u < 0.16 ? [70 * l, 74 * l, 80 * l] : u > 0.76 ? [176 * l, 60 * l, 48 * l] : u > 0.44 && u < 0.5 ? [60, 64, 70] : [214 * l, 216 * l, 220 * l]; }));
+  gen('shell', 32, 12, body(32, 12, (u) => (u < 0.07 ? 0.62 : u > 0.5 ? 0.82 * Math.sqrt(Math.max(0, 1 - Math.pow((u - 0.5) / 0.5, 2))) : 0.82),
+    (u, y) => { const l = 1 - y * 0.35; return u > 0.1 && u < 0.2 ? [176 * l, 112 * l, 58 * l] : [86 * l, 90 * l, 98 * l]; }));
   gen('dot', 16, 16, (u, v) => white(1 - smooth(0.5, 0.95, rad(u, v))));
 
   const AW = 2048, PAD = 2; let px = PAD, py = PAD, rowH = 0;
@@ -129,7 +135,7 @@ window.createFx = function (PIXI, cfg) {
   for (const it of items) tex[it.name] = new PIXI.Texture({ source, frame: new PIXI.Rectangle(it.x, it.y, it.W, it.H) });
   const seq = (name, n) => Array.from({ length: n }, (_, i) => tex[name + i]);
   const T = { flame: [0, 1, 2].map((v) => seq(`flame${v}_`, 16)), boom: seq('boom', 24), pop: seq('pop', 12), cpop: seq('cpop', 12), muz: seq('muz', 6), cmuz: seq('cmuz', 6),
-    smoke: seq('smoke', 4), scorch: seq('scorch', 2), debris: seq('debris', 3), glow: tex.glow, ring: tex.ring, spark: tex.spark, beam: tex.beam, dot: tex.dot };
+    smoke: seq('smoke', 4), scorch: seq('scorch', 2), debris: seq('debris', 3), glow: tex.glow, ring: tex.ring, spark: tex.spark, beam: tex.beam, dot: tex.dot, rocket: tex.rocket, shell: tex.shell };
 
   // ---- particles
   const parts = [], beams = [], pools = { decal: [], smoke: [], add: [] }; let decals = 0;
@@ -219,10 +225,15 @@ window.createFx = function (PIXI, cfg) {
   // muzzle flash. kind: 'fire' (guns), 'rocket' (launch: flash and backblast smoke), 'cyan' (energy weapons)
   function muzzleFlash(p, ang, elev, k, kind = 'fire') {
     const d = dir3(ang, elev), [sa, sl] = sdir(...d), en = kind === 'cyan';
+    if (kind === 'rocket') {                                 // a rocket leaves its tube: a small glow at the mouth, smoke out of the back
+      spawn('add', { tex: T.glow, x: p[0], y: p[1], z: p[2], life: 0.12, s0: 1.3 * k, c0: 0xffc878, a0: 0.8, tout: 0.2, must: true });
+      for (let i = 0; i < 3; i++) { const v = -rnd(2, 6); smoke(p, k, 0xc2bbae, 0.4, { vx: d[0] * v + rnd(-0.5, 0.5), vy: d[1] * v + rnd(-0.5, 0.5), vz: d[2] * v + rnd(0, 0.5), drag: 3.6, life: rnd(0.6, 1.1), s0: 0.3 * k, s1: 1.2 * k, tin: 0.04 }); }
+      return;
+    }
     spawn('add', { frames: en ? T.cmuz : T.muz, x: p[0], y: p[1], z: p[2], life: 0.13, s0: 2.7 * k, rot: sa, ax: 0.06, ay: 0.5, sx: Math.max(0.6, Math.min(1.25, sl / 1.1)), tout: 0.8, must: true });
     spawn('add', { tex: T.glow, x: p[0] + d[0] * 0.3 * k, y: p[1] + d[1] * 0.3 * k, z: p[2] + d[2] * 0.3 * k, life: 0.11, s0: 2.6 * k, s1: 3.4 * k, a0: 0.9, tout: 0.2, c0: en ? 0x9fe8ff : 0xffc878, must: true });
     if (en) return sparks(p, 3, 4, 0x9fe8ff);
-    const back = kind === 'rocket' ? -1 : 1, n = Math.round(3 + 3 * k);
+    const back = 1, n = Math.round(3 + 3 * k);
     for (let i = 0; i < n; i++) {
       const v = rnd(2, 7.5) * k * back;
       smoke(p, k, 0xc2bbae, 0.42, { vx: d[0] * v + rnd(-0.6, 0.6), vy: d[1] * v + rnd(-0.6, 0.6), vz: d[2] * v + rnd(0.1, 0.7), drag: 3.6, life: rnd(0.7, 1.4), s0: 0.32 * k, s1: 1.35 * k, tin: 0.04 });
@@ -291,8 +302,10 @@ window.createFx = function (PIXI, cfg) {
     for (let i = 0; i < 7; i++) smoke([p[0] + rnd(-1, 1), p[1] + rnd(-1, 1), 0.2], 1.6, 0x23262b, 0.5, { vz: rnd(1, 2.6), life: rnd(1.4, 2.6), tin: 0.25, must: true });
     scorch(p, R * 1.5);
   }
+  // turn a held sprite (rocket, shell) along a direction of flight; it gets shorter when it flies towards or away from the camera
+  function aim(p, dx, dy, dz) { const n = Math.hypot(dx, dy, dz) || 1, [a, l] = sdir(dx / n, dy / n, dz / n); p.rot = a; p.sx = Math.max(0.45, Math.min(1.2, l / 1.1)); }
   function clear() { for (const p of parts) p.life = 0; for (const b of beams) b.life = 0; update(0); }
 
-  return { T, spawn, update, beam, clear, count: () => parts.length + beams.length, smoke, sparks, ember, debris, ring, scorch, dust, trail, muzzleFlash, impact, explosion, airburst,
+  return { T, spawn, update, beam, clear, aim, count: () => parts.length + beams.length, smoke, sparks, ember, debris, ring, scorch, dust, trail, muzzleFlash, impact, explosion, airburst,
     flameJet, groundFire, fireOn, chargeIn, energyHit, implosion, gravBlast };
 };

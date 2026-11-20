@@ -1,6 +1,7 @@
 # Tank effects and sounds: design note
 
-**Status (2026-11-21): proposal with a working mockup. Nothing here is approved yet.** The mockup is the tank demo page
+**Status (2026-11-21): proposal with a working mockup. Nothing here is approved yet.** First review by the owner on 2026-11-21:
+three changes asked for and made (Anti-Air rockets, Artillery shell, Graviton beam), marked "owner" below. The mockup is the tank demo page
 (`demo/`, start it with `demo/run_demo.bat`): every effect and sound below can be seen and heard there. The numbers (ranges,
 reload times, damage) are **demo values chosen to show the effects, not game balance**.
 
@@ -16,8 +17,8 @@ many, not what kind.
 | Type | Role (from the manual) | The shot | Light | Medium | Heavy |
 |---|---|---|---|---|---|
 | **Panzer** | Main battle tank | A fast straight shell with a short bright streak | 1 barrel, single shots | 2 barrels, firing in turn, quick | 3 barrels, a salvo of 3 one after another, then a long reload |
-| **Artillery** | Long range, slow fire, best against things that stand still | A shell on a high arc; you see it climb, its shadow runs on the ground, it whistles down. Cannot hit close targets (minimum range) | thin barrel, small blast | bigger blast | two barrels, two shells a moment apart |
-| **Anti-Air** | Protects against aircraft | Rockets leave the tubes one after another, speed up, turn towards the target and burst in the air. White smoke trails. Fires at air targets only | 3 rockets | 4 rockets | 6 rockets |
+| **Artillery** | Long range, slow fire, best against things that stand still | A shell on a high arc. It **leaves along the barrel** (the barrel's own angle and direction) and bends down to the target; a visible shell that flies nose first, **bigger on a bigger tank**, with a thin smoke trail behind it (owner). Its shadow runs on the ground, it whistles down. Cannot hit close targets (minimum range) | small shell, small blast | bigger shell and blast | two barrels, two of the biggest shells a moment apart |
+| **Anti-Air** | Protects against aircraft | **Real rockets** (owner): each one is a small rocket body with a red nose that comes out of its own tube along the tube's angle, with a flame behind it; no gun flash. It speeds up, turns towards the target and bursts in the air. White smoke trails. Fires at air targets only | 3 rockets | 4 rockets | 6 rockets |
 | **Flamer** | Short range, constant flame, heavy damage | A constant jet of fire while the target is in range; the ground at the end keeps burning for a moment | small jet | longer jet | two nozzles, widest and longest jet |
 | **Special** | Energy weapons (fixed cyan glow) | Three different weapons, see below | **Laser** | **Fusion-Lambda** | **Graviton** |
 
@@ -26,7 +27,8 @@ The three Special weapons:
 - **Medium, Fusion-Lambda particle cannon** ("fires through any obstacle"): half a second of charging (cyan sparks pulled into
   the muzzle, a rising whine), then a thick lance that goes **through everything on its line**, to the end of its reach. Rings
   run along the beam, every tank on the line is hit, strong recoil.
-- **Heavy, Graviton particle launcher** ("one of the most powerful known weapons"): a slow cyan orb with a black core. Where it
+- **Heavy, Graviton particle launcher** ("one of the most powerful known weapons"): **a beam and a ball** (owner): a thin cyan
+  beam joins the muzzle to the target, and a slow cyan ball with a black core rides along it. Where the ball
   lands, everything is pulled to one point for half a second (sparks fly inwards, a black sphere grows, the sound is sucked in),
   then the blast: a big cyan burst, two shock rings, debris, a wide scorch mark, the strongest screen shake in the game.
 
@@ -83,7 +85,7 @@ with the turret and reach a changing distance, which a fixed picture cannot do.
 picture, so each of the three layers is one or two draw calls.
 
 **Known limits of the mockup:** effects are always drawn above all tanks (a flame on a tank behind another tank shows through);
-the barrels of Artillery and Anti-Air are baked at one angle, so shells and rockets start at that angle whatever the range; the
+the barrels of Artillery and Anti-Air are baked at one angle (30 / 33 / 36 and 38 / 40 / 42 degrees), so shells and rockets start at that angle whatever the range; the
 target drones in the battle are plain grey placeholders, not an asset.
 
 ## 3. The sounds

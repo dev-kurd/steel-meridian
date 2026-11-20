@@ -72,12 +72,13 @@ const TURN = { light: 2.4, medium: 1.9, heavy: 1.5 };       // hull turn rate, r
 const TURRET_TURN = 2.6;
 /* Weapons for the effects mockup (see ../tank-fx-design.md). Values per size: light, medium, heavy. They are demo values to show
  * the effects, not game balance. range/min in metres, reload in seconds, burst = shots per trigger, gap = seconds between the
- * shots of a burst, kick = recoil in metres, elev = barrel angle (radians), tol = how exactly the turret must aim. */
+ * shots of a burst, kick = recoil in metres, elev = barrel angle in radians (as modelled: Artillery 30/33/36 degrees, Anti-Air
+ * 38/40/42), tol = how exactly the turret must aim. */
 const SI = { light: 0, medium: 1, heavy: 2 };
 const WPN = {
   panzer:    { range: [15, 17, 19], min: [0, 0, 0], reload: [1.3, 0.8, 2.8], burst: [1, 1, 3], gap: 0.13, dmg: [9, 10, 13], kick: [0.1, 0.12, 0.16], elev: 0, tol: 0.07 },
-  artillery: { range: [30, 34, 38], min: [9, 9, 9], reload: [3.6, 4.6, 5.6], burst: [1, 1, 2], gap: 0.28, dmg: [30, 46, 42], splash: [2.2, 2.8, 3.2], kick: [0.2, 0.28, 0.34], elev: 0.58, tol: 0.06 },
-  antiair:   { range: [26, 28, 30], min: [4, 4, 4], reload: [3, 3.4, 4], burst: [3, 4, 6], gap: 0.14, dmg: [10, 12, 12], kick: [0.03, 0.04, 0.05], elev: 0.7, tol: 0.2 },
+  artillery: { range: [30, 34, 38], min: [9, 9, 9], reload: [3.6, 4.6, 5.6], burst: [1, 1, 2], gap: 0.28, dmg: [30, 46, 42], splash: [2.2, 2.8, 3.2], kick: [0.2, 0.28, 0.34], elev: [0.524, 0.576, 0.628], tol: 0.06 },
+  antiair:   { range: [26, 28, 30], min: [4, 4, 4], reload: [3, 3.4, 4], burst: [3, 4, 6], gap: 0.14, dmg: [10, 12, 12], kick: [0.03, 0.04, 0.05], elev: [0.663, 0.698, 0.733], tol: 0.2 },
   flamer:    { range: [7, 8.5, 10], min: [0, 0, 0], dps: [14, 20, 28], elev: 0, tol: 0.2 },
   special:   { range: [16, 21, 22], min: [0, 0, 5], reload: [1.1, 3.6, 6.5], burst: [1, 1, 1], gap: 0, dmg: [12, 55, 110], kick: [0.03, 0.3, 0.36], elev: 0, tol: 0.05 },
 };
@@ -383,18 +384,24 @@ class Batcher {
       shots.push({ type: 'shell', x: m[0], y: m[1], z: m[2], ux: (px - m[0]) / d, uy: (py - m[1]) / d, uz: (tz - m[2]) / d, left: d, si, team: t.team, dmg: W.dmg[si],
         h: fx.spawn('add', { tex: fx.T.spark, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: 1.5 + si * 0.4, rot: Math.atan2(ay, ax), c0: 0xffe2a8 }) });
     } else if (w === 'artillery') {
-      const k = [1.1, 1.35, 1.5][si], px = tx + rnd(-1.2, 1.2), py = ty + rnd(-1.2, 1.2);
-      fx.muzzleFlash(m, ta, W.elev, k); fx.ring([m[0], m[1], 0], 2.2 * k, 0xd8c8a8, 0.5);
+      // the shell leaves along the barrel and bends to the target: a curve from the muzzle, through a point straight ahead of
+      // the barrel (where a shell fired at this angle would be at half way), down to the target
+      const k = [1.1, 1.35, 1.5][si], px = tx + rnd(-1.2, 1.2), py = ty + rnd(-1.2, 1.2), el = W.elev[si], D = Math.hypot(px - m[0], py - m[1]), L = D / 2 / Math.cos(el);
+      const c = [m[0] + Math.cos(ta) * Math.cos(el) * L, m[1] + Math.sin(ta) * Math.cos(el) * L, m[2] + Math.sin(el) * L];
+      fx.muzzleFlash(m, ta, el, k); fx.ring([m[0], m[1], 0], 2.2 * k, 0xd8c8a8, 0.5);
       for (let i = 0; i < 5; i++) fx.dust([t.x + rnd(-1.5, 1.5), t.y + rnd(-1.5, 1.5), 0], 1.3);
       snd('arty', t.x, t.y, { size: si }); addShake(0.12 + si * 0.06, t.x, t.y);
-      shots.push({ type: 'arty', p0: m, p1: [px, py, 0], u: 0, T: 1.1 + dist / 24, H: 3 + dist * 0.2, si, team: t.team, dmg: W.dmg[si], splash: W.splash[si], k,
-        h: fx.spawn('smoke', { tex: fx.T.dot, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: 0.34 + si * 0.06, c0: 0x1c1c1c }),
-        sh: fx.spawn('decal', { tex: fx.T.dot, held: true, flat: true, life: Infinity, must: true, x: m[0], y: m[1], z: 0, s0: 0.7, c0: 0x000000, a0: 0.3 }) });
+      shots.push({ type: 'arty', p0: m, c, p1: [px, py, 0], x: m[0], y: m[1], z: m[2], u: 0, tr: 0, T: 1.1 + dist / 24, si, team: t.team, dmg: W.dmg[si], splash: W.splash[si], k,
+        h: fx.spawn('smoke', { tex: fx.T.shell, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: [0.95, 1.25, 1.6][si] }),     // bigger shell on a bigger tank
+        sh: fx.spawn('decal', { tex: fx.T.dot, held: true, flat: true, life: Infinity, must: true, x: m[0], y: m[1], z: 0, s0: [0.7, 0.9, 1.1][si], c0: 0x000000, a0: 0.3 }) });
     } else if (w === 'antiair') {
-      const d = [Math.cos(ta) * Math.cos(W.elev), Math.sin(ta) * Math.cos(W.elev), Math.sin(W.elev)];
-      fx.muzzleFlash(m, ta, W.elev, 0.5, 'rocket'); snd('rocket', t.x, t.y, { size: si, gain: 0.8 });
-      shots.push({ type: 'rocket', x: m[0], y: m[1], z: m[2], ux: d[0], uy: d[1], uz: d[2], v: 12, age: 0, tr: 0, tg, si, dmg: W.dmg[si],
-        h: fx.spawn('add', { tex: fx.T.glow, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: 0.8, c0: 0xffc070 }) });
+      // a rocket with a body: it leaves its own tube along the tube's angle, burns a flame behind it, then turns to the target
+      const el = W.elev[si], d = [Math.cos(ta) * Math.cos(el), Math.sin(ta) * Math.cos(el), Math.sin(el)], len = [0.85, 1.05, 0.95][si];
+      fx.muzzleFlash(m, ta, el, 0.6, 'rocket'); snd('rocket', t.x, t.y, { size: si, gain: 0.8 });
+      shots.push({ type: 'rocket', x: m[0], y: m[1], z: m[2], ux: d[0], uy: d[1], uz: d[2], v: 8, age: 0, tr: 0, tg, si, dmg: W.dmg[si], len,
+        h: fx.spawn('smoke', { tex: fx.T.rocket, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: len }),
+        fl: fx.spawn('add', { tex: fx.T.spark, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: len * 1.5, c0: 0xffb45a }),
+        gl: fx.spawn('add', { tex: fx.T.glow, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: len * 0.8, c0: 0xffc880, a0: 0.8 }) });
     } else if (si === 0) {                                               // Special, Light: laser. A short steady beam, the hit is instant
       const end = [tx, ty, tz];
       fx.beam(m, end, { w: 0.3, col: 0x40dcff, life: 0.2, hold: true }); fx.muzzleFlash(m, ta, 0, 0.45, 'cyan'); fx.energyHit(end, 0.7);
@@ -410,11 +417,13 @@ class Batcher {
         if (along > 0 && along < L && side < o.r * 0.7 + 0.5) { fx.energyHit([o.x, o.y, o.aimZ], 1); hurt(o, W.dmg[si]); }
       }
     } else {                                                             // Special, Heavy: Graviton. A slow orb, then an implosion and a blast
-      const d = Math.hypot(tx - m[0], ty - m[1]) || 1;
+      // a beam from the muzzle to the target, and the ball rides along it
+      const p0 = m.slice(), p1 = [tx, ty, Math.max(0.9, tz)], d = Math.hypot(tx - m[0], ty - m[1], p1[2] - m[2]) || 1;
       fx.muzzleFlash(m, ta, 0, 1.5, 'cyan'); snd('gravfire', t.x, t.y); addShake(0.2, t.x, t.y);
-      shots.push({ type: 'orb', x: m[0], y: m[1], z: m[2], ux: (tx - m[0]) / d, uy: (ty - m[1]) / d, left: d, z0: m[2], d0: d, team: t.team, dmg: W.dmg[si],
-        h: fx.spawn('add', { tex: fx.T.glow, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: 2, c0: 0x66dcff }),
-        core: fx.spawn('smoke', { tex: fx.T.glow, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: 0.95, c0: 0x000000 }) });
+      shots.push({ type: 'orb', x: m[0], y: m[1], z: m[2], p0, p1, u: 0, d0: d, from: t, team: t.team, dmg: W.dmg[si],
+        beam: fx.beam(p0, p1, { w: 0.36, col: 0x40dcff, life: Infinity, hold: true }),
+        h: fx.spawn('add', { tex: fx.T.glow, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: 3.4, c0: 0x66dcff }),
+        core: fx.spawn('smoke', { tex: fx.T.glow, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: 1.5, c0: 0x000000 }) });
     }
   }
   // a flamer's jet for one frame
@@ -456,30 +465,37 @@ class Batcher {
         const step = Math.min(s.left, 75 * dt); s.x += s.ux * step; s.y += s.uy * step; s.z += s.uz * step; s.left -= step;
         if (s.left <= 0.001) { done = true; fx.impact([s.x, s.y, s.z], [0.7, 0.85, 1][s.si]); snd('hit', s.x, s.y, { gain: 0.7 }); hurtAt(s.x, s.y, 0.5, s.dmg, s.team); }
       } else if (s.type === 'arty') {                                    // a shell on a high arc; its shadow runs along the ground
-        s.u += dt / s.T; const u = Math.min(1, s.u);
-        s.x = s.p0[0] + (s.p1[0] - s.p0[0]) * u; s.y = s.p0[1] + (s.p1[1] - s.p0[1]) * u; s.z = s.p0[2] * (1 - u) + s.H * 4 * u * (1 - u);
+        s.u += dt / s.T; const u = Math.min(1, s.u), a = (1 - u) * (1 - u), b = 2 * u * (1 - u), e = u * u, ox = s.x, oy = s.y, oz = s.z;
+        s.x = a * s.p0[0] + b * s.c[0] + e * s.p1[0]; s.y = a * s.p0[1] + b * s.c[1] + e * s.p1[1]; s.z = a * s.p0[2] + b * s.c[2] + e * s.p1[2];
+        fx.aim(s.h, (1 - u) * (s.c[0] - s.p0[0]) + u * (s.p1[0] - s.c[0]), (1 - u) * (s.c[1] - s.p0[1]) + u * (s.p1[1] - s.c[1]), (1 - u) * (s.c[2] - s.p0[2]) + u * (s.p1[2] - s.c[2]));   // nose first
         s.sh.x = s.x; s.sh.y = s.y;
+        s.tr -= Math.hypot(s.x - ox, s.y - oy, s.z - oz); if (s.tr <= 0) { s.tr = 0.7; fx.trail([ox, oy, oz], 0.75 + s.si * 0.3, 0x8f8a80); }      // smoke behind the shell
         if (!s.wh && (1 - u) * s.T < 0.85) { s.wh = true; snd('whistle', s.p1[0], s.p1[1], { dur: (1 - u) * s.T }); }
         if (u >= 1) { done = true; fx.explosion(s.p1, s.k); snd('boom', s.x, s.y, { size: s.si }); addShake(0.35 + s.si * 0.12, s.x, s.y); hurtAt(s.x, s.y, s.splash, s.dmg, s.team); }
       } else if (s.type === 'rocket') {                                  // a rocket that speeds up and turns towards its target, leaving white smoke
         s.age += dt; s.v = Math.min(38, s.v + 55 * dt);
         const tg = s.tg, live = !(tg.deadT > 0), dx = tg.x - s.x, dy = tg.y - s.y, dz = zOf(tg) - s.z, d = Math.hypot(dx, dy, dz) || 1;
-        if (live && s.age > 0.12) { const k = Math.min(1, 7 * dt); s.ux += (dx / d - s.ux) * k; s.uy += (dy / d - s.uy) * k; s.uz += (dz / d - s.uz) * k; const n = Math.hypot(s.ux, s.uy, s.uz) || 1; s.ux /= n; s.uy /= n; s.uz /= n; }
+        if (live && s.age > 0.22) { const k = Math.min(1, 7 * dt); s.ux += (dx / d - s.ux) * k; s.uy += (dy / d - s.uy) * k; s.uz += (dz / d - s.uz) * k; const n = Math.hypot(s.ux, s.uy, s.uz) || 1; s.ux /= n; s.uy /= n; s.uz /= n; }
         s.x += s.ux * s.v * dt; s.y += s.uy * s.v * dt; s.z += s.uz * s.v * dt;
-        s.tr -= s.v * dt; if (s.tr <= 0) { s.tr = 0.55; fx.trail([s.x, s.y, s.z], 1); }
+        fx.aim(s.h, s.ux, s.uy, s.uz); s.fl.rot = s.h.rot; s.fl.sx = s.h.sx * (0.8 + Math.random() * 0.4);          // the flame flickers behind the body
+        for (const f of [s.fl, s.gl]) { const b = f === s.fl ? s.len * 1.05 : s.len * 0.6; f.x = s.x - s.ux * b; f.y = s.y - s.uy * b; f.z = s.z - s.uz * b; }
+        s.tr -= s.v * dt; if (s.tr <= 0) { s.tr = 0.55; fx.trail([s.x - s.ux * s.len, s.y - s.uy * s.len, s.z - s.uz * s.len], 1); }
         if ((live && d < 1.1) || s.age > 3 || s.z < 0) { done = true; fx.airburst([s.x, s.y, Math.max(0.3, s.z)], 1); snd('flak', s.x, s.y, { gain: 0.7 }); if (live && d < 1.6 && tg.drone) hurt(tg, s.dmg); }
       } else {                                                           // Graviton orb
-        const step = Math.min(s.left, 11 * dt); s.x += s.ux * step; s.y += s.uy * step; s.left -= step; s.z = Math.max(0.9, s.z0 * (s.left / s.d0) + 0.9 * (1 - s.left / s.d0));
+        const f = s.from;                                                 // the beam stays on the muzzle while the tank that fired is alive and still a Graviton
+        if (!(f.deadT > 0) && weaponOf(f) === 'special' && f.size === 'heavy') { const m = muzzleAt(f, 0); s.p0[0] = m[0]; s.p0[1] = m[1]; s.p0[2] = m[2]; }
+        s.u = Math.min(1, s.u + 13 * dt / s.d0);
+        s.x = s.p0[0] + (s.p1[0] - s.p0[0]) * s.u; s.y = s.p0[1] + (s.p1[1] - s.p0[1]) * s.u; s.z = s.p0[2] + (s.p1[2] - s.p0[2]) * s.u;
         s.core.x = s.x; s.core.y = s.y; s.core.z = s.z;
-        if (Math.random() < 30 * dt) fx.spawn('add', { tex: fx.T.spark, streak: true, x: s.x, y: s.y, z: s.z, vx: -s.ux * 3 + rnd(-2, 2), vy: -s.uy * 3 + rnd(-2, 2), vz: rnd(-1.5, 1.5), life: 0.35, s0: 0.5, s1: 0.15, c0: 0x8fe9ff });
-        if (s.left <= 0.001) {
-          done = true; s.core.life = 0; const p = [s.x, s.y, s.z], R = 4, team = s.team, dmg = s.dmg;
+        if (Math.random() < 30 * dt) fx.spawn('add', { tex: fx.T.spark, streak: true, x: s.x, y: s.y, z: s.z, vx: rnd(-2.5, 2.5), vy: rnd(-2.5, 2.5), vz: rnd(-1.5, 1.5), life: 0.35, s0: 0.5, s1: 0.15, c0: 0x8fe9ff });
+        if (s.u >= 1) {
+          done = true; s.core.life = 0; s.beam.life = 0; const p = [s.x, s.y, s.z], R = 4, team = s.team, dmg = s.dmg;
           fx.implosion(p, R); snd('gravimp', s.x, s.y);
           later.push({ t: 0.45, fn: () => { fx.gravBlast(p, R); addShake(0.9, p[0], p[1]); hurtAt(p[0], p[1], R + 0.5, dmg, team); } });
         }
       }
       if (s.h) { s.h.x = s.x; s.h.y = s.y; s.h.z = s.z; }
-      if (done) { if (s.h) s.h.life = 0; if (s.sh) s.sh.life = 0; shots.splice(i, 1); }
+      if (done) { for (const k of ['h', 'sh', 'fl', 'gl']) if (s[k]) s[k].life = 0; shots.splice(i, 1); }
     }
     for (const d of drones) {                                            // target drones circle over the field during a battle
       if (d.deadT > 0) { d.deadT -= dt; if (d.deadT <= 0) d.hp = d.max; }
