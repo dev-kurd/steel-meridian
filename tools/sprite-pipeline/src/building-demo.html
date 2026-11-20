@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State of War — Layered Building Demo</title>
+<style>
+  :root { --bg:#12151a; --panel:#1b2027; --line:#2a313a; --text:#d9dee4; --mute:#8b95a1; --acc:#7fd28f; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--text); font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+  .app { display:grid; grid-template-columns:320px 1fr; height:100%; }
+  aside { background:var(--panel); border-right:1px solid var(--line); padding:14px 16px; overflow:auto; }
+  h1 { font-size:16px; margin:0 0 4px; }
+  .sub { color:var(--mute); font-size:12.5px; margin:0 0 14px; }
+  h2 { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--mute); margin:16px 0 6px; font-weight:600; }
+  .seg { display:flex; flex-wrap:wrap; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .seg button { flex:1; background:transparent; color:var(--mute); border:0; padding:7px 8px; font:inherit; font-size:13px; cursor:pointer; white-space:nowrap; }
+  .seg button.on { background:#2b3540; color:var(--text); }
+  .seg button + button { border-left:1px solid var(--line); }
+  .swatches { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .sw { width:28px; height:28px; border-radius:7px; border:2px solid transparent; cursor:pointer; }
+  .sw.on { border-color:#fff; }
+  input[type=color] { width:36px; height:30px; border:1px solid var(--line); border-radius:7px; background:none; padding:2px; cursor:pointer; }
+  label.chk { display:flex; gap:8px; align-items:flex-start; padding:4px 0; cursor:pointer; }
+  label.chk input { margin-top:3px; accent-color:var(--acc); }
+  label.chk small { display:block; color:var(--mute); font-size:12px; line-height:1.35; }
+  .note { margin-top:16px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-size:12.5px; color:var(--mute); background:#161a20; }
+  .note b { color:var(--text); }
+  main { position:relative; overflow:hidden; background:#1a1e19; }
+  #stage { position:absolute; inset:0; }
+  .hint { position:absolute; right:12px; bottom:10px; color:var(--mute); font-size:12px; background:rgba(18,21,26,.75); padding:5px 9px; border-radius:7px; border:1px solid var(--line); }
+  @media (max-width: 760px) { .app { grid-template-columns:1fr; grid-template-rows:auto 60vh; } aside { border-right:0; border-bottom:1px solid var(--line); } }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <h1>Layered light factory</h1>
+    <p class="sub">One set of baked layers, combined live: any team colour, captured or not, 3 health states, 4 upgrade levels, 4 facings.</p>
+
+    <h2>Team colour</h2>
+    <div class="swatches" id="swatches"></div>
+
+    <h2>Owner</h2>
+    <div class="seg" id="captured"><button data-v="1" class="on">Captured</button><button data-v="0">Not captured</button></div>
+
+    <h2>Health</h2>
+    <div class="seg" id="health"><button data-v="0" class="on">Intact</button><button data-v="1">Damaged</button><button data-v="2">Critical</button></div>
+
+    <h2>Upgrade</h2>
+    <div class="seg" id="upgrade"><button data-v="0" class="on">L0</button><button data-v="1">L1</button><button data-v="2">L2</button><button data-v="3">L3</button></div>
+
+    <h2>Facing</h2>
+    <div class="seg" id="facing"><button data-v="-1">↺ Rotate</button><button data-v="1">Rotate ↻</button></div>
+
+    <h2>View</h2>
+    <div class="seg" id="view"><button data-v="0" class="on">Combined</button><button data-v="1">Exploded layers</button></div>
+
+    <h2>Layers</h2>
+    <div id="layerList"></div>
+
+    <div class="note" id="note"></div>
+  </aside>
+  <main>
+    <div id="stage"></div>
+    <div class="hint">Mouse wheel to zoom · drag to pan</div>
+  </main>
+</div>
+
+<script>
+__PIXI__
+</script>
+<script>
+__PIXI_UNSAFE_EVAL__
+</script>
+<script>
+const LAYERS_PNG = '__LAYERS_PNG__', LAYERS_JSON = __LAYERS_JSON__;
+const FX_PNG = '__FX_PNG__', FX_JSON = __FX_JSON__;
+const PARTS = __PARTS__;
+
+(async () => {
+  const $ = (id) => document.getElementById(id);
+  const P = (x, y, z = 0) => [(x - y) * 0.866, (x + y) * 0.5 - z];
+  const rot = (p, k) => { const a = (k * Math.PI) / 2, c = Math.round(Math.cos(a)), s = Math.round(Math.sin(a)); return [p[0] * c - p[1] * s, p[0] * s + p[1] * c, p[2]]; };
+  const hex = (s) => parseInt(s.slice(1), 16);
+  const mixWhite = (c, t) => { const r = (c >> 16) & 255, g = (c >> 8) & 255, b = c & 255; return (Math.round(r + (255 - r) * t) << 16) | (Math.round(g + (255 - g) * t) << 8) | Math.round(b + (255 - b) * t); };
+
+  // ---------- state ----------
+  const S = { team: '#2f9a45', captured: true, health: 0, upgrade: 0, facing: 0, exploded: 0, explodeT: 0 };
+  const LAYER_INFO = [
+    { key: 'body', name: 'Body', desc: 'Platform, gate, doors, metal parts. Painted walls in neutral grey. Baked once.' },
+    { key: 'mask', name: 'Team paint (mask)', desc: 'Painted walls in white + weathering. Tinted live with the team colour.' },
+    { key: 'lights', name: 'Lights', desc: 'Light strips, windows, emblem, lane lines in white. Tinted with the light colour; dark when not captured.' },
+    { key: 'dmg', name: 'Damage', desc: 'Scorch marks, holes, cracks. Level 1 or 2 overlay.' },
+    { key: 'star', name: 'Upgrade parts', desc: 'L1 star on the gable (L2/L3 change the fans below).' },
+    { key: 'moving', name: 'Fans + radar', desc: 'Flat blade and radar sprites, rotated by the engine. No animation frames.' },
+    { key: 'fore', name: 'Foreground', desc: 'Stack and mast redrawn over the fans where they are nearer.' },
+    { key: 'fire', name: 'Fire + smoke', desc: 'Flipbook flames (fx sheet) + smoke particles when critical.' },
+  ];
+  const visibleLayer = Object.fromEntries(LAYER_INFO.map((l) => [l.key, true]));
+
+  // ---------- Pixi ----------
+  const app = new PIXI.Application();
+  await app.init({ resizeTo: $('stage'), background: '#1a1e19', antialias: true, resolution: Math.min(2, devicePixelRatio || 1), autoDensity: true });
+  $('stage').appendChild(app.canvas);
+  const loadImg = (src) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+  const sheet = new PIXI.Spritesheet(PIXI.Texture.from(await loadImg(LAYERS_PNG)), LAYERS_JSON); await sheet.parse();
+  const fx = new PIXI.Spritesheet(PIXI.Texture.from(await loadImg(FX_PNG)), FX_JSON); await fx.parse();
+  const T = sheet.textures;
+
+  const world = new PIXI.Container(); app.stage.addChild(world);
+  // ground: a few iso tiles under the pad
+  const ground = new PIXI.Graphics();
+  for (let i = -3; i < 3; i++) for (let j = -3; j < 3; j++) {
+    const c = [P(i * 16, j * 16), P((i + 1) * 16, j * 16), P((i + 1) * 16, (j + 1) * 16), P(i * 16, (j + 1) * 16)];
+    ground.poly(c.flat()).fill({ color: (i + j) & 1 ? 0x4a543e : 0x454f3a }).stroke({ width: 0.15, color: 0x000000, alpha: 0.2 });
+  }
+  world.addChild(ground);
+
+  const B = new PIXI.Container(); world.addChild(B);
+  const layer = {}; const labels = {};
+  for (const l of LAYER_INFO) {
+    const c = new PIXI.Container(); B.addChild(c); layer[l.key] = c;
+    const t = new PIXI.Text({ text: l.name, style: { fontFamily: 'system-ui, Segoe UI, sans-serif', fontSize: 4.2, fill: 0xd9dee4, fontWeight: '600' } });
+    t.resolution = 8; t.anchor.set(0, 0.5); t.alpha = 0; world.addChild(t); labels[l.key] = t;
+  }
+  const mk = (key) => { const s = new PIXI.Sprite(); layer[key].addChild(s); return s; };
+  const sBody = mk('body'), sMask = mk('mask'), sLights = mk('lights'), sDmg = mk('dmg'), sStar = mk('star'), sFore = mk('fore');
+  const setT = (sp, name) => { sp.texture = T[name]; sp.anchor.copyFrom(T[name].defaultAnchor); };
+
+  // a flat (top-down) sprite placed on the iso ground plane at height z: rotate in world, then project
+  const ISO = (x, y) => new PIXI.Matrix(0.866, 0.5, -0.866, 0.5, x, y);
+  function flatOnPlane(names) {
+    const plane = new PIXI.Container(), spin = new PIXI.Container(); plane.addChild(spin);
+    for (const n of names) { const s = new PIXI.Sprite(T[n]); s.anchor.set(0.5); spin.addChild(s); }
+    layer.moving.addChild(plane); return { plane, spin };
+  }
+  const fans = [flatOnPlane(['flat_fanBlades']), flatOnPlane(['flat_fanBlades'])];
+  const bigFan = flatOnPlane(['flat_fanDisc', 'flat_fanBlades', 'flat_fanRing']);
+  const radar = flatOnPlane(['flat_radar']);
+
+  // fire: flipbook flames + smoke puffs
+  const flames = PARTS.flames.map(() => { const s = new PIXI.Sprite(); s.blendMode = 'add'; layer.fire.addChild(s); return s; });
+  const puffTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(0.5, 'rgba(255,255,255,.4)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return PIXI.Texture.from(c); })();
+  const puffs = []; const puffLayer = new PIXI.Container(); layer.fire.addChildAt(puffLayer, 0);
+
+  // ---------- camera ----------
+  const GAP = 20; // world units between layers in the exploded view
+  const cam = { x: 0, y: -14, zoom: 1, target: 1 };
+  function fitZoom() { const r = $('stage').getBoundingClientRect(), h = 70 + S.explodeT * 7 * GAP; return Math.min(r.width / (82 + S.explodeT * 40), r.height / h); }
+  let drag = null; const main = $('stage');
+  main.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y }; main.setPointerCapture(e.pointerId); });
+  main.addEventListener('pointermove', (e) => { if (drag) { cam.x = drag.cx - (e.clientX - drag.x) / cam.zoom; cam.y = drag.cy - (e.clientY - drag.y) / cam.zoom; } });
+  main.addEventListener('pointerup', () => (drag = null)); main.addEventListener('pointercancel', () => (drag = null));
+  let userZoom = 1;
+  main.addEventListener('wheel', (e) => { e.preventDefault(); userZoom = Math.max(0.4, Math.min(4, userZoom * Math.exp(-e.deltaY * 0.0015))); }, { passive: false });
+
+  // ---------- UI ----------
+  const SW = ['#2f9a45', '#2f6fd1', '#c0393b', '#9a5fc8', '#e08a1e', '#16a6a6', '#e7e7e7', '#d4c02a'];
+  for (const c of SW) { const b = document.createElement('div'); b.className = 'sw' + (c === S.team ? ' on' : ''); b.style.background = c; b.title = c; b.onclick = () => setTeam(c); $('swatches').appendChild(b); }
+  const picker = document.createElement('input'); picker.type = 'color'; picker.value = S.team; picker.title = 'Any colour'; picker.oninput = () => setTeam(picker.value); $('swatches').appendChild(picker);
+  function setTeam(c) { S.team = c; picker.value = c; document.querySelectorAll('.sw').forEach((s) => s.classList.toggle('on', s.title === c)); }
+  const seg = (id, fn) => document.querySelectorAll(`#${id} button`).forEach((b) => (b.onclick = () => { if (id !== 'facing') document.querySelectorAll(`#${id} button`).forEach((x) => x.classList.toggle('on', x === b)); fn(+b.dataset.v); }));
+  seg('captured', (v) => (S.captured = !!v));
+  seg('health', (v) => (S.health = v));
+  seg('upgrade', (v) => (S.upgrade = v));
+  seg('facing', (v) => (S.facing = (S.facing + v + 4) % 4));
+  seg('view', (v) => (S.exploded = v));
+  for (const l of LAYER_INFO) {
+    const lab = document.createElement('label'); lab.className = 'chk';
+    lab.innerHTML = `<input type="checkbox" checked><span>${l.name}<small>${l.desc}</small></span>`;
+    lab.querySelector('input').onchange = (e) => (visibleLayer[l.key] = e.target.checked);
+    $('layerList').appendChild(lab);
+  }
+  const nFrames = Object.keys(T).length;
+  $('note').innerHTML = `<b>Baked for this building:</b> ${nFrames} frames in one ${Math.round(LAYERS_PNG.length * 0.75 / 1024)} KB sheet (4 facings × 7 layers + 4 flat parts). ` +
+    `Baking every combination as whole pictures instead (4 teams × 4 facings × 3 health × 2 owner × 4 upgrades × 4 fan frames) would need <b>1,536 frames</b>, and still only 4 colours.`;
+
+  // ---------- loop ----------
+  let t = 0, last = performance.now(), fanA = 0, radarA = 0, flick = 1, flickT = 0;
+  app.ticker.add(() => {
+    const now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
+    S.explodeT += ((S.exploded ? 1 : 0) - S.explodeT) * Math.min(1, dt * 6);
+    cam.zoom += (fitZoom() * userZoom - cam.zoom) * Math.min(1, dt * 6);
+    const r = $('stage').getBoundingClientRect();
+    world.scale.set(cam.zoom); world.position.set(r.width / 2 - (cam.x + S.explodeT * 14) * cam.zoom, r.height / 2 - (cam.y - S.explodeT * 3.5 * GAP) * cam.zoom);
+
+    const f = S.facing, team = hex(S.team), light = mixWhite(team, 0.5), cap = S.captured;
+    setT(sBody, `lf_body_f${f}`); setT(sMask, `lf_mask_f${f}`); setT(sLights, `lf_lights_f${f}`); setT(sStar, `lf_star_f${f}`); setT(sFore, `lf_fore_f${f}`);
+    sMask.tint = cap ? team : 0xb4bac2;                        // team colour, or neutral grey when not captured
+    flickT -= dt; if (flickT <= 0) { flickT = 0.06 + Math.random() * 0.12; flick = S.health === 2 && Math.random() < 0.35 ? 0.25 + Math.random() * 0.4 : 1; }
+    sLights.tint = cap ? light : 0x3c4148; sLights.alpha = cap ? flick : 0.9;
+    sDmg.visible = S.health > 0; if (S.health) setT(sDmg, `lf_dmg${S.health}_f${f}`);
+    sStar.visible = S.upgrade >= 1;
+
+    // fans + radar: spin in the world plane (stopped when not captured or critical); large fans spin slower
+    const running = cap && S.health < 2;
+    if (running) { fanA += dt * 6.5 * (S.upgrade >= 2 ? 0.62 : 1); radarA += dt * 1.6; }
+    const place = (obj, p, angle, scale = 1) => { const q = rot(p, f), s = P(q[0], q[1], q[2]); obj.plane.setFromMatrix(ISO(s[0], s[1])); obj.spin.rotation = angle + (f * Math.PI) / 2; obj.spin.scale.set(scale); };
+    fans.forEach((o, i) => { o.plane.visible = S.upgrade < 3; place(o, PARTS.fans[i], fanA + i * 0.5, S.upgrade === 2 ? 1.18 : 1); });
+    bigFan.plane.visible = S.upgrade === 3; place(bigFan, PARTS.bigFan, fanA * 0.8, 1.95); bigFan.spin.children[2].tint = cap ? light : 0x3c4148;
+    place(radar, PARTS.radar, radarA);
+
+    // fire when critical: flipbook flames at fixed points + rising smoke
+    PARTS.flames.forEach((p, i) => {
+      const s = flames[i]; s.visible = S.health === 2; if (!s.visible) return;
+      const key = `fxFlame_v${i % 3}_${Math.floor(t * 18 + i * 5) % 16}`; s.texture = fx.textures[key]; s.anchor.copyFrom(fx.textures[key].defaultAnchor);
+      const q = rot(p, f), sc = P(q[0], q[1], q[2]); s.position.set(sc[0], sc[1]); s.scale.set(i === 2 ? 0.8 : 1.1);
+    });
+    if (S.health > 0 && Math.random() < dt * (S.health === 2 ? 14 : 4)) {
+      const src = rot(PARTS.flames[Math.floor(Math.random() * (S.health === 2 ? 3 : 1)) + (S.health === 2 ? 0 : 2)], f), sp = new PIXI.Sprite(puffTex);
+      sp.anchor.set(0.5); sp.tint = S.health === 2 ? 0x2b2826 : 0x9a9a98; sp._life = 2 + Math.random(); sp._t = 0; sp._p = [src[0] + Math.random() * 2 - 1, src[1] + Math.random() * 2 - 1, src[2] + 2];
+      puffLayer.addChild(sp); puffs.push(sp);
+    }
+    for (let i = puffs.length - 1; i >= 0; i--) {
+      const sp = puffs[i]; sp._t += dt; const k = sp._t / sp._life;
+      if (k >= 1) { sp.destroy(); puffs.splice(i, 1); continue; }
+      sp._p[2] += dt * 9; sp._p[0] += dt * 3; sp._p[1] -= dt * 2;
+      const s = P(...sp._p); sp.position.set(s[0], s[1]); sp.scale.set((3 + 9 * k) / 32); sp.alpha = (S.health === 2 ? 0.65 : 0.45) * (1 - k) * Math.min(1, sp._t * 6);
+    }
+
+    // exploded view: spread the layers upward with a label each
+    LAYER_INFO.forEach((l, i) => {
+      const dy = -i * GAP * S.explodeT; layer[l.key].y = dy; layer[l.key].visible = visibleLayer[l.key];
+      const lb = labels[l.key]; lb.alpha = S.explodeT; lb.visible = visibleLayer[l.key] && S.explodeT > 0.02; lb.position.set(36, dy - 2);
+    });
+  });
+})().catch((e) => { document.querySelector('.hint').textContent = 'Error: ' + e.message; console.error(e); });
+</script>
+</body>
+</html>

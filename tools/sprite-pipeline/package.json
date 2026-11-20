@@ -1,0 +1,25 @@
+{
+  "name": "sprite-pipeline",
+  "version": "1.0.0",
+  "private": true,
+  "description": "State of War: vector models -> sprite sheets -> PixiJS game, web demo and Electron desktop build",
+  "scripts": {
+    "bake": "node bake.cjs",
+    "fx": "node fx.cjs",
+    "site": "node build-page.cjs",
+    "pack": "node pack.cjs",
+    "build": "npm run bake && npm run fx && npm run site && npm run pack",
+    "test:pak": "node pak/test-pak.cjs",
+    "test:desktop": "cargo test --release --manifest-path desktop/src-tauri/Cargo.toml",
+    "desktop:install": "npm install --prefix desktop",
+    "desktop:start": "npm start --prefix desktop",
+    "desktop:dist": "npm run dist --prefix desktop"
+  },
+  "author": "HostKurd",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "pixi.js": "^8.23.0",
+    "sharp": "^0.35.5"
+  }
+}

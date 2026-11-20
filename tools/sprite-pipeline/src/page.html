@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State of War — Sprite Pipeline Test</title>
+<style>
+  :root { --bg:#12151a; --panel:#1b2027; --line:#2a313a; --text:#d9dee4; --mute:#8b95a1; --acc:#7fd28f; --warn:#f2c230; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--text); font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+  .app { display:grid; grid-template-rows:auto 1fr auto; height:100%; }
+  header { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; padding:10px 14px; border-bottom:1px solid var(--line); background:var(--panel); }
+  h1 { font-size:15px; margin:0; font-weight:650; letter-spacing:.2px; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .seg button { background:transparent; color:var(--mute); border:0; padding:7px 12px; font:inherit; cursor:pointer; }
+  .seg button.on { background:#2b3540; color:var(--text); }
+  .seg button + button { border-left:1px solid var(--line); }
+  label.r { display:flex; align-items:center; gap:8px; color:var(--mute); }
+  input[type=range] { width:150px; accent-color:var(--acc); }
+  .stats { margin-left:auto; display:flex; gap:16px; align-items:baseline; font-variant-numeric:tabular-nums; }
+  .fps { font-size:22px; font-weight:700; color:var(--acc); min-width:70px; text-align:right; }
+  .fps.slow { color:var(--warn); } .fps.bad { color:#ff6b5e; }
+  .mute { color:var(--mute); font-size:12.5px; }
+  .badge { font-size:12.5px; padding:3px 8px; border-radius:6px; background:#22303a; color:#bfe3c6; border:1px solid #2f4450; white-space:nowrap; }
+  .badge.load { color:var(--warn); }
+  .teamcols { display:flex; gap:4px; align-items:center; color:var(--mute); font-size:12.5px; }
+  .teamcols input { width:30px; height:26px; padding:1px; border:1px solid var(--line); border-radius:6px; background:none; cursor:pointer; }
+  #view { position:relative; overflow:hidden; cursor:grab; touch-action:none; background:#1a1e19; }
+  #view.drag { cursor:grabbing; }
+  #pixiHost, #svgHost { position:absolute; inset:0; }
+  #svgHost svg { width:100%; height:100%; display:block; }
+  .hint { position:absolute; left:12px; bottom:10px; background:rgba(18,21,26,.78); border:1px solid var(--line); padding:6px 10px; border-radius:8px; font-size:12.5px; color:var(--mute); pointer-events:none; max-width:min(560px, calc(100% - 24px)); }
+  .hint b { color:var(--text); font-weight:600; }
+  footer { border-top:1px solid var(--line); background:var(--panel); }
+  details > summary { cursor:pointer; padding:9px 14px; color:var(--mute); user-select:none; }
+  .atlas { padding:0 14px 14px; overflow:auto; max-height:46vh; display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:10px; }
+  .atlas figure { margin:0; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px; }
+  .atlas figcaption { font-size:12px; color:var(--mute); margin-top:6px; font-variant-numeric:tabular-nums; }
+  .atlas figcaption b { color:var(--text); font-weight:600; }
+  .atlas img { display:block; width:100%; height:auto; image-rendering:auto; border-radius:4px;
+    background: repeating-conic-gradient(#232a31 0 25%, #1c2228 0 50%) 0 0/16px 16px; }
+  .facings { display:flex; gap:6px; padding:0 14px 12px; flex-wrap:wrap; }
+  .facings { gap:4px; } .facings canvas { background:#262d26; border:1px solid var(--line); border-radius:6px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>State of War: sprite pipeline test</h1>
+    <div class="seg" id="mode">
+      <button data-m="pixi" class="on">Baked sprites · PixiJS (WebGL)</button>
+      <button data-m="svg">Live SVG · DOM</button>
+    </div>
+    <label class="r">Tanks <input id="count" type="range" min="20" max="2000" step="20" value="80"><span id="countV">80</span></label>
+    <div class="teamcols" id="teamcols" title="Team colours: any colour, applied live by the team-colour shader (no extra images)"></div>
+    <div class="seg" id="turret" title="What the turrets do">
+      <button data-t="aim" class="on">Turrets: aim at enemies</button><button data-t="follow">Follow hull</button><button data-t="spin">Spin</button>
+    </div>
+    <div class="seg" id="fxmode" title="How fire and explosions are drawn">
+      <button data-f="flip" class="on">Fire: flipbook</button><button data-f="part">Particles only</button>
+    </div>
+    <div class="seg" id="coll">
+      <button data-c="on" class="on">Collisions on</button><button data-c="off">Off</button><button data-c="show">Show colliders</button>
+    </div>
+    <div class="seg" id="res" title="Which baked sprite set to use">
+      <button data-r="auto" class="on">Auto</button><button data-r="1">@1x</button><button data-r="2">@2x</button><button data-r="4">@4x</button>
+    </div>
+    <div class="seg" id="zoom"><button data-z="-1">−</button><button data-z="0">Fit</button><button data-z="1">+</button></div>
+    <div class="stats">
+      <span class="badge" id="collInfo" title="Collision checks per frame (grid broad-phase), overlaps resolved, shell hits, time spent"></span>
+      <span class="badge" id="resInfo"></span>
+      <span class="mute" id="info"></span>
+      <span class="fps" id="fps">–</span><span class="mute">FPS</span>
+    </div>
+  </header>
+  <div id="view">
+    <div id="pixiHost"></div>
+    <div id="svgHost" hidden></div>
+    <div class="hint" id="hint"></div>
+  </div>
+  <footer>
+    <details>
+      <summary id="sheetSummary">Show the 32 tank directions and the sprite sheets</summary>
+      <div class="facings" id="facings"></div>
+      <div class="atlas" id="atlasList"></div>
+    </details>
+  </footer>
+</div>
+
+<script>
+__PIXI__
+</script>
+<script>
+__PIXI_UNSAFE_EVAL__
+</script>
+<script>
+__TEAM_BATCH__
+</script>
+<script>
+__VECTOR_UNIT__
+</script>
+<script>
+__VECTOR_MINI__
+</script>
+<script>
+const MANIFEST = __MANIFEST__; // sprite sheets per group (buildings, tank-<colour>, tank-common) and scale; files live in ./atlas/
+
+(async () => {
+  const VM = window.VectorMini;
+  const TEAMS = Object.keys(VM.TEAMS);
+  // team colours: picked live, normalised by the style-guide rules, applied by the team-colour shader
+  const palette = {}; let paletteVer = 0;
+  const START = { green: '#2f9a45', blue: '#2f6fd1', red: '#c0393b', purple: '#9a5fc8' };
+  let retintStrip = null;
+  const UM = UnitModels, UNIT = UM.META;   // Light Panzer (VectorUnit model) and the positions the game needs
+  const hexInt = (h) => parseInt(h.slice(1), 16);
+  function setColour(team, hex) {
+    const c = TeamColor.teamColours(hex), u = UM.colours(hex);
+    c.tank = { paint: hexInt(u.paint), light: hexInt(u.glow), paintHex: u.paint, glowHex: u.glow };   // tanks: muted unit paint
+    palette[team] = c; paletteVer++; if (team === 'green' && retintStrip) retintStrip();
+  }
+  for (const t of TEAMS) setColour(t, START[t]);
+  const TILE = 24, N = 24, WORLD = TILE * N;            // world units
+  const P = (x, y, z = 0) => [(x - y) * 0.866, (x + y) * 0.5 - z];
+  const view = document.getElementById('view');
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- ground (shared by both modes) ----------
+  const gb = { x0: -WORLD * 0.866, y0: 0, w: WORLD * 0.866 * 2, h: WORLD };
+  const GR = 4;
+  const gc = document.createElement('canvas'); gc.width = Math.ceil(gb.w * GR); gc.height = Math.ceil(gb.h * GR);
+  {
+    const g = gc.getContext('2d'); g.scale(GR, GR); g.translate(-gb.x0, -gb.y0);
+    let s = 7; const R = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+      const c = [P(i * TILE, j * TILE), P((i + 1) * TILE, j * TILE), P((i + 1) * TILE, (j + 1) * TILE), P(i * TILE, (j + 1) * TILE)];
+      const base = (i + j) % 2 ? [74, 84, 62] : [69, 79, 58], k = 0.92 + R() * 0.14;
+      g.fillStyle = `rgb(${base.map((v) => Math.round(v * k)).join(',')})`;
+      g.beginPath(); c.forEach((p, n) => (n ? g.lineTo(...p) : g.moveTo(...p))); g.closePath(); g.fill();
+      g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 0.4; g.stroke();
+    }
+    for (let n = 0; n < 160; n++) { // dirt + grass patches
+      const p = P(R() * WORLD, R() * WORLD); g.fillStyle = R() > 0.5 ? 'rgba(110,96,70,.18)' : 'rgba(40,60,35,.22)';
+      g.beginPath(); g.ellipse(p[0], p[1], 6 + R() * 22, (6 + R() * 22) * 0.5, 0, 0, Math.PI * 2); g.fill();
+    }
+    g.strokeStyle = 'rgba(200,190,160,.10)'; g.lineWidth = 7; // a dirt road loop
+    g.beginPath(); [[96, 96], [480, 96], [480, 480], [96, 480], [96, 96]].forEach((q, n) => { const p = P(...q); n ? g.lineTo(...p) : g.moveTo(...p); }); g.stroke();
+  }
+  let groundURL = null;
+
+  // ---------- simulation (identical for both renderers) ----------
+  const factories = [
+    { x: 70, y: 70, facing: 0, team: 'green' }, { x: 506, y: 70, facing: 1, team: 'blue' },
+    { x: 506, y: 506, facing: 2, team: 'red' }, { x: 70, y: 506, facing: 3, team: 'purple' },
+  ];
+  const LO = 30, HI = WORLD - 30;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  let units = [];
+  const DIRS = 32, STEP = (Math.PI * 2) / DIRS;
+  const dirIndex = (a) => ((Math.round(a / STEP) % DIRS) + DIRS) % DIRS;
+  const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+  const ROLL_STEP = 0.9; // world units driven per animation frame
+  const HULL_TURN = 2.4, TURRET_TURN = 2.2, RANGE = 150; // rad/s, rad/s, world units
+  let turretMode = 'aim', frameNo = 0;
+  const flashes = []; // muzzle flashes {x, y, a, t}
+  const shells = [];  // {x, y, vx, vy, team, life}
+  const sparks = [];  // impact sparks {x, y, t, big}
+  // ---------- collisions ----------
+  const R_TANK = 11, R_FAC = 24, CELL = 24, GW = Math.ceil(WORLD / CELL);
+  const grid = Array.from({ length: GW * GW }, () => []);
+  let collisionsOn = true, showColliders = false;
+  const cstats = { checks: 0, contacts: 0, hits: 0, ms: 0, kills: 0, wrecks: 0 };
+  const insideFactory = (x, y, pad = 0) => factories.some((f) => (x - f.x) ** 2 + (y - f.y) ** 2 < (R_FAC + pad) ** 2);
+  function pickWaypoint(u) { do { u.tx = rnd(LO, HI); u.ty = rnd(LO, HI); } while (insideFactory(u.tx, u.ty, R_TANK + 8)); u.best = Infinity; u.stuckT = 0; }
+  function buildGrid() {
+    for (const c of grid) c.length = 0;
+    for (const u of units) {
+      const cx = Math.max(0, Math.min(GW - 1, (u.x / CELL) | 0)), cy = Math.max(0, Math.min(GW - 1, (u.y / CELL) | 0));
+      u.cell = cy * GW + cx; grid[u.cell].push(u);
+    }
+  }
+  // calls fn(v) for every tank in the 3×3 cells around (x, y)
+  function near(x, y, fn) {
+    const cx = (x / CELL) | 0, cy = (y / CELL) | 0;
+    for (let gy = cy - 1; gy <= cy + 1; gy++) { if (gy < 0 || gy >= GW) continue;
+      for (let gx = cx - 1; gx <= cx + 1; gx++) { if (gx < 0 || gx >= GW) continue;
+        const c = grid[gy * GW + gx]; for (let k = 0; k < c.length; k++) if (fn(c[k]) === false) return; } }
+  }
+  // the nearest obstacle in a corridor ahead of the tank (its own width), or null
+  const LOOK = 26;
+  function probe(u) {
+    const hx = Math.cos(u.heading), hy = Math.sin(u.heading); let best = null;
+    const test = (ox, oy, r, follow) => {
+      const rx = ox - u.x, ry = oy - u.y, ahead = rx * hx + ry * hy;
+      if (ahead <= 0 || ahead > LOOK + r) return;
+      if (Math.abs(ry * hx - rx * hy) < (r + R_TANK) * 0.85) { // inside our corridor
+        const dist = ahead - r + R_TANK; if (!best || dist < best.dist) best = { dist, follow };
+      }
+    };
+    near(u.x + hx * LOOK * 0.5, u.y + hy * LOOK * 0.5, (v) => {
+      if (v === u) return;
+      // a tank driving the same way in front of us: follow it, don't swerve
+      const same = !v.dead && v.wait <= 0 && Math.cos(v.heading - u.heading) > 0.75;
+      test(v.x, v.y, R_TANK, same);
+    });
+    for (const f of factories) test(f.x, f.y, R_FAC, false);
+    return best;
+  }
+  // ---------- local path planner ----------
+  const PLAN_LOOK = 60;                            // how far ahead a tank checks each direction
+  const DETOUR_START = 36, DETOUR_END = 52;         // hysteresis band (world units)
+  const OPEN = R_TANK * 1.2;                        // a lane is open if we can drive at least this far
+  const CANDS = [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6, 7, -7, 8, -8].map((k) => k * (Math.PI / 16)); // ±90° in 11.25° steps
+  function nearR(x, y, r, fn) { // every tank in grid cells within radius r
+    const c0 = Math.max(0, ((x - r) / CELL) | 0), c1 = Math.min(GW - 1, ((x + r) / CELL) | 0);
+    const r0 = Math.max(0, ((y - r) / CELL) | 0), r1 = Math.min(GW - 1, ((y + r) / CELL) | 0);
+    for (let gy = r0; gy <= r1; gy++) for (let gx = c0; gx <= c1; gx++) { const c = grid[gy * GW + gx]; for (let k = 0; k < c.length; k++) fn(c[k]); }
+  }
+  // how far can u drive in direction a before its body would touch something?
+  function freeDist(u, a, maxD) {
+    const hx = Math.cos(a), hy = Math.sin(a); let best = maxD;
+    const test = (ox, oy, r) => {
+      const rx = ox - u.x, ry = oy - u.y, ahead = rx * hx + ry * hy, lat = ry * hx - rx * hy, R = r + R_TANK + 1.5;
+      if (ahead <= 0 || Math.abs(lat) >= R) return; // behind or beside us: driving this way moves away from it
+      const dd = ahead - Math.sqrt(R * R - lat * lat);
+      if (dd < best) best = Math.max(0, dd);
+    };
+    nearR(u.x + hx * maxD * 0.5, u.y + hy * maxD * 0.5, maxD * 0.5 + 2 * R_TANK, (v) => {
+      if (v === u) return;
+      // tanks already driving our way are not obstacles (we follow them instead)
+      if (!v.dead && v.wait <= 0 && Math.cos(v.heading - a) > 0.75 && (v.x - u.x) * hx + (v.y - u.y) * hy > 0) return;
+      // moving tank: test where it will be when we get there (and where it is now, if it is close)
+      const ahead = (v.x - u.x) * hx + (v.y - u.y) * hy, t = Math.max(0, Math.min(1.2, ahead / Math.max(8, u.speed)));
+      if (ahead < 3 * R_TANK || !(v.vx || v.vy)) test(v.x, v.y, R_TANK);
+      if (v.vx || v.vy) test(v.x + v.vx * t, v.y + v.vy * t, R_TANK);
+    });
+    for (const f of factories) test(f.x, f.y, R_FAC);
+    return best;
+  }
+  function plan(u, goal, distToGoal) {
+    const look = Math.min(PLAN_LOOK, distToGoal + R_TANK);
+    // 1) straight line to the goal is clear → just go
+    const goalFree = freeDist(u, goal, PLAN_LOOK), near = distToGoal + R_TANK;
+    // hysteresis: start a detour only if blocked close ahead; end it only when the way is clear further out, twice in a row
+    const startAt = Math.min(DETOUR_START, near - 0.5), endAt = Math.min(DETOUR_END, near - 0.5);
+    if (!u.detour && goalFree >= startAt) { u.nav = goal; u.navFree = goalFree; return; }
+    if (u.detour && goalFree >= endAt) { if (++u.clearN >= 2) { u.nav = goal; u.navFree = goalFree; u.detour = false; u.clearN = 0; u.detourEndT = 0; return; } }
+    else u.clearN = 0;
+    // 2) a new encounter picks its side at random (left or right of the goal line) and keeps it until the detour ends
+    const score = (a, free) => (Math.min(free, look) / look) * 2.2 + Math.cos(wrap(a - goal)) * 1.3
+      - (Math.abs(wrap(a - u.heading)) / Math.PI) * 0.7;
+    const pick = (sideOnly, side = u.side) => {
+      let bA = null, bS = -Infinity, bF = 0;
+      for (const off of CANDS) {
+        if (sideOnly && off !== 0 && Math.sign(off) !== side) continue;
+        const a = goal + off, free = freeDist(u, a, PLAN_LOOK);
+        if (sideOnly && free < OPEN) continue;                 // lane must actually be open
+        const sc = score(a, free); if (sc > bS) { bS = sc; bA = a; bF = free; }
+      }
+      return bA === null ? null : { a: bA, s: bS, f: bF };
+    };
+    // 3) commit: hold the detour lane. Only if it gets blocked, turn further OUT on the same side (never back in mid-detour)
+    const curFree = freeDist(u, u.nav, PLAN_LOOK);
+    if (u.detour && curFree >= OPEN && Math.cos(wrap(u.nav - goal)) > -0.3) { u.navFree = curFree; return; }
+    let best = null;
+    if (u.detour) { // blocked: more outward lanes on our side, measured from the lane we are on
+      for (let k = 1; k <= 8 && !best; k++) {
+        const a = u.nav + u.side * k * (Math.PI / 16), free = freeDist(u, a, PLAN_LOOK);
+        if (free >= OPEN && Math.cos(wrap(a - goal)) > -0.3) best = { a, f: free };
+      }
+    } else {
+      // new obstacle: take the side with more room / less turning; coin flip only if both are about equal;
+      // right after another detour, keep going round the same way (no left-right-left zigzag through a crowd)
+      const L = pick(true, -1), R = pick(true, 1);
+      const recent = u.detourEndT < 1.5;
+      if (L && R) u.side = Math.abs(L.s - R.s) < 0.15 ? (recent ? u.side : (Math.random() < 0.5 ? -1 : 1)) : (L.s > R.s ? -1 : 1);
+      else if (L || R) u.side = L ? -1 : 1;
+      best = u.side < 0 ? L : R; cstats.starts = (cstats.starts || 0) + 1;
+    }
+    if (!best) {
+      const other = pick(true, -u.side);
+      if (other) { u.side = -u.side; best = other; cstats.forced = (cstats.forced || 0) + 1; } // our side is shut, the other is open: go round that way
+      else best = pick(false);                                                                 // nothing open anywhere: keep our side, creep along the freest lane
+    }
+    u.nav = best.a; u.navFree = best.f; u.detour = true; u.clearN = 0;
+  }
+  function collide() {
+    let checks = 0, contacts = 0;
+    for (const u of units) u.touch = false;
+    if (collisionsOn) {
+      const m = 2 * R_TANK, m2 = m * m;
+      for (let pass = 0; pass < 2; pass++) { // 2 relaxation passes = stable crowds
+        buildGrid();
+        for (const u of units) near(u.x, u.y, (v) => {
+          if (v.id <= u.id) return; checks++;
+          const dx = v.x - u.x, dy = v.y - u.y, d2 = dx * dx + dy * dy;
+          if (d2 >= m2) return;
+          contacts++;
+          if (u.dead && v.dead) return;
+          const d = Math.sqrt(d2) || 0.01, nx = d2 ? dx / d : 1, ny = d2 ? dy / d : 0, gap = m - d;
+          const pu = u.dead ? 0 : v.dead ? gap : gap / 2, pv = gap - pu; // wrecks don't move
+          u.x -= nx * pu; u.y -= ny * pu; v.x += nx * pv; v.y += ny * pv; u.touch = v.touch = true;
+        });
+      }
+      for (const u of units) {
+        for (const f of factories) { // buildings are static: push the tank out
+          checks++;
+          const dx = u.x - f.x, dy = u.y - f.y, d2 = dx * dx + dy * dy, m = R_FAC + R_TANK;
+          if (d2 < m * m) { contacts++; const d = Math.sqrt(d2) || 0.01; u.x = f.x + (dx / d) * m; u.y = f.y + (dy / d) * m; u.touch = true; }
+        }
+      }
+    }
+    for (const u of units) { u.x = Math.max(R_TANK, Math.min(WORLD - R_TANK, u.x)); u.y = Math.max(R_TANK, Math.min(WORLD - R_TANK, u.y)); }
+    if (!collisionsOn) buildGrid(); // shells still need the grid
+    cstats.wrecks = units.reduce((n, u) => n + (u.dead ? 1 : 0), 0);
+    cstats.checks = checks; cstats.contacts = contacts; cstats.avoiding = units.reduce((n, u) => n + (!u.dead && u.detour ? 1 : 0), 0);
+  }
+  // ---------- damage ----------
+  const DMG = [6, 11];                 // HP per shell hit
+  const WRECK_TIME = 12, FADE = 2;     // seconds a wreck stays, then fades out
+  const level = (u) => (u.dead ? 3 : u.hp > 60 ? 0 : u.hp > 30 ? 1 : 2); // 0 intact · 1 damaged · 2 critical/burning · 3 destroyed
+  const particles = []; // {x, y, z, vx, vy, vz, t, life, kind: 'smoke'|'dsmoke'|'fire'|'ember', s0, s1}
+  let fxMode = 'flip'; const FLIP = () => fxMode === 'flip' && mode === 'pixi'; // flipbooks are sprites → Pixi only
+  const explosions = []; // flipbook explosions {x, y, t, big}
+  const EXPLO = { big: { frames: 24, fps: 30, z: 3 }, small: { frames: 12, fps: 36, z: 7 } };
+  let simT = 0;
+  const MAX_P = 5000;
+  function puff(kind, x, y, z, spread = 1, up = 1) {
+    if (particles.length >= MAX_P) return;
+    const fire = kind === 'fire', ember = kind === 'ember';
+    particles.push({ kind, x: x + rnd(-1, 1) * spread, y: y + rnd(-1, 1) * spread, z,
+      vx: rnd(-3, 3) + WIND[0], vy: rnd(-3, 3) + WIND[1], vz: (ember ? rnd(16, 30) : fire ? rnd(10, 20) : rnd(7, 13)) * up, t: 0,
+      life: ember ? rnd(0.5, 0.9) : fire ? rnd(0.3, 0.55) : kind === 'dsmoke' ? rnd(1.6, 2.6) : rnd(1.2, 2.0),
+      s0: ember ? rnd(1.2, 2) : fire ? rnd(4, 6.5) : rnd(3, 4.5), s1: ember ? 0.4 : fire ? 1.2 : kind === 'dsmoke' ? rnd(11, 15) : rnd(8, 11) });
+  }
+  const WIND = [4, -3]; // smoke drifts a little
+  const local = (u, lx, ly, a = u.heading) => [u.x + Math.cos(a) * lx - Math.sin(a) * ly, u.y + Math.sin(a) * lx + Math.cos(a) * ly];
+  // ---------- firing: recoil + muzzle smoke ----------
+  const RECOIL_T = 0.45; // seconds the kick + wobble lasts
+  function fireKick(u) {
+    u.recoilT = 0; u.recoilA = u.turret;
+    const c = Math.cos(u.turret), sn = Math.sin(u.turret), L = TIP_LEN + 0.5, pv = UM.pivotOffset(u.heading);
+    for (let k = 0; k < 7; k++) { // puffs blown out of the barrel: fast forward, then they slow, grow and drift
+      if (particles.length >= MAX_P) break;
+      const sp = rnd(18, 42), side = rnd(-6, 6);
+      particles.push({ kind: 'msmoke', x: u.x + pv[0] + c * L, y: u.y + pv[1] + sn * L, z: TIP[2] + rnd(-0.4, 0.4),
+        vx: c * sp - sn * side + WIND[0], vy: sn * sp + c * side + WIND[1], vz: rnd(2, 6), t: 0,
+        life: rnd(0.8, 1.4), s0: rnd(2, 3), s1: rnd(9, 13) });
+    }
+  }
+  // recoil curve: sharp kick back, then a damped spring back to rest (1 = full kick)
+  function recoilK(t) {
+    if (t == null || t >= RECOIL_T) return 0;
+    if (t < 0.035) return t / 0.035;
+    const s = t - 0.035; return Math.exp(-s * 11) * Math.cos(s * 34);
+  }
+  // render-only offsets for a firing tank: hull rocks back a little, turret + barrel kick back more
+  function recoilOffsets(u) {
+    const k = recoilK(u.recoilT); if (!k) return null;
+    const c = Math.cos(u.recoilA), sn = Math.sin(u.recoilA);
+    const o = P(0, 0, 0), h = P(-c * 0.55 * k, -sn * 0.55 * k, 0.25 * Math.abs(k)), t = P(-c * 1.5 * k, -sn * 1.5 * k, 0);
+    return { hx: h[0] - o[0], hy: h[1] - o[1], tx: t[0] - o[0], ty: t[1] - o[1] };
+  }
+  function kill(u) {
+    u.dead = true; u.deadT = 0; u.hp = 0; u.hitT = 0; u.target = null; cstats.kills++;
+    if (FLIP()) { explosions.push({ x: u.x, y: u.y, t: 0, big: true }); for (let k = 0; k < 14; k++) { const p = particles.length; puff('ember', u.x, u.y, 6, 3, 1.4); if (particles[p]) { particles[p].vx *= 7; particles[p].vy *= 7; } } }
+    else { sparks.push({ x: u.x, y: u.y, t: -0.05, big: true, boom: true });
+      for (let k = 0; k < 22; k++) { const p = particles.length; puff('fire', u.x, u.y, 6, 5, 1.6); if (particles[p]) { particles[p].vx *= 6; particles[p].vy *= 6; particles[p].life *= 1.4; particles[p].s0 *= 1.6; } } }
+    for (let k = 0; k < 10; k++) puff('dsmoke', u.x, u.y, 8, 6, 1.2);
+  }
+  function respawn(u) {
+    const f = factories.find((q) => q.team === u.team), a = f.facing * Math.PI / 2;
+    u.x = f.x + Math.cos(a) * (R_FAC + R_TANK + 6); u.y = f.y + Math.sin(a) * (R_FAC + R_TANK + 6);
+    u.heading = u.turret = u.nav = u.lastH = a; u.hp = 100; u.dead = false; u.deadT = 0; u.wait = 0; u.planT = 0; pickWaypoint(u);
+  }
+  function emitAll(dt) {
+    for (const u of units) {
+      const L = level(u); if (!L) continue;
+      const e = u.emit; let smokeRate = 0, dsRate = 0, fireRate = 0;
+      const flip = FLIP(); // flipbook mode: flames are sprites on the tank, particles only add embers
+      if (L === 1) smokeRate = 3;
+      else if (L === 2) { dsRate = 6; fireRate = flip ? 4 : 12; }
+      else { const k = Math.max(0, 1 - u.deadT / 7); fireRate = flip ? 7 * k : 24 * k + (u.deadT < 7 ? 4 : 0); dsRate = u.deadT < WRECK_TIME - 1 ? 7 : 0; }
+      e.s += (smokeRate + dsRate) * dt; e.f += fireRate * dt;
+      while (e.s >= 1) { e.s -= 1; const q = local(u, -6, rnd(-2, 2)); puff(dsRate ? 'dsmoke' : 'smoke', q[0], q[1], 8); }
+      while (e.f >= 1) { e.f -= 1; const q = local(u, rnd(-8, 2), rnd(-4, 4)); puff(flip ? 'ember' : 'fire', q[0], q[1], flip ? 10 : L === 3 ? 7 : 7.5, 1); }
+    }
+    for (let k = particles.length - 1; k >= 0; k--) {
+      const q = particles[k]; q.t += dt;
+      if (q.t >= q.life) { particles[k] = particles[particles.length - 1]; particles.pop(); continue; }
+      q.x += q.vx * dt; q.y += q.vy * dt; q.z += q.vz * dt;
+      // drag pulls every particle toward the wind speed; muzzle smoke loses its blast speed fast
+      const drag = q.kind === 'msmoke' ? Math.pow(0.04, dt) : 0.97; q.vx = WIND[0] + (q.vx - WIND[0]) * drag; q.vy = WIND[1] + (q.vy - WIND[1]) * drag;
+    }
+  }
+  function moveShells(dt) {
+    for (let k = shells.length - 1; k >= 0; k--) {
+      const b = shells[k]; b.life -= dt;
+      const steps = 2; let dead = b.life <= 0;
+      for (let st = 0; st < steps && !dead; st++) { // sub-steps so fast shells cannot skip through a tank
+        b.x += (b.vx * dt) / steps; b.y += (b.vy * dt) / steps;
+        if (insideFactory(b.x, b.y)) { sparks.push({ x: b.x, y: b.y, t: 0, big: false }); dead = true; break; }
+        near(b.x, b.y, (v) => {
+          if (v.team === b.team || v.dead) return;
+          if ((v.x - b.x) ** 2 + (v.y - b.y) ** 2 < R_TANK * R_TANK * 0.8) {
+            v.hitT = 0.16; cstats.hits++; if (FLIP()) explosions.push({ x: b.x, y: b.y, t: 0, big: false }); else sparks.push({ x: b.x, y: b.y, t: 0, big: true }); dead = true;
+            v.hp -= rnd(DMG[0], DMG[1]); if (v.hp <= 0) kill(v);
+            return false;
+          }
+        });
+      }
+      if (dead || b.x < 0 || b.y < 0 || b.x > WORLD || b.y > WORLD) shells.splice(k, 1);
+    }
+    for (let k = sparks.length - 1; k >= 0; k--) { const f = sparks[k]; f.t += dt; if (f.t > (f.boom ? 0.45 : 0.25)) sparks.splice(k, 1); }
+    for (let k = explosions.length - 1; k >= 0; k--) { const e = explosions[k], E = e.big ? EXPLO.big : EXPLO.small; e.t += dt; if (e.t * E.fps >= E.frames) explosions.splice(k, 1); }
+    simT += dt;
+    for (const u of units) { if (u.hitT > 0) u.hitT -= dt; if (u.recoilT != null) { u.recoilT += dt; if (u.recoilT >= RECOIL_T) u.recoilT = null; } }
+  }
+  function makeUnits(n) {
+    shells.length = sparks.length = flashes.length = particles.length = explosions.length = 0; cstats.hits = cstats.kills = 0;
+    units = Array.from({ length: n }, (_, i) => {
+      const h = Math.random() * Math.PI * 2;
+      let x, y; do { x = rnd(LO, HI); y = rnd(LO, HI); } while (insideFactory(x, y, R_TANK + 4));
+      return { id: i, team: TEAMS[i % 4], x, y, tx: x, ty: y,
+        speed: rnd(16, 30), heading: h, turret: h, frame: 0, ft: Math.random() * 0.1, wait: 0, target: null, cd: rnd(0, 2), hitT: 0, recoilT: null, recoilA: 0, hp: 100, dead: false, deadT: 0, emit: { s: 0, f: 0 }, best: Infinity, stuckT: 0, nav: h, navFree: PLAN_LOOK, clearN: 0, detour: false, planT: Math.random() * 0.25, side: 1, detourEndT: 9, vx: 0, vy: 0, lastH: h };
+    });
+  }
+  const turnToward = (cur, want, max) => { const d = wrap(want - cur); return cur + Math.max(-max, Math.min(max, d)); };
+  let fanFrame = 0, fanT = 0;
+  function step(dt) {
+    fanT += dt; if (fanT > 0.11) { fanT = 0; fanFrame = (fanFrame + 1) % 4; }
+    frameNo++;
+    for (let i = 0; i < units.length; i++) {
+      const u = units[i];
+      if (u.dead) { u.vx = u.vy = 0; u.deadT += dt; if (u.deadT > WRECK_TIME + FADE) respawn(u); continue; }
+      // --- hull: turn gradually, drive only when roughly facing the waypoint
+      let moving = false;
+      if (u.wait > 0) { u.wait -= dt; u.vx = u.vy = 0; }
+      else {
+        const dx = u.tx - u.x, dy = u.ty - u.y, d = Math.hypot(dx, dy);
+        if (d < 6) { pickWaypoint(u); u.wait = Math.random() < 0.3 ? rnd(0.3, 1.5) : 0; }
+        else {
+          const goal = Math.atan2(dy, dx);
+          // stuck in a crowd or behind a building for long? choose another waypoint
+          if (d < u.best - 3) { u.best = d; u.stuckT = 0; } else if ((u.stuckT += dt) > 4) pickWaypoint(u);
+          // --- local path planning: re-plan a few times a second (staggered), or at once if our lane is blocked
+          let want = goal;
+          if (collisionsOn) {
+            u.planT -= dt; u.detourEndT += dt;
+            const laneFree = freeDist(u, u.nav, PLAN_LOOK);
+            if (u.planT <= 0 || (laneFree < OPEN && u.planT < 0.15)) { plan(u, goal, d); u.planT = rnd(0.2, 0.3); }
+            want = u.nav;
+          }
+          const ob = collisionsOn ? probe(u) : null;
+          const off = Math.abs(wrap(want - u.heading));
+          u.heading = turnToward(u.heading, want, HULL_TURN * dt);
+          // tracks only drive forward: speed follows the free space ahead
+          let spd = u.speed * (level(u) === 2 ? 0.65 : 1); // burning tanks crawl
+          if (ob && ob.follow) spd = ob.dist < 2 * R_TANK + 6 ? 0 : spd * 0.6;  // convoy: keep distance
+          else if (ob && ob.dist < 2 * R_TANK + 1) spd = 0;                      // nearly touching: turn in place
+          else if (collisionsOn) spd *= Math.min(1, 0.35 + u.navFree / PLAN_LOOK);
+          u.vx = u.vy = 0;
+          if (off < 0.6 && spd > 0) { const v = Math.min(d, spd * dt * (1 - off)); u.x += Math.cos(u.heading) * v; u.y += Math.sin(u.heading) * v; u.vx = Math.cos(u.heading) * v / dt; u.vy = Math.sin(u.heading) * v / dt; }
+          moving = true;
+        }
+      }
+      // track animation follows the ground actually covered (and turning in place), not time
+      const travel = Math.hypot(u.vx, u.vy) * dt + Math.abs(wrap(u.heading - u.lastH)) * 6; u.lastH = u.heading;
+      u.ft += travel; if (u.ft > ROLL_STEP) { u.ft %= ROLL_STEP; u.frame = (u.frame + 1) % 3; }
+      // --- turret: independent of the hull
+      if (turretMode === 'aim') {
+        if ((i + frameNo) % 15 === 0) { // re-pick the nearest enemy now and then
+          let best = null, bd = RANGE * RANGE;
+          for (const e of units) { if (e.team === u.team || e.dead) continue; const q = (e.x - u.x) ** 2 + (e.y - u.y) ** 2; if (q < bd) { bd = q; best = e; } }
+          u.target = best;
+        }
+        const t = u.target;
+        if (t && !t.dead && (t.x - u.x) ** 2 + (t.y - u.y) ** 2 < RANGE * RANGE * 1.2) {
+          const want = Math.atan2(t.y - u.y, t.x - u.x);
+          u.turret = turnToward(u.turret, want, TURRET_TURN * dt);
+          u.cd -= dt;
+          if (u.cd <= 0 && Math.abs(wrap(want - u.turret)) < 0.06) { u.cd = rnd(1.4, 2.6); const pv = UM.pivotOffset(u.heading); flashes.push({ x: u.x + pv[0], y: u.y + pv[1], a: u.turret, t: 0 }); fireKick(u);
+            const c = Math.cos(u.turret), sn = Math.sin(u.turret), L = TIP_LEN;
+            shells.push({ x: u.x + pv[0] + c * L, y: u.y + pv[1] + sn * L, vx: c * 300, vy: sn * 300, team: u.team, life: RANGE / 300 + 0.15 }); }
+        } else u.turret = turnToward(u.turret, u.heading, TURRET_TURN * dt * 0.6);
+      } else if (turretMode === 'follow') u.turret = turnToward(u.turret, u.heading, TURRET_TURN * dt);
+      else u.turret += TURRET_TURN * 0.5 * dt * (u.id % 2 ? 1 : -1);
+    }
+    const t0 = performance.now();
+    collide(); moveShells(dt); emitAll(dt);
+    cstats.ms = cstats.ms * 0.9 + (performance.now() - t0) * 0.1;
+    for (let k = flashes.length - 1; k >= 0; k--) { flashes[k].t += dt; if (flashes[k].t > 0.12) flashes.splice(k, 1); }
+  }
+  const dmgTag = (u) => { const L = level(u); return L === 1 ? 'D1' : L === 2 ? 'D2' : ''; };
+  const hullKey = (u) => u.dead ? `tankHullWreck_any_f${dirIndex(u.heading)}_t0` : `tankHull${dmgTag(u)}_any_f${dirIndex(u.heading)}_t${u.frame}`;
+  const wreckAlpha = (u) => (u.dead && u.deadT > WRECK_TIME ? Math.max(0, 1 - (u.deadT - WRECK_TIME) / FADE) : 1);
+  const turretKey = (u) => u.dead ? `tankTurretWreck_any_f${dirIndex(u.turret)}_t0` : `tankTurret${dmgTag(u)}_any_f${dirIndex(u.turret)}_t0`;
+  // turret sprite sits on its pivot (a little behind the hull centre), in screen units from the tank centre
+  const pivotScreen = (u) => { const pv = UM.pivotOffset(u.heading), a = P(pv[0], pv[1], 0), o = P(0, 0, 0); return [a[0] - o[0], a[1] - o[1]]; };
+  const TIP = UNIT.muzzle, TIP_LEN = TIP[0] + 0.6;   // muzzle: from the turret pivot along the barrel
+  const SHELL_Z = TIP[2];
+  const flashPos = (f) => P(f.x + Math.cos(f.a) * TIP_LEN, f.y + Math.sin(f.a) * TIP_LEN, TIP[2]);
+  const facKey = (f) => `lightFactory_any_f${f.facing}_t${fanFrame}`;
+
+  // ---------- camera ----------
+  const cam = { cx: 0, cy: WORLD * 0.5, zoom: 1 };
+  function fit() { const r = view.getBoundingClientRect(); cam.cx = 0; cam.cy = WORLD * 0.5 - 10; cam.zoom = Math.min(r.width / (gb.w + 40), r.height / (gb.h + 60)); }
+  const clampZoom = (z) => Math.max(0.3, Math.min(4, z));
+
+  // ---------- renderer A: baked sprites in PixiJS ----------
+  const app = new PIXI.Application();
+  await app.init({ preference: 'webgl', resizeTo: view, background: '#1a1e19', antialias: false, autoStart: false, resolution: Math.min(2, devicePixelRatio || 1), autoDensity: true });
+  app.ticker.stop();
+  // count draw calls per frame (proof that all teams still draw in a few batches)
+  let drawCalls = 0, lastDrawCalls = 0;
+  { const gl = app.renderer.gl; for (const fn of ['drawElements', 'drawArrays', 'drawElementsInstanced', 'drawArraysInstanced']) { const orig = gl[fn]; if (orig) gl[fn] = function (...a) { drawCalls++; return orig.apply(this, a); }; } }
+  $('pixiHost').appendChild(app.canvas);
+  const loadImg = (src) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+  let tankSprites = [], mode = 'pixi';
+  const sheets = {};
+  // the groups this map needs. A real map would list only the teams that play on it, e.g. ['buildings', 'tank-common', 'tank-green', 'tank-red']
+  const NEEDED = ['buildings', 'tank', 'tank-dmg', 'tank-common', 'fx']; // one set of tank sheets for every team colour
+  const fileOf = (g, sc) => MANIFEST.groups[g].files[sc];
+  const scaleKB = (sc) => NEEDED.reduce((a, g) => a + fileOf(g, sc).kb, 0);
+  // where sheets come from: web = loose files in ./atlas/ · desktop (Tauri) = the encrypted .pak files through
+  // the app's private pak protocol (Windows/Android spell it http://pak.localhost/, macOS/Linux pak://localhost/)
+  const ASSET_BASE = window.__TAURI_INTERNALS__ ? (/Windows|Android/.test(navigator.userAgent) ? 'http://pak.localhost/' : 'pak://localhost/') : 'atlas/';
+  async function loadFile(name) { // one sprite sheet = <name>.json + <name>.webp (lossless), downloaded separately and in parallel
+    const [json, blob] = await Promise.all([
+      fetch(`${ASSET_BASE}${name}.json`).then((r) => { if (r.status === 503) throw new Error('Game data (.pak files) not found. Please reinstall the game.'); if (!r.ok) throw new Error(`${name}.json: HTTP ${r.status}`); return r.json(); }),
+      fetch(`${ASSET_BASE}${name}.webp`).then((r) => { if (!r.ok) throw new Error(`${name}.webp: HTTP ${r.status}`); return r.blob(); }),
+    ]);
+    const url = URL.createObjectURL(blob), img = await loadImg(url);
+    const sheet = new PIXI.Spritesheet(PIXI.Texture.from(img), json); await sheet.parse();
+    return { name, sheet, img, url, kb: Math.round(blob.size / 1024), w: json.meta.size.w, h: json.meta.size.h };
+  }
+  function getSheet(sc) {
+    if (!sheets[sc]) sheets[sc] = (async () => {
+      const t0 = performance.now();
+      const parts = await Promise.all(NEEDED.map((g) => loadFile(fileOf(g, sc).file)));
+      const textures = Object.assign({}, ...parts.map((p) => p.sheet.textures)); // one lookup table over all files
+      return { sc, sheet: { textures }, parts, ms: Math.round(performance.now() - t0) };
+    })();
+    return sheets[sc];
+  }
+  // pick the smallest set that still has ≥ 1 texture pixel per screen pixel
+  const needFor = () => cam.zoom * app.renderer.resolution;
+  function pickScale(cur) {
+    const need = needFor(), slack = 1.12; // small hysteresis so it does not flip back and forth at the edge
+    if (cur === 1 && need <= 1 * slack) return 1;
+    if (cur === 2 && need <= 2 * slack && need > 1 / slack) return 2;
+    return need <= 1 ? 1 : need <= 2 ? 2 : 4;
+  }
+  let resMode = 'auto', cur = null, switching = false;
+  async function ensureScale() {
+    const want = resMode === 'auto' ? pickScale(cur && cur.sc) : +resMode;
+    if ((cur && cur.sc === want) || switching) return;
+    switching = true; showRes(want, true);
+    const next = await getSheet(want);
+    cur = next; switching = false;
+    tankSprites.forEach((sp) => sp.children.forEach((c) => (c._k = null))); // re-texture everything from the new set
+    showRes(want, false);
+  }
+  function showRes(sc, loading) {
+    const el = $('resInfo');
+    if (mode === 'svg') { el.textContent = 'Vector · always sharp'; el.className = 'badge'; return; }
+    const got = cur && cur.sc === sc ? cur : null;
+    el.textContent = loading ? `Downloading @${sc}x · ${NEEDED.length} files · ${scaleKB(sc)} KB…`
+      : `@${sc}x · ${NEEDED.length} files · ${scaleKB(sc)} KB${got ? ` · loaded in ${got.ms} ms` : ''}`;
+    el.className = 'badge' + (loading ? ' load' : '');
+  }
+  fit();
+  await ensureScale();
+  const world = new PIXI.Container();
+  app.stage.addChild(world);
+  const ground = new PIXI.Sprite(PIXI.Texture.from(gc));
+  ground.position.set(gb.x0, gb.y0); ground.scale.set(1 / GR);
+  world.addChild(ground);
+  const layer = new PIXI.Container(); layer.sortableChildren = true; world.addChild(layer);
+  const dbg = new PIXI.Graphics(); world.addChild(dbg); // drawn above the tanks
+  const facSprites = factories.map((f) => { const s = new TeamColor.TeamSprite(cur.sheet.textures[facKey(f)]); s.anchor.copyFrom(cur.sheet.textures[facKey(f)].defaultAnchor); const p = P(f.x, f.y); s.position.set(p[0], p[1]); s.zIndex = f.x + f.y; layer.addChild(s); return s; });
+  // flash texture: soft yellow dot, drawn additively
+  const flashTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,250,220,1)'); gr.addColorStop(0.35, 'rgba(255,200,90,.9)'); gr.addColorStop(1, 'rgba(255,120,20,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return PIXI.Texture.from(c); })();
+  const smokeTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(0.5, 'rgba(255,255,255,.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return PIXI.Texture.from(c); })();
+  const smokeLayer = new PIXI.Container(); world.addChild(smokeLayer);
+  const fireLayer = new PIXI.Container(); world.addChild(fireLayer);
+  const bars = new PIXI.Graphics(); world.addChild(bars);
+  const fxLayer = new PIXI.Container(); world.addChild(fxLayer);
+  const smokePool = [], firePool = [];
+  function drawParticles() {
+    let ns = 0, nf = 0;
+    for (const q of particles) {
+      const fire = q.kind === 'fire' || q.kind === 'ember', poolArr = fire ? firePool : smokePool, idx = fire ? nf++ : ns++;
+      let sp = poolArr[idx];
+      if (!sp) { sp = new PIXI.Sprite(fire ? flashTex : smokeTex); sp.anchor.set(0.5); if (fire) sp.blendMode = 'add'; (fire ? fireLayer : smokeLayer).addChild(sp); poolArr.push(sp); }
+      const k = q.t / q.life, p = P(q.x, q.y, q.z), size = q.s0 + (q.s1 - q.s0) * k;
+      sp.visible = true; sp.position.set(p[0], p[1]); sp.scale.set(size / 32);
+      if (fire) { sp.tint = q.kind === 'ember' ? (k < 0.5 ? 0xffc24a : 0xff6a1a) : k < 0.4 ? 0xffd36a : 0xff7a22; sp.alpha = 1 - k; }
+      else { sp.tint = q.kind === 'dsmoke' ? 0x2b2826 : q.kind === 'msmoke' ? 0xd2d0c8 : 0x9a9a98; sp.alpha = (q.kind === 'dsmoke' ? 0.7 : q.kind === 'msmoke' ? 0.8 : 0.5) * (1 - k) * Math.min(1, q.t * 10); }
+    }
+    for (let k = ns; k < smokePool.length; k++) smokePool[k].visible = false;
+    for (let k = nf; k < firePool.length; k++) firePool[k].visible = false;
+  }
+  const hpColor = (hp) => (hp > 60 ? 0x6fd17f : hp > 30 ? 0xf2c230 : 0xff5a4a);
+  function drawBars() {
+    bars.clear();
+    const W = 16, H = 1.8;
+    for (const u of units) { if (u.dead || u.hp >= 100) continue; const p = P(u.x, u.y, 22); bars.rect(p[0] - W / 2 - 0.4, p[1] - 0.4, W + 0.8, H + 0.8); }
+    bars.fill({ color: 0x0b0e13, alpha: 0.85 });
+    for (const c of [0x6fd17f, 0xf2c230, 0xff5a4a]) {
+      for (const u of units) { if (u.dead || u.hp >= 100 || hpColor(u.hp) !== c) continue; const p = P(u.x, u.y, 22); bars.rect(p[0] - W / 2, p[1], W * Math.max(0, u.hp) / 100, H); }
+      bars.fill({ color: c });
+    }
+  }
+  const flashPool = [], shellPool = [], sparkPool = [], exploPool = [];
+  const exploLayer = new PIXI.Container(); world.addChild(exploLayer);
+  function drawExplosions(tx) {
+    while (exploPool.length < explosions.length) { const sp = new PIXI.Sprite(); sp.blendMode = 'add'; sp._k = null; exploLayer.addChild(sp); exploPool.push(sp); }
+    exploPool.forEach((sp, k) => {
+      const e = explosions[k]; sp.visible = !!e; if (!e) return;
+      const E = e.big ? EXPLO.big : EXPLO.small, f = Math.min(E.frames - 1, Math.floor(e.t * E.fps));
+      setTex(sp, `${e.big ? 'fxExplosionBig' : 'fxExplosionSmall'}_${f}`, tx);
+      const p = P(e.x, e.y, E.z); sp.position.set(p[0], p[1]);
+    });
+  }
+  function pool(arr, n, tint) { while (arr.length < n) { const sp = new PIXI.Sprite(flashTex); sp.anchor.set(0.5); sp.blendMode = 'add'; sp.tint = tint; fxLayer.addChild(sp); arr.push(sp); } }
+  const EX = 1.2247, EY = 0.7071; // a world circle of radius r projects to an ellipse r·EX × r·EY
+  function drawColliders() {
+    dbg.clear(); if (!showColliders) return;
+    const w = 1.6 / cam.zoom;
+    for (const f of factories) { const p = P(f.x, f.y); dbg.ellipse(p[0], p[1], R_FAC * EX, R_FAC * EY); }
+    dbg.fill({ color: 0xf2c230, alpha: 0.12 }); dbg.stroke({ width: w, color: 0xf2c230, alpha: 0.95 });
+    for (const u of units) if (!u.touch) { const p = P(u.x, u.y); dbg.ellipse(p[0], p[1], R_TANK * EX, R_TANK * EY); }
+    dbg.fill({ color: 0x7fd28f, alpha: 0.16 }); dbg.stroke({ width: w, color: 0x7fd28f, alpha: 0.95 });
+    for (const u of units) if (u.touch) { const p = P(u.x, u.y); dbg.ellipse(p[0], p[1], R_TANK * EX, R_TANK * EY); }
+    dbg.fill({ color: 0xff5e5e, alpha: 0.22 }); dbg.stroke({ width: w, color: 0xff5e5e, alpha: 1 });
+    for (const u of units) { if (u.dead || !u.detour) continue; const a = P(u.x, u.y), L = Math.max(6, u.navFree), b = P(u.x + Math.cos(u.nav) * L, u.y + Math.sin(u.nav) * L); dbg.moveTo(a[0], a[1]).lineTo(b[0], b[1]); }
+    dbg.stroke({ width: w * 1.4, color: 0xf2a33a, alpha: 0.95 });
+  }
+  function buildPixiUnits() {
+    tankSprites.forEach((s) => s.destroy({ children: true }));
+    tankSprites = units.map((u) => {
+      // 4 layers, all sharing one pivot (hull centre on the ground): hull · hull damage · turret · turret damage
+      const box = new PIXI.Container();
+      const [hull, tur] = [0, 1].map(() => { const sp = new TeamColor.TeamSprite(); sp._k = null; return sp; });
+      box.addChild(hull, tur); box._h = hull; box._t = tur;
+      box._fl = [0, 1, 2].map(() => { const sp = new TeamColor.TeamSprite(); sp.blendMode = 'add'; sp.visible = false; sp._k = null; box.addChild(sp); return sp; }); // flipbook flames
+      layer.addChild(box); return box;
+    });
+  }
+  // flipbook flames on the hull deck: 2 while burning, 3 on a fresh wreck (dying down over 7 s)
+  const FLAME_PTS = { 2: UNIT.burnPts.slice(0, 2), 3: UNIT.burnPts.map((p) => [p[0], p[1], p[2] - 0.8]) };   // engine deck + hull, from the model
+  function drawFlames(u, s, tx) {
+    const L = level(u), pts = FLIP() ? FLAME_PTS[L] : null;
+    const k = L === 3 ? Math.max(0, 1 - u.deadT / 7) : 1;
+    for (let i = 0; i < 3; i++) {
+      const sp = s._fl[i], pt = pts && pts[i];
+      if (!pt || k <= 0.02) { sp.visible = false; continue; }
+      const v = (u.id + i) % 3, f = Math.floor(simT * 18 + u.id * 5 + i * 7) % 16, key = `fxFlame_v${v}_${f}`;
+      setTex(sp, key, tx); sp.visible = true;
+      const c = Math.cos(u.heading), sn = Math.sin(u.heading), dx = c * pt[0] - sn * pt[1], dy = sn * pt[0] + c * pt[1], p = P(dx, dy, pt[2]);
+      sp.position.set(p[0], p[1]); sp.scale.set((L === 3 ? 0.55 + 0.6 * k : 0.85) * (i === 2 ? 0.8 : 1)); sp.alpha = L === 3 ? Math.min(1, 0.3 + k) : 0.95;
+    }
+  }
+  function setTex(sp, key, tx) {
+    if (sp._k === key) return; sp._k = key;
+    if (!key) { sp.visible = false; return; }
+    sp.visible = true; sp.texture = tx[key]; sp.anchor.copyFrom(sp.texture.defaultAnchor);
+  }
+  function drawPixi() {
+    const r = view.getBoundingClientRect();
+    world.scale.set(cam.zoom); world.position.set(r.width / 2 - cam.cx * cam.zoom, r.height / 2 - cam.cy * cam.zoom);
+    ensureScale();
+    const tx = cur.sheet.textures;
+    factories.forEach((f, i) => { facSprites[i].texture = tx[facKey(f)]; facSprites[i].setTeam(palette[f.team].paint, palette[f.team].light); });
+    for (let i = 0; i < units.length; i++) {
+      const u = units[i], s = tankSprites[i];
+      setTex(s._h, hullKey(u), tx); setTex(s._t, turretKey(u), tx);
+      s.alpha = wreckAlpha(u);
+      if (u.dead) { s._h.setTeam(null); s._t.setTeam(null); }      // wrecks are charred: no team colour
+      else { const c = palette[u.team].tank; s._h.setTeam(c.paint, c.light); s._t.setTeam(c.paint, c.light); }
+      drawFlames(u, s, tx);
+      const tint = u.hitT > 0 && !u.dead ? 0xff9a7a : 0xffffff; if (s._tint !== tint) { s._h.tint = s._t.tint = tint; s._tint = tint; }
+      const p = P(u.x, u.y), ro = recoilOffsets(u);
+      s.position.set(p[0] + (ro ? ro.hx : 0), p[1] + (ro ? ro.hy : 0)); s.zIndex = u.x + u.y;
+      const tox = ro ? ro.tx - ro.hx : 0, toy = ro ? ro.ty - ro.hy : 0; // turret kicks further than the hull
+      const pvs = pivotScreen(u); s._t.position.set(pvs[0] + tox, pvs[1] + toy);
+    }
+    while (flashPool.length < flashes.length) { const f = new PIXI.Sprite(flashTex); f.anchor.set(0.5); f.blendMode = 'add'; fxLayer.addChild(f); flashPool.push(f); }
+    drawColliders(); drawParticles(); drawBars(); drawExplosions(tx);
+    pool(shellPool, shells.length, 0xffe08a);
+    shellPool.forEach((sp, k) => { const b = shells[k]; sp.visible = !!b; if (!b) return; const p = P(b.x, b.y, SHELL_Z); sp.position.set(p[0], p[1]); sp.scale.set(0.07); });
+    pool(sparkPool, sparks.length, 0xff9a40);
+    sparkPool.forEach((sp, k) => { const f = sparks[k]; sp.visible = !!f; if (!f) return; const dur = f.boom ? 0.45 : 0.25, q = Math.max(0, f.t) / dur, p = P(f.x, f.y, f.boom ? 6 : SHELL_Z * 0.8); sp.position.set(p[0], p[1]); sp.scale.set((f.boom ? 1.1 : f.big ? 0.32 : 0.2) * (0.5 + q)); sp.alpha = 1 - q; sp.tint = f.boom ? 0xffc06a : 0xff9a40; });
+    flashPool.forEach((sp, k) => {
+      const f = flashes[k]; sp.visible = !!f; if (!f) return;
+      const p = flashPos(f), k2 = 1 - f.t / 0.12;
+      if (FLIP()) { // muzzle-flash flipbook, rotated to the barrel's on-screen direction
+        const fr = Math.min(5, Math.floor((f.t / 0.12) * 6)); setTex(sp, `fxMuzzle_${fr}`, tx);
+        const dir = P(Math.cos(f.a), Math.sin(f.a), 0); // barrel direction projected on screen (P(0,0,0) is the origin)
+        sp.position.set(p[0], p[1]); sp.rotation = Math.atan2(dir[1], dir[0]); sp.scale.set(0.8); sp.alpha = 1;
+      } else { if (sp._k !== null) { sp.texture = flashTex; sp._k = null; sp.anchor.set(0.5); sp.rotation = 0; } sp.position.set(p[0], p[1]); sp.scale.set(0.16 + 0.1 * k2); sp.alpha = k2; }
+    });
+    drawCalls = 0; app.render(); lastDrawCalls = drawCalls;
+  }
+
+  // ---------- renderer B: live vector SVG in the DOM ----------
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg'); $('svgHost').appendChild(svg);
+  svg.setAttribute('shape-rendering', 'geometricPrecision');
+  const img = document.createElementNS(NS, 'image');
+  img.setAttribute('x', gb.x0); img.setAttribute('y', gb.y0); img.setAttribute('width', gb.w); img.setAttribute('height', gb.h);
+  svg.appendChild(img);
+  const sLayer = document.createElementNS(NS, 'g'); svg.appendChild(sLayer);
+  const fxG = document.createElementNS(NS, 'g'); svg.appendChild(fxG);
+  const svgCache = new Map(); // markup generated by the vector engine (cached per pose)
+  const svgTeam = (t) => (palette[t] ? { paint: palette[t].paintHex, light: palette[t].lightHex } : t);
+  const markup = (key, model, team, facing, frame) => { const ck = `${palette[team] ? palette[team].paintHex : ''}|${key}`; let m = svgCache.get(ck); if (!m) { m = VM.view(model, svgTeam(team), facing, frame).svg; svgCache.set(ck, m); } return m; };
+  const unitMarkup = (model, team, facing, frame) => {
+    const c = team === 'any' ? null : palette[team].tank, ck = `${c ? c.paintHex : 'any'}|${model}|${facing}|${frame}`;
+    let m = svgCache.get(ck); if (!m) { m = UM.view(model, facing, frame, c && { paint: c.paintHex, glow: c.glowHex }).svg; svgCache.set(ck, m); } return m;
+  };
+  let svgNodes = [];
+  function buildSvgUnits() {
+    if (!groundURL) { groundURL = gc.toDataURL('image/png'); img.setAttribute('href', groundURL); }
+    sLayer.textContent = '';
+    const things = factories.map((f) => ({ kind: 'f', o: f })).concat(units.map((u) => ({ kind: 't', o: u })));
+    svgNodes = things.map((t) => {
+      const g = document.createElementNS(NS, 'g'); g._t = t; g._k = '';
+      g._a = document.createElementNS(NS, 'g'); g._a._k = null; g.appendChild(g._a);
+      if (t.kind === 't') for (const k of ['_b']) { g[k] = document.createElementNS(NS, 'g'); g[k]._k = null; g.appendChild(g[k]); }
+      sLayer.appendChild(g); return g;
+    });
+    fxG.textContent = ''; svg.appendChild(fxG);
+  }
+  function drawSvg() {
+    const r = view.getBoundingClientRect();
+    svg.setAttribute('viewBox', `${cam.cx - r.width / 2 / cam.zoom} ${cam.cy - r.height / 2 / cam.zoom} ${r.width / cam.zoom} ${r.height / cam.zoom}`);
+    for (const g of svgNodes) {
+      const { kind, o } = g._t;
+      if (kind === 'f') { const k = `${facKey(o)}|${palette[o.team].paintHex}`; if (g._k !== k) { g._a.innerHTML = markup(k, 'lightFactory', o.team, o.facing, fanFrame); g._k = k; } }
+      else {
+        const fh = dirIndex(o.heading), ft = dirIndex(o.turret), L = level(o);
+        const put = (el, key, model, team, facing, frame) => { const k = `${key}|${team === 'any' ? '' : palette[team].tank.paintHex}`; if (el._k === k) return; el._k = k; el.innerHTML = unitMarkup(model, team, facing, frame); };
+        if (o.dead) { put(g._a, hullKey(o), 'tankHullWreck', 'any', fh, 0); put(g._b, turretKey(o), 'tankTurretWreck', 'any', ft, 0); }
+        else { const d = dmgTag(o); put(g._a, hullKey(o), 'tankHull' + d, o.team, fh, o.frame); put(g._b, turretKey(o), 'tankTurret' + d, o.team, ft, 0); }
+        const al = wreckAlpha(o); if (g._al !== al) { g.setAttribute('opacity', al.toFixed(2)); g._al = al; }
+      }
+      const p = P(o.x, o.y), ro = kind === 't' ? recoilOffsets(o) : null;
+      g.setAttribute('transform', `translate(${(p[0] + (ro ? ro.hx : 0)).toFixed(2)} ${(p[1] + (ro ? ro.hy : 0)).toFixed(2)})`);
+      if (kind === 't') { const pv = pivotScreen(o), tt = `translate(${(pv[0] + (ro ? ro.tx - ro.hx : 0)).toFixed(2)} ${(pv[1] + (ro ? ro.ty - ro.hy : 0)).toFixed(2)})`; if (g._tt !== tt) { g._b.setAttribute('transform', tt); g._tt = tt; } }
+    }
+    // painter's order: re-append nodes whose depth order changed
+    const sorted = svgNodes.slice().sort((a, b) => (a._t.o.x + a._t.o.y) - (b._t.o.x + b._t.o.y));
+    let cur = sLayer.firstChild;
+    for (const g of sorted) { if (g !== cur) sLayer.insertBefore(g, cur); else cur = cur.nextSibling; }
+    let fx = '';
+    for (const f of flashes) { const p = flashPos(f), k2 = 1 - f.t / 0.12; fx += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${(3 + 2 * k2).toFixed(1)}" fill="#ffd27a" opacity="${k2.toFixed(2)}"/>`; }
+    for (const b of shells) { const p = P(b.x, b.y, SHELL_Z); fx += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="1.4" fill="#ffe08a"/>`; }
+    for (const q of particles) {
+      const k = q.t / q.life, p = P(q.x, q.y, q.z), size = (q.s0 + (q.s1 - q.s0) * k) * 0.5;
+      const fill = q.kind === 'fire' || q.kind === 'ember' ? (k < 0.4 ? '#ffd36a' : '#ff7a22') : q.kind === 'dsmoke' ? '#2b2826' : q.kind === 'msmoke' ? '#d2d0c8' : '#9a9a98';
+      const op = q.kind === 'fire' || q.kind === 'ember' ? 1 - k : (q.kind === 'dsmoke' ? 0.65 : 0.45) * (1 - k);
+      fx += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${size.toFixed(1)}" fill="${fill}" opacity="${op.toFixed(2)}"/>`;
+    }
+    for (const f of sparks) { const dur = f.boom ? 0.45 : 0.25, q = Math.max(0, f.t) / dur, p = P(f.x, f.y, f.boom ? 6 : SHELL_Z * 0.8); fx += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${((f.boom ? 20 : f.big ? 6 : 4) * (0.5 + q)).toFixed(1)}" fill="${f.boom ? '#ffc06a' : '#ff9a40'}" opacity="${(1 - q).toFixed(2)}"/>`; }
+    for (const u of units) { if (u.dead || u.hp >= 100) continue; const p = P(u.x, u.y, 22), c = u.hp > 60 ? '#6fd17f' : u.hp > 30 ? '#f2c230' : '#ff5a4a';
+      fx += `<rect x="${(p[0] - 8.4).toFixed(1)}" y="${(p[1] - 0.4).toFixed(1)}" width="16.8" height="2.6" fill="#0b0e13" opacity=".85"/><rect x="${(p[0] - 8).toFixed(1)}" y="${p[1].toFixed(1)}" width="${(16 * u.hp / 100).toFixed(1)}" height="1.8" fill="${c}"/>`; }
+    if (showColliders) {
+      const w = (1.2 / cam.zoom).toFixed(2);
+      for (const f of factories) { const p = P(f.x, f.y); fx += `<ellipse cx="${p[0]}" cy="${p[1]}" rx="${R_FAC * 1.2247}" ry="${R_FAC * 0.7071}" fill="#f2c230" fill-opacity="0.12" stroke="#f2c230" stroke-width="${w}"/>`; }
+      for (const u of units) { if (u.dead || !u.detour) continue; const L = Math.max(6, u.navFree), a = P(u.x, u.y), b = P(u.x + Math.cos(u.nav) * L, u.y + Math.sin(u.nav) * L); fx += `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="#f2a33a" stroke-width="${(w * 1.4).toFixed(2)}"/>`; }
+      for (const u of units) { const p = P(u.x, u.y); fx += `<ellipse cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" rx="${(R_TANK * 1.2247).toFixed(2)}" ry="${(R_TANK * 0.7071).toFixed(2)}" fill="${u.touch ? '#ff5e5e' : '#7fd28f'}" fill-opacity="0.18" stroke="${u.touch ? '#ff5e5e' : '#7fd28f'}" stroke-width="${w}"/>`; }
+    }
+    fxG.innerHTML = fx;
+  }
+
+  // ---------- UI ----------
+  const hints = {
+    pixi: '<b>Fire &amp; smoke:</b> flames, explosions and muzzle flashes are flipbooks from the procedural <i>fx</i> sheet (glowing, additive). Smoke, embers and sparks are particles. Switch to <b>Particles only</b> to compare.',
+    svg: '<b>Live SVG:</b> each Light Panzer is ~3,300 vector shapes in the DOM (hull + turret). It looks identical, but the browser re-rasterises every shape each frame. Raise the tank count and watch FPS drop, especially on phones.',
+  };
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('#mode button').forEach((b) => b.classList.toggle('on', b.dataset.m === m));
+    $('pixiHost').hidden = m !== 'pixi'; $('svgHost').hidden = m !== 'svg';
+    if (m === 'pixi') buildPixiUnits(); else buildSvgUnits();
+    if (m === 'svg') { tankSprites.forEach((s) => s.destroy({ children: true })); tankSprites = []; [...flashPool, ...shellPool, ...sparkPool, ...smokePool, ...firePool, ...exploPool].forEach((f) => (f.visible = false)); tankSprites.forEach((b) => b._fl && b._fl.forEach((f) => (f.visible = false))); dbg.clear(); bars.clear(); app.render(); } else { sLayer.textContent = ''; svgNodes = []; }
+    $('hint').innerHTML = hints[m]; fpsHist.length = 0; updateInfo(); showRes(cur.sc, false);
+  }
+  function updateInfo() {
+    $('info').textContent = mode === 'pixi'
+      ? `${units.length * 4 + 4} sprites · ${lastDrawCalls} draw calls`
+      : `${(sLayer.getElementsByTagName('*').length).toLocaleString()} SVG nodes`;
+  }
+  document.querySelectorAll('#mode button').forEach((b) => b.onclick = () => setMode(b.dataset.m));
+  $('count').oninput = (e) => { $('countV').textContent = e.target.value; };
+  $('count').onchange = (e) => { makeUnits(+e.target.value); setMode(mode); };
+  for (const t of TEAMS) {
+    const inp = document.createElement('input'); inp.type = 'color'; inp.value = START[t]; inp.title = `${t} team colour`;
+    inp.oninput = () => setColour(t, inp.value);
+    $('teamcols').appendChild(inp);
+  }
+  $('teamcols').insertAdjacentText('afterbegin', 'Teams ');
+  document.querySelectorAll('#fxmode button').forEach((b) => b.onclick = () => {
+    fxMode = b.dataset.f;
+    document.querySelectorAll('#fxmode button').forEach((x) => x.classList.toggle('on', x === b));
+  });
+  document.querySelectorAll('#coll button').forEach((b) => b.onclick = () => {
+    const c = b.dataset.c;
+    if (c === 'show') { showColliders = !showColliders; b.classList.toggle('on', showColliders); return; }
+    collisionsOn = c === 'on';
+    document.querySelectorAll('#coll button[data-c=on], #coll button[data-c=off]').forEach((x) => x.classList.toggle('on', x === b));
+  });
+  document.querySelectorAll('#turret button').forEach((b) => b.onclick = () => {
+    turretMode = b.dataset.t;
+    document.querySelectorAll('#turret button').forEach((x) => x.classList.toggle('on', x === b));
+  });
+  document.querySelectorAll('#res button').forEach((b) => b.onclick = () => {
+    resMode = b.dataset.r;
+    document.querySelectorAll('#res button').forEach((x) => x.classList.toggle('on', x === b));
+    ensureScale();
+  });
+  document.querySelectorAll('#zoom button').forEach((b) => b.onclick = () => { const z = +b.dataset.z; if (!z) fit(); else cam.zoom = clampZoom(cam.zoom * (z > 0 ? 1.35 : 1 / 1.35)); });
+
+  // pan & zoom (mouse, touch, wheel)
+  let drag = null;
+  view.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, cx: cam.cx, cy: cam.cy }; view.classList.add('drag'); view.setPointerCapture(e.pointerId); });
+  view.addEventListener('pointermove', (e) => { if (!drag) return; cam.cx = drag.cx - (e.clientX - drag.x) / cam.zoom; cam.cy = drag.cy - (e.clientY - drag.y) / cam.zoom; });
+  const endDrag = () => { drag = null; view.classList.remove('drag'); };
+  view.addEventListener('pointerup', endDrag); view.addEventListener('pointercancel', endDrag);
+  view.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const r = view.getBoundingClientRect(), mx = e.clientX - r.left - r.width / 2, my = e.clientY - r.top - r.height / 2;
+    const wx = cam.cx + mx / cam.zoom, wy = cam.cy + my / cam.zoom;
+    cam.zoom = clampZoom(cam.zoom * Math.exp(-e.deltaY * 0.0015));
+    cam.cx = wx - mx / cam.zoom; cam.cy = wy - my / cam.zoom;
+  }, { passive: false });
+
+  // facing strip: the 32 baked hull directions (turret on top, same direction)
+  {
+    const set2 = await getSheet(2), tankPart = set2.parts.find((p) => p.name === 'tank@2x');
+    const sheet2 = tankPart.sheet, atlasImg = tankPart.img, halfH = atlasImg.height / 2;
+    const host = $('facings'), strips = [];
+    // same maths as the shader: picture * mix(1, paint, mask.R) * mix(1, light, mask.G)
+    const tintStrip = (c, base, mask) => {
+      const col = palette.green.tank, g = c.getContext('2d'), out = g.createImageData(c.width, c.height);
+      const rgb = (n) => [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => v / 255);
+      const pr = rgb(col.paint).map((v) => Math.min(1, v * 1.1087)), lr = rgb(col.light);
+      for (let i = 0; i < base.data.length; i += 4) {
+        const r = mask.data[i] / 255, gm = mask.data[i + 1] / 255;
+        for (let k = 0; k < 3; k++) out.data[i + k] = base.data[i + k] * (1 + (pr[k] - 1) * r) * (1 + (lr[k] - 1) * gm);
+        out.data[i + 3] = base.data[i + 3];
+      }
+      g.putImageData(out, 0, 0);
+    };
+    for (let f = 0; f < 32; f++) {
+      const c = document.createElement('canvas'), m = document.createElement('canvas'); let made = false;
+      for (const key of [`tankHull_any_f${f}_t0`, `tankTurret_any_f${f}_t0`]) {
+        const t = sheet2.textures[key], fr = t.frame, res = t.source.resolution, an = t.defaultAnchor;
+        if (!made) { m.width = c.width = 40 * res; m.height = c.height = 34 * res; c.style.width = '60px'; made = true; }
+        const pv = key.startsWith('tankTurret') ? pivotScreen({ heading: f * Math.PI / 16 }) : [0, 0];   // turret on its pivot
+        const ox = c.width / 2 + pv[0] * res, oy = c.height * 0.68 + pv[1] * res, dx = ox - an.x * fr.width * res, dy = oy - an.y * fr.height * res;
+        c.getContext('2d').drawImage(atlasImg, fr.x * res, fr.y * res, fr.width * res, fr.height * res, dx, dy, fr.width * res, fr.height * res);
+        const w = fr.width * res, h = fr.height * res, pc = document.createElement('canvas'); pc.width = w; pc.height = h;
+        const pg2 = pc.getContext('2d'); pg2.drawImage(atlasImg, fr.x * res, fr.y * res + halfH, w, h, 0, 0, w, h);
+        pg2.globalCompositeOperation = 'destination-in'; pg2.drawImage(atlasImg, fr.x * res, fr.y * res, w, h, 0, 0, w, h); // mask only where the picture is
+        m.getContext('2d').drawImage(pc, dx, dy);
+      }
+      const base = c.getContext('2d').getImageData(0, 0, c.width, c.height), mask = m.getContext('2d').getImageData(0, 0, c.width, c.height);
+      strips.push([c, base, mask]); tintStrip(c, base, mask);
+      host.appendChild(c);
+    }
+    retintStrip = () => strips.forEach(([c, b, mk]) => tintStrip(c, b, mk));
+    // the separate files (shown: @2x)
+    const list = $('atlasList');
+    for (const p of set2.parts) {
+      const fig = document.createElement('figure'), im = new Image(); im.src = p.url; im.alt = p.name;
+      const cap = document.createElement('figcaption');
+      const sizes = MANIFEST.scales.map((s) => `@${s}x ${fileOf(p.name.split('@')[0], s).kb} KB`).join(' · ');
+      cap.innerHTML = `<b>${p.name.split('@')[0]}</b> · ${Object.keys(p.sheet.textures).length} frames · ${p.w}×${p.h}<br>${sizes}`;
+      fig.append(im, cap); list.appendChild(fig);
+    }
+    $('sheetSummary').textContent = `Show the 32 tank directions and the ${NEEDED.length} separate sprite sheets, WebP lossless (${MANIFEST.scales.map((s) => `@${s}x ${scaleKB(s)} KB`).join(' · ')})`;
+  }
+
+  // ---------- main loop ----------
+  const fpsHist = [];
+  let last = performance.now(), infoT = 0;
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    fpsHist.push(dt); if (fpsHist.length > 40) fpsHist.shift();
+    step(dt);
+    mode === 'pixi' ? drawPixi() : drawSvg();
+    infoT += dt;
+    if (infoT > 0.4 && fpsHist.length > 5) {
+      infoT = 0; const fps = fpsHist.length / fpsHist.reduce((a, b) => a + b, 0), el = $('fps');
+      el.textContent = Math.round(fps); el.className = 'fps' + (fps < 30 ? ' bad' : fps < 50 ? ' slow' : ''); updateInfo();
+      $('collInfo').textContent = collisionsOn
+        ? `${units.length - cstats.wrecks} alive · ${cstats.avoiding} detouring · ${cstats.wrecks} wrecks · ${cstats.kills} destroyed · ${cstats.hits} hits · ${cstats.checks.toLocaleString()} checks · ${cstats.ms.toFixed(2)} ms`
+        : `collisions off · ${cstats.hits} hits`;
+    }
+    requestAnimationFrame(loop);
+  }
+  makeUnits(80); setMode('pixi'); requestAnimationFrame(loop);
+  new ResizeObserver(() => {}).observe(view);
+})().catch((err) => { document.getElementById('hint').textContent = 'Error: ' + err.message; console.error(err); });
+</script>
+</body>
+</html>
