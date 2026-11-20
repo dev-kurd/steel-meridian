@@ -282,7 +282,7 @@ class Batcher {
   catch (e) { return fail('The effects sheet is missing: ' + SHEETS + 'fx.json\nMake it with: node source/tools/bake_fx.cjs\n' + e); }
   const fx = createFx(PIXI, { proj: P3, ppm: PPM, layers: { decal: decalC, smoke: smokeC, add: addC }, manifest: FXM, base: SHEETS });
   await fx.useRes(wantRes());
-  const sfx = createSfx('../../../sounds/', 'sounds/');                            // the game's recordings, at the repo root
+  const sfx = createSfx('../../../sounds/');                                      // the game's recordings, at the repo root
 
   // ---- tanks
   const tanksMesh = new Batcher(top, false), shadowMesh = new Batcher(shadowWorld, true);

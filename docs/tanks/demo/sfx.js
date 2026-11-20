@@ -5,12 +5,10 @@
  * - Sounds the game has no recording for (rockets, flame jet, the Fusion and Graviton weapons, engines, fire) are synthesised
  *   here with the Web Audio API, so the demo adds no sound files.
  * - Every sound gets a stereo position and a loudness from where it happens on the screen. */
-window.createSfx = function (base, demoBase) {
+window.createSfx = function (base) {
   const FILES = { shell: ['shell_1.wav', 'shell_2.wav', 'shell_3.wav'], arty: ['arty_1.wav', 'arty_2.wav'], boom: ['boom_1.wav', 'boom_2.wav', 'boom_3.wav'],
-    bigboom: ['bigboom_1.wav', 'bigboom_2.wav'], laser: ['laser_1.wav'] };
-  // The Anti-Air rocket launch (owner, 2026-11-21): a missile launch recording in the demo's own sounds/ folder (CC0, see
-  // sounds/README.txt there). It is very quiet, so it is played about three times louder (owner: kept under the burst explosion).
-  const MISSILE = 'k_missile.wav';
+    bigboom: ['bigboom_1.wav', 'bigboom_2.wav'], laser: ['laser_1.wav'],
+    missile: ['rocket_1.wav'] };                           // the Anti-Air rocket launch (owner, 2026-11-21). A very quiet recording, so it is played about three times louder
   const PITCH = [1.22, 1, 0.82];                             // light, medium, heavy
   const rnd = (a, b) => a + Math.random() * (b - a);
   let ctx = null, master = null, noiseBuf = null, on = true, vol = 0.7, ends = [];
@@ -28,7 +26,6 @@ window.createSfx = function (base, demoBase) {
       smp[name] = [];
       for (const f of files) fetch(base + f).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject())).then((b) => ctx.decodeAudioData(b)).then((buf) => smp[name].push(buf)).catch(() => {});
     }
-    smp.missile = []; fetch(demoBase + MISSILE).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject())).then((b) => ctx.decodeAudioData(b)).then((buf) => smp.missile.push(buf)).catch(() => {});
     makeLoops();
   }
   const shape = (param, t, dur, g, att = 0.004) => { param.setValueAtTime(0.0001, t); param.linearRampToValueAtTime(g, t + att); param.exponentialRampToValueAtTime(0.0001, t + Math.max(dur, att + 0.01)); };

@@ -100,7 +100,7 @@ target drones in the battle are plain grey placeholders, not an asset.
 ## 3. The sounds
 
 The game already has recordings in `sounds/` (all CC0, see `sounds/README.txt`). The mockup uses them where one fits and
-synthesises the rest in the browser. The only sound file it adds is the rocket launch recording in `demo/sounds/` (see the Rocket launch row). Size changes the pitch: Light higher, Heavy lower.
+synthesises the rest in the browser. The only sound file it adds is the rocket launch recording `sounds/rocket_1.wav` (see the Rocket launch row). Size changes the pitch: Light higher, Heavy lower.
 
 | Sound | Source |
 |---|---|
@@ -108,7 +108,7 @@ synthesises the rest in the browser. The only sound file it adds is the rocket l
 | Artillery gun | `arty_1..2.wav` + a deeper thump and a rumbling tail |
 | Artillery shell coming down | synthesised falling whistle |
 | Artillery shell lands | `boom_1..3.wav` + low thump |
-| Rocket launch | **Decided (owner, 2026-11-21): the "Missile"**: a CC0 missile launch recording from OpenGameArt (`demo/sounds/k_missile.wav`, author and page in `demo/sounds/README.txt`), played a little faster and louder but kept under the burst explosion (owner: the whoosh was hiding the explosion), with a small synthesised pop as the rocket leaves the tube. **Every rocket has its own launch sound**, so a volley of 3, 4 or 6 is heard as a quick row. Turned down: the first synthesised version, a set built from shot and whoosh recordings, the other real rocket and thruster recordings, and a set shaped after the original game's weapon sounds; their files were removed |
+| Rocket launch | **Decided (owner, 2026-11-21): the "Missile"**: a CC0 missile launch recording from OpenGameArt, in the game's sound folder as `sounds/rocket_1.wav` (author and page in `sounds/README.txt`; not named `missile_1.wav`, which the current game would start playing for its missile turret), played a little faster and louder but kept under the burst explosion (owner: the whoosh was hiding the explosion), with a small synthesised pop as the rocket leaves the tube. **Every rocket has its own launch sound**, so a volley of 3, 4 or 6 is heard as a quick row. Turned down: the first synthesised version, a set built from shot and whoosh recordings, the other real rocket and thruster recordings, and a set shaped after the original game's weapon sounds; their files were removed |
 | Rocket bursts in the air | **An explosion for every rocket** (owner, 2026-11-21): the game's `boom_1..3.wav` played almost twice as fast and cut short, with a sharp crack and a thump, louder than the launch. When many rockets burst at the same moment, the sound limit below drops the extra ones so it does not turn into noise |
 | Shell hits | synthesised clang and thud |
 | Flame jet | synthesised roar that runs while any flamer fires (one shared sound, louder with more flamers) |
