@@ -96,7 +96,7 @@ target drones in the battle are plain grey placeholders, not an asset.
 ## 3. The sounds
 
 The game already has recordings in `sounds/` (all CC0, see `sounds/README.txt`). The mockup uses them where one fits and
-synthesises the rest in the browser. The only sound files it adds are the rocket launch candidates in `demo/sounds/` (see the Rocket launch row). Size changes the pitch: Light higher, Heavy lower.
+synthesises the rest in the browser. The only sound file it adds is the rocket launch recording in `demo/sounds/` (see the Rocket launch row). Size changes the pitch: Light higher, Heavy lower.
 
 | Sound | Source in the mockup |
 |---|---|
@@ -104,8 +104,8 @@ synthesises the rest in the browser. The only sound files it adds are the rocket
 | Artillery gun | `arty_1..2.wav` + a deeper thump and a rumbling tail |
 | Artillery shell coming down | synthesised falling whistle |
 | Artillery shell lands | `boom_1..3.wav` + low thump |
-| Rocket launch | **Not decided: eleven versions in two rows in the demo** (owner, 2026-11-21: the first synthesised one needs to be better; it should be close to the original game; one of the earlier tries was near to it, so both earlier sets are kept until the owner names it). **Second set**, from real rocket, missile and thruster recordings (OpenGameArt, CC0): Rocket, Missile, Thruster, Rocket + roar, Missile + hiss, each with a small synthesised pop. **First set**, from shot and whoosh recordings of the CC0 pack the game already uses: Shot + fire rush, Deep fire rush, Wind whoosh, Swoosh; plus Recorded mix (the game's own `flak` and `arty` with a synthesised rush) and Original (fully synthesised). Files, authors and pages: `demo/sounds/README.txt`; they stay in the demo folder until one is chosen. A third set, shaped after the original game's short weapon sounds, was turned down and removed |
-| Rocket bursts in the air | synthesised crack and thump |
+| Rocket launch | **Decided (owner, 2026-11-21): the "Missile"**: a CC0 missile launch recording from OpenGameArt (`demo/sounds/k_missile.wav`, author and page in `demo/sounds/README.txt`), played a little faster and louder, with a small synthesised pop as the rocket leaves the tube. **Every rocket has its own launch sound**, so a volley of 3, 4 or 6 is heard as a quick row. Turned down: the first synthesised version, a set built from shot and whoosh recordings, the other real rocket and thruster recordings, and a set shaped after the original game's weapon sounds; their files were removed |
+| Rocket bursts in the air | **An explosion for every rocket** (owner, 2026-11-21): the game's `boom_1..3.wav` played almost twice as fast and cut short, with a sharp crack and a small thump. When many rockets burst at the same moment, the sound limit below drops the extra ones so it does not turn into noise |
 | Shell hits | synthesised clang and thud |
 | Flame jet | synthesised roar that runs while any flamer fires (one shared sound, louder with more flamers) |
 | Laser | `laser_1.wav` (cut short) + a synthesised zap |
@@ -125,8 +125,7 @@ about 28 sounds play at once, and the same sound is not started twice within 35 
    aircraft). Should it also be able to hit tanks or buildings, weakly?
 3. **Synthesised sounds:** keep them synthesised in the game (no files, easy to tune) or turn the approved ones into WAV files
    in `sounds/` like the others (anyone can then replace a file)?
-4. **Artillery shell shape:** Bullet or Sphere (both are in the demo), and is the size right now? And **which rocket launch
-   sound** of the six in the demo?
+4. **Artillery shell shape:** Bullet or Sphere (both are in the demo), and is the size right now?
 5. **Screen shake:** keep it (it can be switched off in the demo), and how strong?
 6. **Drawing effects in front of and behind tanks:** worth sorting flames and smoke with the tanks in the game, or is "above
    everything" good enough?
