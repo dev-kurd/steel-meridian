@@ -30,6 +30,7 @@
   <div class="row" id="teams"><span class="l">Team colour</span></div>
   <div class="row" id="states"><span class="l">Damage state</span></div>
   <div class="row" id="counts"><span class="l">Tanks</span></div>
+  <div class="row"><input id="custom" type="number" min="1" max="1000" value="50" style="width:64px" title="Any number of tanks, 1 to 1000"> <button id="customGo">Set this number</button></div>
   <div class="row"><span class="l">Zoom</span>
     <input id="zoom" type="range" min="0.5" max="4" step="0.05" value="2" style="flex:1">
   </div>
@@ -501,6 +502,8 @@ class Batcher {
           s.pulse = 0.09; const v = 34 / s.d0, life = Math.min(0.6, s.u * s.d0 / 34);
           if (life > 0.05) fx.spawn('add', { tex: fx.T.ring, x: s.p0[0], y: s.p0[1], z: s.p0[2], vx: bx * v, vy: by * v, vz: bz * v, life, s0: 0.5, s1: 1.15, sx: 0.5, c0: 0xff6a4a, a0: 0.8, tin: 0.1, tout: 0.8, must: true });
         }
+        if (Math.random() < 26 * dt) fx.sparks(s.p1, 1, 5, 0xff8a5a);     // where the beam lands: sparks, and a red glow on the ground
+        if (Math.random() < 12 * dt) fx.spawn('add', { tex: fx.T.glow, flat: true, x: s.p1[0], y: s.p1[1], z: 0, life: 0.25, s0: 2.6, s1: 3.4, c0: 0xff4a32, a0: 0.45, tin: 0.3, tout: 0.4 });
         if (Math.random() < 40 * dt) { const q = Math.random() * s.u;    // red sparks jump off the beam
           fx.spawn('add', { tex: fx.T.spark, streak: true, x: s.p0[0] + bx * q, y: s.p0[1] + by * q, z: s.p0[2] + bz * q, vx: rnd(-3, 3), vy: rnd(-3, 3), vz: rnd(-1, 3), life: 0.28, s0: 0.45, s1: 0.12, c0: 0xff7a50 }); }
         if (Math.random() < 30 * dt) fx.spawn('add', { tex: fx.T.spark, streak: true, x: s.x, y: s.y, z: s.z, vx: rnd(-2.5, 2.5), vy: rnd(-2.5, 2.5), vz: rnd(-1.5, 1.5), life: 0.35, s0: 0.5, s1: 0.15, c0: 0x8fe9ff });
@@ -633,7 +636,12 @@ class Batcher {
   document.getElementById('snd').onchange = (e) => sfx.setOn(e.target.checked);
   document.getElementById('vol').oninput = (e) => sfx.setVolume(+e.target.value);
   for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, () => sfx.unlock());
-  group('counts', [[15, '15'], [30, '30'], [90, '90'], [300, '300']], () => tanks.length, (v) => { setCount(v); if (stateMode === 'mixed') tanks.forEach((t, i) => { t.state = [0, 0, 1, 2, 0, 1, 3, 2][i % 8]; }); });
+  const applyCount = (v) => { setCount(v); if (stateMode === 'mixed') tanks.forEach((t, i) => { t.state = [0, 0, 1, 2, 0, 1, 3, 2][i % 8]; }); };
+  group('counts', [[15, '15'], [30, '30'], [90, '90'], [300, '300']], () => tanks.length, applyCount);
+  const customEl = document.getElementById('custom');                  // any number of tanks, 1 to 1000
+  const customGo = () => { const n = Math.max(1, Math.min(1000, Math.round(+customEl.value) || 1)); customEl.value = n; applyCount(n);
+    for (const b of document.querySelectorAll('#counts button')) b.classList.toggle('on', +b.title === n); };
+  document.getElementById('customGo').onclick = customGo; customEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') customGo(); });
   const zoomEl = document.getElementById('zoom');
   function setZoom(z, sx, sy) {
     z = Math.max(0.5, Math.min(4, z)); sx ??= app.screen.width / 2; sy ??= app.screen.height / 2;

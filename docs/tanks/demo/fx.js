@@ -115,7 +115,8 @@ window.createFx = function (PIXI, cfg) {
   gen('glow', 64, 64, (u, v) => white(Math.pow(Math.max(0, 1 - rad(u, v)), 2)));
   gen('ring', 128, 128, (u, v) => white(Math.exp(-Math.pow((rad(u, v) - 0.82) / 0.07, 2))));
   gen('spark', 32, 8, (u, v) => white(Math.exp(-Math.pow((v * 2 - 1) / 0.45, 2)) * smooth(0, 0.75, u) * (1 - smooth(0.8, 1, u))));
-  gen('beam', 8, 32, (u, v) => white(Math.exp(-Math.pow((v * 2 - 1) / 0.42, 2))));
+  // a beam, stretched between its two ends: soft across, and it narrows and fades over the last part of each end so it never stops in a flat cut
+  gen('beam', 64, 32, (u, v) => { const e = smooth(0, 0.07, Math.min(u, 1 - u)); return white(Math.exp(-Math.pow((v * 2 - 1) / (0.42 * (0.35 + 0.65 * e)), 2)) * e); });
   // a rocket and an artillery shell, seen from the side, nose to the right (drawn in their own colours, turned along their flight)
   const body = (W, H, half, colour) => (u, v) => { const y = v * 2 - 1, w = half(u), a = clamp01((w - Math.abs(y)) * H * 0.5); if (a <= 0) return ZERO; const c = colour(u, y); return [c[0], c[1], c[2], a * 255]; };
   gen('rocket', 40, 10, body(40, 10, (u) => (u < 0.16 ? 1 : u > 0.76 ? 0.08 + 0.5 * (1 - u) / 0.24 : 0.58),
@@ -182,11 +183,16 @@ window.createFx = function (PIXI, cfg) {
     }
     for (let i = beams.length - 1; i >= 0; i--) {
       const b = beams[i]; b.age += dt;
-      if (b.age >= b.life) { for (const s of [b.s1, b.s2]) { s.visible = false; pools.add.push(s); } beams.splice(i, 1); continue; }
+      if (b.age >= b.life) { for (const s of [b.s1, b.s2, b.e0, b.e1]) if (s) { s.visible = false; pools.add.push(s); } beams.splice(i, 1); continue; }
       const t = b.age / b.life, [x0, y0] = proj(...b.p0), [x1, y1] = proj(...b.p1), len = Math.hypot(x1 - x0, y1 - y0), a = Math.atan2(y1 - y0, x1 - x0);
       const w = b.w * ppm * (b.hold ? 0.85 + 0.15 * Math.sin(b.age * 90) : 1 - t * 0.7), al = b.hold ? 1 - smooth(0.75, 1, t) : 1 - t * t;
-      b.s1.position.set(x0, y0); b.s1.rotation = a; b.s1.scale.set(len / 8, w / 32); b.s1.alpha = al * b.alpha; b.s1.tint = b.col;
-      b.s2.position.set(x0, y0); b.s2.rotation = a; b.s2.scale.set(len / 8, w * 0.38 / 32); b.s2.alpha = b.core ? al : 0; b.s2.tint = b.core || 0xffffff;
+      b.s1.position.set(x0, y0); b.s1.rotation = a; b.s1.scale.set(len / 64, w / 32); b.s1.alpha = al * b.alpha; b.s1.tint = b.col;
+      b.s2.position.set(x0, y0); b.s2.rotation = a; b.s2.scale.set(len / 64, w * 0.38 / 32); b.s2.alpha = b.core ? al : 0; b.s2.tint = b.core || 0xffffff;
+      if (b.e0) {                                           // a round glow closes each end: small at the muzzle, a bigger flickering one where the beam lands
+        const f = 0.85 + 0.15 * Math.sin(b.age * 70), k0 = w * 1.9 / 64, k1 = w * 3.2 * f / 64;
+        b.e0.position.set(x0, y0); b.e0.scale.set(k0); b.e0.alpha = al * 0.8; b.e0.tint = b.col;
+        b.e1.position.set(x1, y1); b.e1.scale.set(k1); b.e1.alpha = al; b.e1.tint = b.col;
+      }
     }
   }
   // a beam between two points: coloured outside, light core. o: w (metres), col, life, hold (steady, then a quick fade),
@@ -194,6 +200,7 @@ window.createFx = function (PIXI, cfg) {
   function beam(p0, p1, o) {
     const b = { p0, p1, w: o.w, col: o.col, life: o.life, hold: !!o.hold, alpha: o.alpha || 0.85, core: o.core === undefined ? 0xffffff : o.core, age: 0, s1: sprite('add'), s2: sprite('add') };
     for (const s of [b.s1, b.s2]) { s.texture = T.beam; s.anchor.set(0, 0.5); }
+    if (b.core) { b.e0 = sprite('add'); b.e1 = sprite('add'); for (const s of [b.e0, b.e1]) { s.texture = T.glow; s.anchor.set(0.5, 0.5); s.rotation = 0; } }   // end glows (not for a halo beam)
     beams.push(b); return b;
   }
   const sdir = (dx, dy, dz) => { const [x, y] = proj(dx, dy, dz); return [Math.atan2(y, x), Math.hypot(x, y) / ppm]; };
