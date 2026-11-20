@@ -6,10 +6,10 @@ Design note: `claude/tanks-3d-model.md` in the State of War Game project. Mockup
 ## Files
 | File | What it is |
 |---|---|
-| `tank_lib.py` | The model: three chassis, the Panzer turret, layers, damage states, track frames, checks. Source of truth. |
+| `tank_lib.py` | The model: three chassis, the five turrets (`WEAPONS`: panzer, artillery, antiair, flamer, special), layers, damage states, track frames, checks. Source of truth. |
 | `sow_common.py` | Code shared by every 3D unit: colours, materials, mesh helpers, lights, the game's camera, render setup. Taken from `walker_lib.py`; one addition: the team-mask render can be made darker (`set_mask_mode(mode, gain)`). |
 | `build_tanks.py` | Builds every tank and saves the `.blend` files and `tank_data.json`. |
-| `blend/tank_<size>_panzer.blend` | One saved scene per tank, ready to open and render (F12). |
+| `blend/tank_<size>_<weapon>.blend` | One saved scene per tank, ready to open and render (F12): 3 Panzer and the 12 round 2 tanks. |
 | `tank_data.json` | Sizes, turret pivot, muzzle points and track numbers per tank, in metres. |
 | `checks/` | Check images: all 32 directions per size, damage states. |
 | `bake_panzer.bat` | Double-click to bake the Panzer sprites with Blender (no window). Can be stopped and started again. |
@@ -33,7 +33,13 @@ In Blender 5.3, Scripting tab, Python console:
     exec(open(r"C:\Users\khala\Desktop\temp\Game Dev\StateOfWar-Tanks\build_tanks.py").read())
     build_all()
 
-`build_all(['heavy'])` rebuilds one size. A team colour can be passed: `build_all(team='#3b82f6')`.
+`build_all(['heavy'])` rebuilds one size (Panzer). Weapons are the second argument: `build_all(None, ['flamer'])`. A team colour
+can be passed: `build_all(team='#3b82f6')`. From a terminal:
+
+    blender -b --python build_tanks.py -- artillery antiair flamer special      (the 12 round 2 scenes)
+    blender -b --python build_tanks.py -- heavy flamer                           (one tank)
+
+`tank_data.json` keeps the tanks that are not rebuilt.
 
 ## Useful calls (after `import tank_lib as TL`)
 - `T = TL.build_model('heavy')` — a fresh scene with one tank.
@@ -70,11 +76,12 @@ Needs Python with numpy and Pillow. Output: `sheets/tanks.json` and `sheets/tank
 
 ## Check a pack
     blender -b --python tools/check_refs.py -- --out check_refs          (renders three whole tanks per size)
+    blender -b --python tools/check_refs.py -- --weapon flamer --out check_refs_flamer      (another weapon; one folder per weapon)
     python tools/check_pack.py sheets check_refs check_pack.jpg          (compares them with tanks built from the sheets)
     python tools/compose_tanks.py sheets contact.jpg                     (contact sheet built from the sheets)
 Expected on the tank's pixels: mean difference 6-9 of 255 (sub-pixel edges and the barrels' shadow on the hull, which is not baked).
 
 ## Not here yet
-- The other four weapon types (Artillery, Anti-Air, Flamer, Special): mockup round 2 comes first.
-- The packed sheets (after the bake).
+- The bake frames and the packed sheets are on the PC only (ignored by git). The four round 2 weapons were baked with
+  `bake_round2.bat` (turrets, turret shadows and wrecks; the hulls come from the Panzer bake), packed and checked on 2026-11-20.
 - The `.blend` files were built with Blender's Python module (version 5.3.0) in the cloud and reopened there; they have not been opened in the Blender on this PC yet.

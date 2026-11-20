@@ -17,7 +17,7 @@ technology. Follow it; anything not listed here is not decided yet, so ask. The 
 The current code draws every unit and building live each frame in Canvas 2D from plan-view SVG models (`assets/**/model.svg`).
 That is too slow. The game is moving to this plan:
 - **Models are the source, baked to sprite sheets**, drawn with **PixiJS (WebGL)**. Units are 3D models in Blender rendered to
-  sprites (walkers done; tanks: the Panzer set is modelled, baked and packed, see `docs/tanks/`); buildings are 2.5D vector models (VectorEngine) baked the same way.
+  sprites (walkers done; tanks: the Panzer set is modelled, baked and packed; the other four weapon types are modelled after mockup round 2, baked, packed and checked too, see `docs/tanks/`); buildings are 2.5D vector models (VectorEngine) baked the same way.
 - **Resolutions @1x / @2x / @4x**, switched automatically by zoom × screen density. Zoom is limited (about 0.5×–2×). The game
   starts at a larger zoom and does not zoom out as far as today.
 - **WebP lossless only** (one file type, no PNG copies). Sheets at most 4096 px; sprites trimmed.
@@ -95,8 +95,11 @@ are shown when a session cannot publish to a design canvas (pictures or a page i
 ## Current order of work (owner, 2026-11-20)
 1. **Finish the Panzer tanks first:** baked, packed and checked on the PC on 2026-11-20 (`docs/tanks/README.md`). Still open:
    where the sheets live.
-2. Then ask which comes first: tank mockup round 2 (Artillery, Anti-Air, Flamer, Special) or the walker changes (re-bake with the new
-   mask method, new damaged look, other improvements).
+2. **Tank round 2 (Artillery, Anti-Air, Flamer, Special), chosen by the owner:** mockup approved and the 12 models built on
+   2026-11-20, models approved by the owner the same day (`docs/tanks/README.md`, "Round 2"). The full bake of the new turrets, turret shadows
+   and wrecks ran on 2026-11-20 (2,880 renders), then the pack (all 15 tanks, 46 sheets, 97 MB) and the pack check passed.
+   Still open: where the sheets live; the Flamer and Special firing effects.
+3. Then the walker changes (re-bake with the new mask method, new damaged look, other improvements).
 
 ## References
 In this repo:

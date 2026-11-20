@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Steel Meridian - Panzer tank demo</title>
+<title>Steel Meridian - tank demo</title>
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #14171d; color: #e6e9ee; font: 13px/1.4 system-ui, "Segoe UI", sans-serif; }
   canvas { display: block; }
@@ -25,7 +25,8 @@
 </head>
 <body>
 <div id="hud">
-  <h1>Panzer tanks: sprite demo</h1>
+  <h1>Tanks: sprite demo</h1>
+  <div class="row" id="weapons"><span class="l">Weapon</span></div>
   <div class="row" id="teams"><span class="l">Team colour</span></div>
   <div class="row" id="states"><span class="l">Damage state</span></div>
   <div class="row" id="counts"><span class="l">Tanks</span></div>
@@ -44,14 +45,18 @@
 <script src="https://cdn.jsdelivr.net/npm/pixi.js@8.23.0/dist/pixi.min.js"></script>
 <script>
 'use strict';
-/* Panzer tank demo: draws the packed sheets (docs/tanks/source/sheets) the way the game will.
- * - PixiJS (WebGL). Every tank sprite of every team is in one mesh = one draw call; the sheet index is a vertex value.
+/* Tank demo: draws the packed sheets (docs/tanks/source/sheets) the way the game will. All five weapon types on the three hulls.
+ * - PixiJS (WebGL). Tank sprites of every team go into one mesh = one draw call for up to 16 sheets; the sheet slot is a vertex
+ *   value. When a picture needs more than 16 sheets, the next tanks (they are sorted far to near) go into a second mesh.
+ * - Sheets load on demand: a sheet is fetched the first time a tank needs it (weapon, damage state, resolution).
  * - Team colour in linear light: out = toSRGB(toLinear(base) + toLinear(mask.r) * toLinear(paint) + toLinear(mask.g) * toLinear(light)).
  * - Draw order per tank: ground shadows (hull + turret, blended with "max"), hull frame 0, track overlay, turret.
  * - Game view: 2:1 dimetric; x and y are on the ground in metres, screen = (x - y, (x + y) / 2) * pixels per metre. */
 const SHEETS = '../source/sheets/';
 const TEAMS = { green: '#33d17a', blue: '#3b82f6', red: '#e5484d', orange: '#f5a524', purple: '#a855f7', cyan: '#22d3ee' };
 const TEAM_NAMES = Object.keys(TEAMS);
+const WEAPON_LABELS = { panzer: 'Panzer', artillery: 'Artillery', antiair: 'Anti-Air', flamer: 'Flamer', special: 'Special' };
+const NTEX = 16;                                            // sheets per draw call (WebGL 2 always has at least 16 texture units)
 const SPEED = { light: 3.4, medium: 2.7, heavy: 2.1 };      // metres per second (demo values, not game balance)
 const TURN = { light: 2.4, medium: 1.9, heavy: 1.5 };       // hull turn rate, radians per second
 const TURRET_TURN = 2.6;
@@ -107,18 +112,15 @@ void main() {
 const FS = `#version 300 es
 precision highp float;
 in vec2 vUV; in vec2 vMT; in vec3 vPaint; in vec3 vLight;
-uniform sampler2D uTex0; uniform sampler2D uTex1; uniform sampler2D uTex2; uniform sampler2D uTex3;
-uniform sampler2D uTex4; uniform sampler2D uTex5; uniform sampler2D uTex6; uniform sampler2D uTex7;
+${Array.from({ length: NTEX }, (_, i) => `uniform sampler2D uTex${i};`).join(' ')}
 uniform float uShadow;
 out vec4 finalColor;
 vec3 toLin(vec3 c) { return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(vec3(0.04045), c)); }
 vec3 toSRGB(vec3 c) { c = clamp(c, 0.0, 1.0); return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(vec3(0.0031308), c)); }
 vec4 samp(vec2 uv) {
   float t = vMT.y;
-  if (t < 0.5) return texture(uTex0, uv); else if (t < 1.5) return texture(uTex1, uv); else if (t < 2.5) return texture(uTex2, uv);
-  else if (t < 3.5) return texture(uTex3, uv); else if (t < 4.5) return texture(uTex4, uv); else if (t < 5.5) return texture(uTex5, uv);
-  else if (t < 6.5) return texture(uTex6, uv);
-  return texture(uTex7, uv);
+  ${Array.from({ length: NTEX - 1 }, (_, i) => `if (t < ${i}.5) return texture(uTex${i}, uv);`).join('\n  ')}
+  return texture(uTex${NTEX - 1}, uv);
 }
 void main() {
   vec4 b = samp(vUV);                                   // premultiplied by the browser on upload
@@ -133,10 +135,10 @@ void main() {
   finalColor = vec4(toSRGB(lin) * b.a, b.a);
 }`;
 
-// ---- a mesh of textured quads; every vertex: x, y, u, v, mask offset, sheet index, paint, light (32 bytes)
+// ---- a mesh of textured quads; every vertex: x, y, u, v, mask offset, sheet slot, paint, light (32 bytes)
 class QuadMesh {
   constructor(capacity, shadow) {
-    this.cap = capacity; this.n = 0; this.used = 0;
+    this.cap = capacity; this.n = 0; this.used = 0; this.tex = [];
     this.f32 = new Float32Array(capacity * 4 * 8); this.u32 = new Uint32Array(this.f32.buffer);
     const idx = new Uint32Array(capacity * 6);
     for (let i = 0; i < capacity; i++) idx.set([i * 4, i * 4 + 1, i * 4 + 2, i * 4, i * 4 + 2, i * 4 + 3], i * 6);
@@ -147,12 +149,14 @@ class QuadMesh {
       indexBuffer: idx,
     });
     const res = { u: { uShadow: { value: shadow ? 1 : 0, type: 'f32' } } };
-    for (let i = 0; i < 8; i++) res['uTex' + i] = PIXI.Texture.WHITE.source;
+    for (let i = 0; i < NTEX; i++) res['uTex' + i] = PIXI.Texture.WHITE.source;
     this.shader = PIXI.Shader.from({ gl: { vertex: VS, fragment: FS }, resources: res });
     this.mesh = new PIXI.Mesh({ geometry: this.geometry, shader: this.shader });
     if (shadow) this.mesh.blendMode = 'max';
   }
-  setTextures(sources) { for (let i = 0; i < 8; i++) this.shader.resources['uTex' + i] = sources[i] || PIXI.Texture.WHITE.source; }
+  setTextures(sources) {
+    for (let i = 0; i < NTEX; i++) { const s = sources[i] || PIXI.Texture.WHITE.source; if (this.tex[i] !== s) { this.tex[i] = s; this.shader.resources['uTex' + i] = s; } }
+  }
   begin() { this.n = 0; }
   quad(x, y, w, h, u0, v0, u1, v1, maskDv, tex, paint, light) {
     if (this.n >= this.cap) return;
@@ -164,6 +168,30 @@ class QuadMesh {
   end() {
     if (this.n < this.used) this.f32.fill(0, this.n * 32, this.used * 32);   // quads left from the last frame collapse to nothing
     this.used = this.n; this.buffer.update();
+  }
+}
+// ---- quads in draw order, split into as few meshes as the sheets allow (NTEX sheets per mesh)
+class Batcher {
+  constructor(parent, shadow) { this.parent = parent; this.cap = 64; this.shadow = shadow; this.meshes = []; this.cur = -1; this.n = 0; this.calls = 0; }
+  reset(capacity) { for (const m of this.meshes) m.mesh.destroy(); this.meshes = []; this.cap = capacity; }
+  next() {
+    this.cur++; this.slots = new Map(); this.sources = [];
+    if (!this.meshes[this.cur]) { const m = new QuadMesh(this.cap, this.shadow); this.meshes.push(m); this.parent.addChild(m.mesh); }
+    this.meshes[this.cur].begin();
+  }
+  begin() { this.cur = -1; this.n = 0; this.next(); }
+  quad(sheet, source, x, y, w, h, u0, v0, u1, v1, maskDv, paint, light) {
+    let slot = this.slots.get(sheet);
+    if (slot === undefined) {
+      if (this.slots.size === NTEX) { this.flush(); this.next(); }
+      slot = this.slots.size; this.slots.set(sheet, slot); this.sources[slot] = source;
+    }
+    this.meshes[this.cur].quad(x, y, w, h, u0, v0, u1, v1, maskDv, slot, paint, light); this.n++;
+  }
+  flush() { const m = this.meshes[this.cur]; m.setTextures(this.sources); m.end(); m.mesh.visible = m.n > 0; }
+  end() {
+    this.flush(); this.calls = this.meshes.slice(0, this.cur + 1).filter((m) => m.n > 0).length;
+    for (let i = this.cur + 1; i < this.meshes.length; i++) { const m = this.meshes[i]; if (m.used) { m.begin(); m.end(); } m.mesh.visible = false; }
   }
 }
 
@@ -184,17 +212,18 @@ class QuadMesh {
   const toScreen = (x, y) => [PPM * (x - y), PPM * (x + y) / 2];
   const toGround = (sx, sy) => [(sx / PPM + 2 * sy / PPM) / 2, (2 * sy / PPM - sx / PPM) / 2];
 
-  // ---- sheets: one set of textures per resolution, loaded when the zoom first needs it
-  const loaded = {}, loading = {};
-  async function loadRes(res) {
-    if (loaded[res] || loading[res]) return loading[res];
-    loading[res] = (async () => {
-      const tex = await Promise.all(M.sheets[res].map((s) => PIXI.Assets.load(SHEETS + s.file)));
-      tex.forEach((t) => { t.source.scaleMode = 'linear'; });
-      loaded[res] = tex.map((t) => t.source);
-    })();
-    return loading[res];
+  // ---- sheets: each one is loaded the first time a tank needs it (weapon, damage state, resolution)
+  const loaded = {}, loading = {}; let sheetsLoaded = 0, sheetsLoading = 0, failed = false;
+  for (const r of Object.keys(M.sheets)) { loaded[r] = []; loading[r] = []; }
+  function loadSheet(r, i) {
+    if (!loading[r][i]) {
+      sheetsLoading++;
+      loading[r][i] = PIXI.Assets.load(SHEETS + M.sheets[r][i].file).then((t) => { t.source.scaleMode = 'linear'; loaded[r][i] = t.source; sheetsLoaded++; sheetsLoading--; })
+        .catch((e) => { failed = true; fail('A sheet could not be loaded: ' + M.sheets[r][i].file + '\n' + e); });
+    }
+    return loading[r][i];
   }
+  const WEAPONS = Object.keys(WEAPON_LABELS).filter((w) => M.weapons.includes(w));
   const wantRes = () => { const need = cam.zoom * (window.devicePixelRatio || 1); return need <= 1.05 ? '1x' : need <= 2.1 ? '2x' : '4x'; };
 
   // ---- scene
@@ -215,28 +244,27 @@ class QuadMesh {
     shadowSprite.texture = rt;
   }
   makeRT(); app.renderer.on('resize', makeRT);
-  let tanksMesh, shadowMesh, res = null;
+  let res = null;
   world.addChild(ground, marks);
   app.stage.addChild(world, shadowSprite);
   const top = new PIXI.Container(); app.stage.addChild(top);            // the tank mesh: same camera as the world, drawn above the shadows
 
   // ---- tanks
-  let tanks = [], teamMode = 'mixed', stateMode = 0;
+  const tanksMesh = new Batcher(top, false), shadowMesh = new Batcher(shadowWorld, true);
+  let tanks = [], teamMode = 'mixed', stateMode = 0, weaponMode = 'mixed';
   const rnd = (a, b) => a + Math.random() * (b - a);
   function setCount(n) {
     tanks = []; FIELD = Math.max(26, Math.round(Math.sqrt(n) * 3.2)); drawGround();
     const side = Math.ceil(Math.sqrt(n)), gap = Math.min(5.2, (FIELD * 2 - 6) / side);
     for (let i = 0; i < n; i++) {
-      const size = M.sizes[i % M.sizes.length], d = M.models[size + '_panzer'].data, h = rnd(0, TAU);
+      const size = M.sizes[i % M.sizes.length], d = M.models[size + '_panzer'].data, h = rnd(0, TAU);   // the hull is the same for every weapon
       const x = ((i % side) - (side - 1) / 2) * gap + rnd(-0.4, 0.4), y = (Math.floor(i / side) - (side - 1) / 2) * gap + rnd(-0.4, 0.4);
-      tanks.push({ size, d, md: M.models[size + '_panzer'], team: TEAM_NAMES[Math.floor(i / M.sizes.length) % 6], x, y, h, tur: h, tx: x, ty: y,
+      tanks.push({ size, d, weapon: WEAPONS[i % WEAPONS.length], team: TEAM_NAMES[Math.floor(i / M.sizes.length) % 6], x, y, h, tur: h, tx: x, ty: y,
         phase: 0, state: 0, wait: rnd(0, 2.5), r: d.hull_length * 0.5 });
     }
-    for (const m of [tanksMesh, shadowMesh]) if (m) m.mesh.destroy();
-    tanksMesh = new QuadMesh(n * 3, false); shadowMesh = new QuadMesh(n * 2, true);
-    top.addChild(tanksMesh.mesh); shadowWorld.addChild(shadowMesh.mesh);
-    if (res) { tanksMesh.setTextures(loaded[res]); shadowMesh.setTextures(loaded[res]); }
+    tanksMesh.reset(n * 3); shadowMesh.reset(n * 2);
   }
+  const weaponOf = (t) => (weaponMode === 'mixed' ? t.weapon : weaponMode);
   function order(gx, gy) {                                               // send every tank to a place in a block around the point
     const live = tanks.filter((t) => stateOf(t) < 3), side = Math.ceil(Math.sqrt(live.length)), gap = Math.min(5, (FIELD * 2) / side);
     live.forEach((t, i) => {
@@ -279,28 +307,40 @@ class QuadMesh {
     }
   }
 
-  let sprites = 0;
+  // the sprites of one tank, in draw order: [shadow?, key, x offset, y offset, team coloured?]
+  function parts(t) {
+    const st = stateOf(t), w = weaponOf(t), hd = dirOf(t.h), td = dirOf(t.tur), dd = String(hd).padStart(2, '0'), tt = String(td).padStart(2, '0');
+    if (st === 3) return [[false, `wreck/${t.size}/${w}/d${String(hd - (hd % 2)).padStart(2, '0')}`, 0, 0, false]];
+    const md = M.models[t.size + '_' + w], tg = md.turretGround1x[hd], tp = md.turretPivot1x[hd], frame = Math.floor(t.phase) % M.track.frames;
+    const list = [[true, `shadow/hull/${t.size}/d${dd}`, 0, 0, false], [true, `shadow/turret/${t.size}/${w}/d${tt}`, tg[0], tg[1], false],
+      [false, `hull/${t.size}/s${st}/d${dd}/f0`, 0, 0, true]];
+    if (frame) list.push([false, `hull/${t.size}/s${st}/d${dd}/f${frame}`, 0, 0, true]);
+    list.push([false, `turret/${t.size}/${w}/s${st}/d${tt}`, tp[0], tp[1], true]);
+    return list;
+  }
+  // true when every sheet this tank needs at resolution r is loaded; asks for the missing ones
+  function ready(r, list) {
+    let ok = true;
+    for (const p of list) { const f = M.frames[r][p[1]]; if (f && !loaded[r][f[0]]) { loadSheet(r, f[0]); ok = false; } }
+    return ok;
+  }
+  const resReady = (r) => tanks.map((t) => ready(r, parts(t))).every(Boolean);
+  let sprites = 0, waiting = 0;
   function draw() {
     const S = M.resolutions[res].scale, F = M.frames[res], SH = M.sheets[res], snap = cam.zoom * app.renderer.resolution;
     const put = (mesh, key, px, py, team) => {
       const f = F[key]; if (!f) return;
       const sh = SH[f[0]], c = team && sh.mask ? COLOURS[team] : null;
-      mesh.quad(px - f[5] / S, py - f[6] / S, f[3] / S, f[4] / S, f[1] / sh.w, f[2] / sh.h, (f[1] + f[3]) / sh.w, (f[2] + f[4]) / sh.h,
-        sh.mask ? sh.maskOffsetY / sh.h : 0, f[0], c ? c.paint : 0, c ? c.light : 0);
+      mesh.quad(f[0], loaded[res][f[0]], px - f[5] / S, py - f[6] / S, f[3] / S, f[4] / S, f[1] / sh.w, f[2] / sh.h, (f[1] + f[3]) / sh.w, (f[2] + f[4]) / sh.h,
+        sh.mask ? sh.maskOffsetY / sh.h : 0, c ? c.paint : 0, c ? c.light : 0);
     };
     tanks.sort((a, b) => (a.x + a.y) - (b.x + b.y));                      // far tanks first
-    tanksMesh.begin(); shadowMesh.begin();
+    tanksMesh.begin(); shadowMesh.begin(); waiting = 0;
     for (const t of tanks) {
       let [px, py] = toScreen(t.x, t.y); px = Math.round(px * snap) / snap; py = Math.round(py * snap) / snap;   // whole screen pixels
-      const st = stateOf(t), hd = dirOf(t.h), td = dirOf(t.tur), team = teamMode === 'mixed' ? t.team : teamMode;
-      const dd = String(hd).padStart(2, '0'), tt = String(td).padStart(2, '0');
-      if (st === 3) { put(tanksMesh, `wreck/${t.size}/panzer/d${String(hd - (hd % 2)).padStart(2, '0')}`, px, py, null); continue; }
-      const tg = t.md.turretGround1x[hd], tp = t.md.turretPivot1x[hd], frame = Math.floor(t.phase) % M.track.frames;
-      put(shadowMesh, `shadow/hull/${t.size}/d${dd}`, px, py, null);
-      put(shadowMesh, `shadow/turret/${t.size}/panzer/d${tt}`, px + tg[0], py + tg[1], null);
-      put(tanksMesh, `hull/${t.size}/s${st}/d${dd}/f0`, px, py, team);
-      if (frame) put(tanksMesh, `hull/${t.size}/s${st}/d${dd}/f${frame}`, px, py, team);
-      put(tanksMesh, `turret/${t.size}/panzer/s${st}/d${tt}`, px + tp[0], py + tp[1], team);
+      const list = parts(t), team = teamMode === 'mixed' ? t.team : teamMode;
+      if (!ready(res, list)) { waiting++; continue; }                     // its sheets are still loading: drawn as soon as they arrive
+      for (const [shadow, key, ox, oy, coloured] of list) put(shadow ? shadowMesh : tanksMesh, key, px + ox, py + oy, coloured ? team : null);
     }
     tanksMesh.end(); shadowMesh.end(); sprites = tanksMesh.n + shadowMesh.n;
     for (const c of [world, shadowWorld, top]) { c.position.set(cam.x, cam.y); c.scale.set(cam.zoom); }
@@ -308,7 +348,7 @@ class QuadMesh {
   }
 
   // ---- controls
-  setCount(9);
+  setCount(15);
   const group = (id, items, get, set) => {
     const el = document.getElementById(id), btns = [];
     for (const [value, label, colour] of items) {
@@ -319,11 +359,12 @@ class QuadMesh {
     }
     btns.forEach((x) => x.b.classList.toggle('on', x.value === get()));
   };
+  group('weapons', [['mixed', 'Mixed'], ...WEAPONS.map((w) => [w, WEAPON_LABELS[w]])], () => weaponMode, (v) => { weaponMode = v; });
   group('teams', [['mixed', 'Mixed'], ...TEAM_NAMES.map((n) => [n, n[0].toUpperCase() + n.slice(1), TEAMS[n]])], () => teamMode, (v) => { teamMode = v; });
   group('states', [[0, 'Intact'], [1, 'Damaged'], [2, 'Burning'], [3, 'Wreck'], ['mixed', 'Mixed']], () => stateMode, (v) => {
     stateMode = v; if (v === 'mixed') tanks.forEach((t, i) => { t.state = [0, 0, 1, 2, 0, 1, 3, 2][i % 8]; });
   });
-  group('counts', [[9, '9'], [30, '30'], [90, '90'], [300, '300']], () => tanks.length, (v) => { setCount(v); if (stateMode === 'mixed') tanks.forEach((t, i) => { t.state = [0, 0, 1, 2, 0, 1, 3, 2][i % 8]; }); });
+  group('counts', [[15, '15'], [30, '30'], [90, '90'], [300, '300']], () => tanks.length, (v) => { setCount(v); if (stateMode === 'mixed') tanks.forEach((t, i) => { t.state = [0, 0, 1, 2, 0, 1, 3, 2][i % 8]; }); });
   const zoomEl = document.getElementById('zoom');
   function setZoom(z, sx, sy) {
     z = Math.max(0.5, Math.min(4, z)); sx ??= app.screen.width / 2; sy ??= app.screen.height / 2;
@@ -346,15 +387,17 @@ class QuadMesh {
 
   // ---- start
   cam.x = app.screen.width / 2; cam.y = app.screen.height / 2;
-  try { await loadRes(wantRes()); } catch (e) { return fail('A sheet could not be loaded: ' + e); }
-  res = wantRes(); tanksMesh.setTextures(loaded[res]); shadowMesh.setTextures(loaded[res]);
+  res = wantRes();
+  while (!failed && !resReady(res)) await Promise.all(loading[res].filter(Boolean));     // the sheets the first picture needs
+  if (failed) return;
   msg.classList.add('hide');
-  window.tankDemo = { step: (n = 1, dt = 1 / 60) => { for (let i = 0; i < n; i++) update(dt); draw(); return tanks.map((t) => [t.size, +t.x.toFixed(1), +t.y.toFixed(1)]); }, setZoom };   // for testing from the console
+  window.tankDemo = { step: (n = 1, dt = 1 / 60) => { for (let i = 0; i < n; i++) update(dt); draw(); return tanks.map((t) => [t.size, weaponOf(t), +t.x.toFixed(1), +t.y.toFixed(1)]); }, setZoom,
+    info: () => ({ res, waiting, sprites, calls: [tanksMesh.calls, shadowMesh.calls], sheetsLoaded, sheetsLoading }) };   // for testing from the console
   const stats = document.getElementById('stats'); let fps = 60, statT = 0;
   app.ticker.add((tk) => {
     const dt = Math.min(0.05, tk.deltaMS / 1000);
     const want = wantRes();
-    if (want !== res) { if (loaded[want]) { res = want; tanksMesh.setTextures(loaded[res]); shadowMesh.setTextures(loaded[res]); } else loadRes(want).catch((e) => fail('A sheet could not be loaded: ' + e)); }
+    if (want !== res && resReady(want)) res = want;                        // switch once the sheets of the new resolution are there
     update(dt); draw();
     marks.clear();
     for (const c of clicks) { c.t += dt; const [sx, sy] = toScreen(c.gx, c.gy); marks.ellipse(sx, sy, 6 + c.t * 14, 3 + c.t * 7).stroke({ width: 1.5 / cam.zoom, color: 0xffffff, alpha: Math.max(0, 0.8 - c.t) }); }
@@ -362,7 +405,7 @@ class QuadMesh {
     fps += (1000 / tk.deltaMS - fps) * 0.05; statT += dt;
     if (statT > 0.25) {
       statT = 0;
-      stats.textContent = `zoom ${cam.zoom.toFixed(2)}x  screen density ${(window.devicePixelRatio || 1).toFixed(2)}\nsheets in use @${res}${loaded[wantRes()] ? '' : '  (loading @' + wantRes() + ')'}\n${tanks.length} tanks  ${sprites} sprites\ntanks: 1 draw call, shadows: 1\n${fps.toFixed(0)} pictures per second`;
+      stats.textContent = `zoom ${cam.zoom.toFixed(2)}x  screen density ${(window.devicePixelRatio || 1).toFixed(2)}\nsheets in use @${res}${want === res ? '' : '  (loading @' + want + ')'}\nsheets loaded ${sheetsLoaded} of ${Object.values(M.sheets).reduce((a, l) => a + l.length, 0)}${sheetsLoading ? '  (loading ' + sheetsLoading + ')' : ''}\n${tanks.length} tanks  ${sprites} sprites${waiting ? '  (' + waiting + ' waiting)' : ''}\ndraw calls: tanks ${tanksMesh.calls}, shadows ${shadowMesh.calls}\n${fps.toFixed(0)} pictures per second`;
     }
   });
 })().catch((e) => fail('The demo stopped: ' + (e && e.stack || e)));

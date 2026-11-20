@@ -22,7 +22,7 @@ node_modules/
 # Sprite bake frames and check renders (thousands of PNG): made locally with the bake scripts in docs/*/source
 bake/
 bake_*/
-check_refs/
+check_refs*/
 __pycache__/
 
 # Packed sprite sheets and check pictures made inside the source folders. Where the sheets live is not decided yet;

@@ -40,6 +40,8 @@ Look: a turret with barrels pointing forward.
 ### 4. Flamer
 Short range, so it must get close to its target. Its constant flame does heavy damage to units and buildings.
 Look: a short, thick nozzle plus fuel tanks.
+As built in 3D (owner, 2026-11-20): a long plain barrel; only the nozzle is a hollow sleeve with round holes cut through it; gas
+bottles on the back of the turret; no pipes over the roof or on the barrel.
 - Light: small nozzle
 - Medium: nozzle with round fuel tanks
 - Heavy: big nozzle with a coiled or ribbed fuel drum
