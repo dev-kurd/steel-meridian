@@ -31,6 +31,8 @@ That is too slow. The game is moving to this plan:
   green, at 20% brightness). Mask = (B − A) / 0.2 in linear light; the part above 1.0 (paint highlights) goes into the base sprite.
   The tanks are baked this way. The walker sheets were baked the old way (B at full brightness, highlights cut off) and **will be
   re-baked the new way**. The shader formula above is the same for both.
+- **Tank effects and sounds (approved 2026-11-21):** how each of the 15 tanks shoots, what its shot, hit, damage and destruction
+  look and sound like: `docs/tanks/tank-fx-design.md`, shown working in the tank demo (`docs/tanks/demo/`).
 - **Effects** come from an `fx` sheet: flipbook flames, explosions and muzzle flash (additive), plus particle smoke and embers,
   muzzle smoke and a small recoil kick when a tank fires.
 
@@ -88,8 +90,7 @@ Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and 
   missing. Pack extension (`.pak` or `.cab`) is **not decided yet**.
 
 ## Not decided yet (ask first)
-Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Flamer flame jet and Special
-beam effects · Gatling spin, Achilles strike, spinning radar · the tank effects and sounds as a whole (proposal and mockup: `docs/tanks/tank-fx-design.md`, not approved yet) · the other improvements the owner wants inside the walker models (not listed yet) · how mockups
+Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Gatling spin, Achilles strike, spinning radar · for the tank effects (approved, see `docs/tanks/tank-fx-design.md`): the artillery shell shape (Bullet or Sphere, both kept in the demo), whether Anti-Air may hit ground targets, synthesised sounds or WAV files, whether effects are sorted with the tanks, and the real ranges, reload times and damage · the other improvements the owner wants inside the walker models (not listed yet) · how mockups
 are shown when a session cannot publish to a design canvas (pictures or a page in the session, or do the mockup in claude.ai).
 
 ## Current order of work (owner, 2026-11-20)
@@ -98,9 +99,11 @@ are shown when a session cannot publish to a design canvas (pictures or a page i
 2. **Tank round 2 (Artillery, Anti-Air, Flamer, Special), chosen by the owner:** mockup approved and the 12 models built on
    2026-11-20, models approved by the owner the same day (`docs/tanks/README.md`, "Round 2"). The full bake of the new turrets, turret shadows
    and wrecks ran on 2026-11-20 (2,880 renders), then the pack (all 15 tanks, 46 sheets, 97 MB) and the pack check passed.
-   Still open: the Flamer and Special firing effects (part of step 3).
+   The Flamer and Special firing effects are part of step 3.
 3. **Tank effects and sounds before the walkers (owner, 2026-11-21):** design note `docs/tanks/tank-fx-design.md` and a working
-   mockup in the tank demo page (firing, hits, damage smoke and flames, explosions, sounds). Waiting for the owner's review.
+   mockup in the tank demo page (firing, hits, damage smoke and flames, explosions, sounds). **Approved by the owner on
+   2026-11-21** after several review rounds. Next (only when the owner says so): bake the real `fx` sheet and move the effects and
+   sounds into the game.
 4. Then the walker changes (re-bake with the new mask method, new damaged look, other improvements).
 
 ## References
@@ -111,7 +114,7 @@ In this repo:
   into sheets and described in `walkers.json`. The sheets themselves are not in the repo yet.
 - `docs/tanks/`: the 3D tanks (`README.md` with status and next steps, the design note `tanks-3d-model.md`, `source/` with the
   model, bake, pack, check and mockup tools, `.blend` scenes), the packed sheets (`source/sheets/`), the demo page (`demo/`) and
-  the effects and sounds proposal (`tank-fx-design.md`). The bake frames are not in the repo.
+  the approved effects and sounds design (`tank-fx-design.md`). The bake frames are not in the repo.
 - `docs/tanks/vector-viewer/`: the tanks viewer page (all 15 approved vector tanks, 2:1 view): the design reference for the 3D tanks.
 - `tools/sprite-pipeline/`: the sprite pipeline prototype (bake, team-colour shader, fx, PixiJS test map, encrypted packs,
   Tauri app). Its models still use the old isometric view; the pack key `pak/secret.txt` is not in the repo.

@@ -1,6 +1,7 @@
 # Tank effects and sounds: design note
 
-**Status (2026-11-21): proposal with a working mockup. Nothing here is approved yet.** First review by the owner on 2026-11-21:
+**Status: approved by the owner on 2026-11-21** (the effects and the sounds, as shown in the tank demo). Still open: the points in
+section 4. History: first review by the owner on 2026-11-21:
 three changes asked for and made (Anti-Air rockets, Artillery shell, Graviton beam), marked "owner" below.
 Second review the same day: a new Panzer gun sound (three versions to compare in the demo), a smaller and faster artillery shell
 with motion blur, a heavier red Graviton beam with the ball kept cyan, and a reworked ground fire for the Flamer. The mockup is the tank demo page
@@ -118,7 +119,10 @@ synthesises the rest in the browser. The only sound file it adds is the rocket l
 Every sound is placed left or right by where it happens on the screen, and is quieter off screen and when zoomed out. At most
 about 28 sounds play at once, and the same sound is not started twice within 35 ms, so 300 tanks do not turn into noise.
 
-## 4. Questions for the owner
+## 4. Still open after the approval
+
+The effects and sounds are approved as they are in the demo. These points were not answered and stay open (question 1 is
+answered by the approval; the Panzer, Graviton and rocket sounds are decided, see section 3):
 
 1. **The five shot types** (section 1): is each one right, above all the three Special weapons?
 2. **Anti-Air against ground targets:** in the mockup it fires at air targets only (the manual says it protects against
@@ -131,7 +135,7 @@ about 28 sounds play at once, and the same sound is not started twice within 35 
    everything" good enough?
 7. Which effects need a second look: too big, too small, too bright, too long?
 
-## 5. Next steps after approval
+## 5. Next steps (approved, not started)
 
 1. Bake the flipbooks and soft shapes into the real `fx` sheet (three resolutions) and add it to the manifest and the packs.
 2. Move the effect and sound code from the demo into the game, with the weapon rules from section 1.

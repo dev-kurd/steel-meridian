@@ -41,7 +41,7 @@ The round 2 models (2026-11-20), each rendered from its saved `.blend` scene:
 | `source/mockup/` | The scripts behind the mockup boards (`mock.py` round 1, `mock2.py` round 2) |
 | `source/README.md` | How to use the files above, command by command |
 | `demo/` | The tank demo page (PixiJS): all 15 tanks driving, turrets aiming, a weapon filter, team colours, damage states, drawn from the packed sheets in `source/sheets/`. Since 2026-11-21 also the effects and sounds mockup: firing, hits, smoke, flames, explosions, a small battle (`fx.js`, `sfx.js`). Start it with `demo/run_demo.bat` (needs Node.js and the internet for PixiJS) |
-| `tank-fx-design.md` | Effects and sounds for the tanks: the proposal behind the mockup (how each weapon shoots, the effects, the sounds, questions for the owner). **Not approved yet** |
+| `tank-fx-design.md` | Effects and sounds for the tanks: the proposal behind the mockup (how each weapon shoots, the effects, the sounds, questions for the owner). **Approved by the owner on 2026-11-21**; a few points stay open (listed in its section 4) |
 | `source/sheets/` | The packed sheets: 46 WebP files and `tanks.json` (93 MB). In the repo since 2026-11-21 (owner's decision) |
 | `vector-viewer/` | The approved vector tanks (the design reference the 3D models follow) |
 
@@ -114,8 +114,9 @@ yet (they will be re-baked first). Work copy of `source/` on the owner's PC:
 1. **Where the sheets live: decided (owner, 2026-11-21): in the repo**, in `source/sheets/`. A new pack replaces the files there.
 2. **Round 2 tanks** (the owner chose these first): baked, packed, checked and in the demo page. Open: the Flamer flame jet and Special beam
    effects are not decided.
-3. **Tank effects and sounds (owner, 2026-11-21: before the walkers):** proposal in `tank-fx-design.md`, mockup in the demo
-   page. Waiting for the owner's review; after approval the flipbooks are baked into the real `fx` sheet.
+3. **Tank effects and sounds (owner, 2026-11-21: before the walkers):** design in `tank-fx-design.md`, mockup in the demo
+   page. **Approved on 2026-11-21.** Next, when the owner says so: bake the flipbooks into the real `fx` sheet and move the effects
+   and sounds into the game.
 4. Then the **Walkers:** re-bake with the new mask method, change their damaged look to the tank style (smoky tint, less orange / fire
      colour), plus other improvements the owner wants inside the walker models (not listed yet: ask). See `../walkers/README.md`.
 
