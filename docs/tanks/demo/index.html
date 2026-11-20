@@ -396,12 +396,12 @@ class Batcher {
       for (let i = 0; i < 5; i++) fx.dust([t.x + rnd(-1.5, 1.5), t.y + rnd(-1.5, 1.5), 0], 1.3);
       snd('arty', t.x, t.y, { size: si }); addShake(0.12 + si * 0.06, t.x, t.y);
       shots.push({ type: 'arty', p0: m, c, p1: [px, py, 0], x: m[0], y: m[1], z: m[2], u: 0, tr: 0, T: 0.7 + dist / 38, si, ball: shellMode === 'sphere', team: t.team, dmg: W.dmg[si], splash: W.splash[si], k,
-        // motion blur: a soft dark streak drawn behind the shell, three shell lengths long; the shell itself is a little see-through
-        bl: fx.spawn('smoke', { tex: fx.T.spark, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: (shellMode === 'sphere' ? [0.6, 0.72, 0.85][si] * 4.4 : [0.95, 1.15, 1.35][si] * 3.2), ax: 0.8, c0: 0x4c5058, a0: 0.5 }),
-        // two shapes to compare: a pointed bullet (0.95 / 1.15 / 1.35 m long) or a round ball (0.6 / 0.72 / 0.85 m across); bigger on a bigger tank
-        h: shellMode === 'sphere' ? fx.spawn('smoke', { tex: fx.T.ball, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: [0.6, 0.72, 0.85][si], a0: 0.95 })
-          : fx.spawn('smoke', { tex: fx.T.shell, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: [0.95, 1.15, 1.35][si], a0: 0.9 }),
-        sh: fx.spawn('decal', { tex: fx.T.dot, held: true, flat: true, life: Infinity, must: true, x: m[0], y: m[1], z: 0, s0: [0.7, 0.9, 1.1][si], c0: 0x000000, a0: 0.3 }) });
+        // motion blur: a soft dark streak drawn behind the shell, about two shell lengths long and faint (owner: less blur); the shell itself is a little see-through
+        bl: fx.spawn('smoke', { tex: fx.T.spark, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: (shellMode === 'sphere' ? [0.8, 0.95, 1.1][si] * 2.4 : [1.3, 1.55, 1.8][si] * 1.8), ax: 0.8, c0: 0x4c5058, a0: 0.28 }),
+        // two shapes to compare: a pointed bullet (1.3 / 1.55 / 1.8 m long) or a round ball (0.8 / 0.95 / 1.1 m across); bigger on a bigger tank
+        h: shellMode === 'sphere' ? fx.spawn('smoke', { tex: fx.T.ball, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: [0.8, 0.95, 1.1][si], a0: 0.95 })
+          : fx.spawn('smoke', { tex: fx.T.shell, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: [1.3, 1.55, 1.8][si], a0: 0.95 }),
+        sh: fx.spawn('decal', { tex: fx.T.dot, held: true, flat: true, life: Infinity, must: true, x: m[0], y: m[1], z: 0, s0: [0.9, 1.15, 1.4][si], c0: 0x000000, a0: 0.3 }) });
     } else if (w === 'antiair') {
       // a rocket with a body: it leaves its own tube along the tube's angle, burns a flame behind it, then turns to the target
       const el = W.elev[si], d = [Math.cos(ta) * Math.cos(el), Math.sin(ta) * Math.cos(el), Math.sin(el)], len = [0.85, 1.05, 0.95][si];
