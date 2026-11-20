@@ -1,7 +1,7 @@
 # Tanks — 3D models rendered to sprites
 
-**Status (2026-11-20): the three Panzer tanks (Light, Medium, Heavy hull + Panzer turret) are modelled and approved. Their sprite
-bake is ready but has not been run on the PC yet.** The other four weapon types are not modelled yet.
+**Status (2026-11-20): the three Panzer tanks (Light, Medium, Heavy hull + Panzer turret) are modelled and approved, and their
+sprites are baked, packed and checked on the PC.** The other four weapon types are not modelled yet.
 Roster, weapons and roles: [`../tank-types.md`](../tank-types.md). Rules for every asset: [`../../CLAUDE.md`](../../CLAUDE.md).
 Full design note with every decision and measurement: [`tanks-3d-model.md`](tanks-3d-model.md).
 
@@ -34,6 +34,7 @@ Test bake check, 2026-11-20: the whole tank rendered in one piece (left) against
 | `source/build_tanks.py`, `source/blend/`, `source/tank_data.json` | Builds and saves the three `.blend` scenes (Blender 5.3); model data in metres |
 | `source/mockup/` | The scripts behind the mockup boards, for round 2 |
 | `source/README.md` | How to use the files above, command by command |
+| `demo/` | The tank demo page (PixiJS): tanks driving, turrets aiming, team colours, damage states, drawn from the packed sheets in `source/sheets/`. Start it with `demo/run_demo.bat` (needs Node.js and the internet for PixiJS) |
 | `vector-viewer/` | The approved vector tanks (the design reference the 3D models follow) |
 
 **Not in the repo:** the bake frames (`bake/`, 3,120 PNG, ignored by git) and the packed sheets. Where the sheets live is not decided
@@ -52,22 +53,22 @@ Test bake check, 2026-11-20: the whole tank rendered in one piece (left) against
   stands, so the deck is shaded the same for every turret direction; the turret over a dark disc at deck height. The camera sees
   neither. The tank is never moved for a render (the paint's dust depends on real height); the camera moves instead.
 - **Not baked:** the barrels' shadow on the hull (it depends on the turret direction).
-- **Track frames at pack time:** `--tracks overlay` (default) stores frame 0 as a whole hull and frames 1–3 as small overlays with only
-  the pixels that change; `--tracks full` stores four whole hulls. Estimate for the Panzer set: about 44 MB against 74 MB for all three
-  resolutions; @2x alone about 9.5 MB against 17 MB. The game draws hull frame 0, then the overlay.
+- **Track frames are stored as overlays (owner, 2026-11-20):** `--tracks overlay` (default) stores frame 0 as a whole hull and frames
+  1–3 as small overlays with only the pixels that change; `--tracks full` stores four whole hulls (estimated at about 74 MB for all
+  three resolutions, not packed). The game draws hull frame 0, then the overlay.
+
+## Done on the PC (2026-11-20)
+- **Bake:** `bake_panzer.bat`, 3,120 renders with Blender 5.3 on the RTX 3060 (GPU), 173 minutes, about 3.3 s per render.
+- **Pack:** overlay tracks, 1,680 sprites in 17 sheets, 48.0 MB (@4x 33.1 MB, @2x 11.2 MB, @1x 3.7 MB), `tanks.json` 283 KB. The
+  overlays hold 24% of the hull pixels they replace.
+- **Check:** `check_refs.py` then `check_pack.py`: mean difference on the tank 6.7–9.5 of 255 over nine cases (expected 6–9; above
+  about 12 means a fault).
+- **Python:** the PC has no Python of its own. The pack tools ran from `source/.venv`, made from Blender's Python
+  (`python -m venv --system-site-packages`) with Pillow installed; it is not in the repo.
 
 ## Next steps (in this order)
-1. **Short test bake on the PC**, to confirm Blender is found, the GPU is used and the time per render. From `source/`:
-   `bake_panzer.bat --sizes light --dirs 0 --states 0 --frames 0 --out bake_smoke` (7 renders). Each progress line ends with `[GPU]` or
-   `[CPU]`. Neither `bake_panzer.bat` nor the `.blend` files have been run on the PC yet; the scripts were tested with Blender's
-   Python module 5.3.0 on a cloud CPU only.
-2. **Full Panzer bake:** `bake_panzer.bat` (3,120 renders; about 2 hours if it matches the walkers' 2.2–2.5 s per render on the
-   RTX 3060). It can be stopped and started again; `bake/progress.txt` shows progress, `bake/BAKE_DONE` appears at the end.
-3. **Pack:** `python tools/pack_tanks.py bake sheets` (Python with numpy and Pillow).
-4. **Check:** `check_refs.py` then `check_pack.py` (expected mean difference on the tank 6–9 of 255), and a contact sheet of all 32
-   directions with `compose_tanks.py`. Show the owner the result.
-5. **Decide with the owner** where the sheets live and which track storage to use (overlay or full).
-6. After the Panzer set, ask the owner which comes first:
+1. **Decide with the owner** where the sheets live. For now they are in `source/sheets/` on the PC, ignored by git.
+2. Ask the owner which comes first:
    - **Mockup round 2:** Artillery, Anti-Air, Flamer and Special on all three sizes (mockup first, then model, then bake).
    - **Walkers:** re-bake with the new mask method, change their damaged look to the tank style (smoky tint, less orange / fire
      colour), plus other improvements the owner wants inside the walker models (not listed yet: ask). See `../walkers/README.md`.

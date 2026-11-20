@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Steel Meridian - Panzer tank demo</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #14171d; color: #e6e9ee; font: 13px/1.4 system-ui, "Segoe UI", sans-serif; }
+  canvas { display: block; }
+  #hud { position: fixed; left: 12px; top: 12px; background: rgba(15, 18, 24, 0.86); border: 1px solid #2c323c; border-radius: 8px; padding: 10px 12px; width: 268px; user-select: none; }
+  #hud h1 { font-size: 14px; margin: 0 0 8px; font-weight: 600; }
+  .row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 0 0 8px; }
+  .row > span.l { width: 100%; color: #9aa3b0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  button { font: inherit; color: #e6e9ee; background: #232831; border: 1px solid #39414d; border-radius: 5px; padding: 3px 8px; cursor: pointer; }
+  button:hover { background: #2c333e; }
+  button.on { background: #3a6ea5; border-color: #5b8fc7; }
+  button.sw { width: 26px; height: 22px; padding: 0; }
+  button.sw.on { outline: 2px solid #fff; outline-offset: 1px; }
+  label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+  #stats { color: #9aa3b0; font-variant-numeric: tabular-nums; white-space: pre; }
+  #help { color: #9aa3b0; margin-top: 6px; }
+  #msg { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; background: #14171d; white-space: pre-wrap; }
+  #msg.hide { display: none; }
+</style>
+</head>
+<body>
+<div id="hud">
+  <h1>Panzer tanks: sprite demo</h1>
+  <div class="row" id="teams"><span class="l">Team colour</span></div>
+  <div class="row" id="states"><span class="l">Damage state</span></div>
+  <div class="row" id="counts"><span class="l">Tanks</span></div>
+  <div class="row"><span class="l">Zoom</span>
+    <input id="zoom" type="range" min="0.5" max="4" step="0.05" value="2" style="flex:1">
+  </div>
+  <div class="row">
+    <label><input id="patrol" type="checkbox" checked> Patrol on their own</label>
+    <label><input id="aim" type="checkbox" checked> Turrets aim at the mouse</label>
+  </div>
+  <div id="stats"></div>
+  <div id="help">Click: send the tanks there. Wheel: zoom. Right-drag: move the view.</div>
+</div>
+<div id="msg">Loading the tank sheets...</div>
+
+<script src="https://cdn.jsdelivr.net/npm/pixi.js@8.23.0/dist/pixi.min.js"></script>
+<script>
+'use strict';
+/* Panzer tank demo: draws the packed sheets (docs/tanks/source/sheets) the way the game will.
+ * - PixiJS (WebGL). Every tank sprite of every team is in one mesh = one draw call; the sheet index is a vertex value.
+ * - Team colour in linear light: out = toSRGB(toLinear(base) + toLinear(mask.r) * toLinear(paint) + toLinear(mask.g) * toLinear(light)).
+ * - Draw order per tank: ground shadows (hull + turret, blended with "max"), hull frame 0, track overlay, turret.
+ * - Game view: 2:1 dimetric; x and y are on the ground in metres, screen = (x - y, (x + y) / 2) * pixels per metre. */
+const SHEETS = '../source/sheets/';
+const TEAMS = { green: '#33d17a', blue: '#3b82f6', red: '#e5484d', orange: '#f5a524', purple: '#a855f7', cyan: '#22d3ee' };
+const TEAM_NAMES = Object.keys(TEAMS);
+const SPEED = { light: 3.4, medium: 2.7, heavy: 2.1 };      // metres per second (demo values, not game balance)
+const TURN = { light: 2.4, medium: 1.9, heavy: 1.5 };       // hull turn rate, radians per second
+const TURRET_TURN = 2.6;
+let FIELD = 26;                                             // tanks stay within +-FIELD metres (grows with the number of tanks)
+const TAU = Math.PI * 2;
+const msg = document.getElementById('msg');
+const fail = (t) => { msg.classList.remove('hide'); msg.textContent = t; };
+
+// ---- team colours: the same rule as tools/compose_tanks.py (paint_of, unit_paint, light_col)
+const s2l = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+const lum = ([r, g, b]) => 0.2126 * s2l(r) + 0.7152 * s2l(g) + 0.0722 * s2l(b);
+function rgb2hls([r, g, b]) {
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  if (d === 0) return [0, l, 0];
+  const s = l <= 0.5 ? d / (mx + mn) : d / (2 - mx - mn);
+  const rc = (mx - r) / d, gc = (mx - g) / d, bc = (mx - b) / d;
+  let h = r === mx ? bc - gc : g === mx ? 2 + rc - bc : 4 + gc - rc;
+  h = ((h / 6) % 1 + 1) % 1; return [h, l, s];
+}
+function hls2rgb(h, l, s) {
+  if (s === 0) return [l, l, l];
+  const m2 = l <= 0.5 ? l * (1 + s) : l + s - l * s, m1 = 2 * l - m2;
+  const v = (hue) => { hue = ((hue % 1) + 1) % 1; return hue < 1 / 6 ? m1 + (m2 - m1) * hue * 6 : hue < 0.5 ? m2 : hue < 2 / 3 ? m1 + (m2 - m1) * (2 / 3 - hue) * 6 : m1; };
+  return [v(h + 1 / 3), v(h), v(h - 1 / 3)];
+}
+function paintOf(rgb) {
+  const [h, , s0] = rgb2hls(rgb), hd = h * 360, purple = hd >= 255 && hd <= 320, red = hd >= 335 || hd <= 15;
+  const s = purple ? Math.max(0.42, Math.min(0.5, s0)) : red ? Math.max(0.46, Math.min(0.52, s0)) : Math.max(0.6, Math.min(0.82, s0));
+  const target = lum(hls2rgb(146 / 360, 0.4, 0.65)) * (purple ? 1.25 : red ? 0.9 : 1);
+  let lo = 0.3, hi = purple ? 0.64 : red ? 0.5 : 0.56;
+  for (let i = 0; i < 18; i++) { const m = (lo + hi) / 2; if (lum(hls2rgb(h, m, s)) < target) lo = m; else hi = m; }
+  return hls2rgb(h, (lo + hi) / 2, s);
+}
+const hexRgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+const pack = ([r, g, b]) => ((255 << 24) | (Math.round(b * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(r * 255)) >>> 0;   // bytes R, G, B, A in memory
+const COLOURS = {};
+for (const [name, hex] of Object.entries(TEAMS)) {
+  const [h, l, s] = rgb2hls(paintOf(hexRgb(hex))), unit = hls2rgb(h, l * 0.9, s * 0.5);     // units: saturation x 0.5, lightness x 0.9
+  COLOURS[name] = { paint: pack(unit), light: pack(unit.map((c) => c * 0.5 + 0.5)) };      // lights: mix(paint, white, 0.5)
+}
+
+// ---- shaders
+const VS = `#version 300 es
+in vec2 aPosition; in vec2 aUV; in vec2 aMT; in vec4 aPaint; in vec4 aLight;
+uniform mat3 uProjectionMatrix; uniform mat3 uWorldTransformMatrix; uniform mat3 uTransformMatrix;
+out vec2 vUV; out vec2 vMT; out vec3 vPaint; out vec3 vLight;
+vec3 toLin(vec3 c) { return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(vec3(0.04045), c)); }
+void main() {
+  mat3 mvp = uProjectionMatrix * uWorldTransformMatrix * uTransformMatrix;
+  gl_Position = vec4((mvp * vec3(aPosition, 1.0)).xy, 0.0, 1.0);
+  vUV = aUV; vMT = aMT; vPaint = toLin(aPaint.rgb); vLight = toLin(aLight.rgb);
+}`;
+const FS = `#version 300 es
+precision highp float;
+in vec2 vUV; in vec2 vMT; in vec3 vPaint; in vec3 vLight;
+uniform sampler2D uTex0; uniform sampler2D uTex1; uniform sampler2D uTex2; uniform sampler2D uTex3;
+uniform sampler2D uTex4; uniform sampler2D uTex5; uniform sampler2D uTex6; uniform sampler2D uTex7;
+uniform float uShadow;
+out vec4 finalColor;
+vec3 toLin(vec3 c) { return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(vec3(0.04045), c)); }
+vec3 toSRGB(vec3 c) { c = clamp(c, 0.0, 1.0); return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(vec3(0.0031308), c)); }
+vec4 samp(vec2 uv) {
+  float t = vMT.y;
+  if (t < 0.5) return texture(uTex0, uv); else if (t < 1.5) return texture(uTex1, uv); else if (t < 2.5) return texture(uTex2, uv);
+  else if (t < 3.5) return texture(uTex3, uv); else if (t < 4.5) return texture(uTex4, uv); else if (t < 5.5) return texture(uTex5, uv);
+  else if (t < 6.5) return texture(uTex6, uv);
+  return texture(uTex7, uv);
+}
+void main() {
+  vec4 b = samp(vUV);                                   // premultiplied by the browser on upload
+  if (uShadow > 0.5) { finalColor = vec4(b.a); return; } // shadow pass: coverage only (blended with max)
+  float a = max(b.a, 0.0001);
+  vec3 lin = toLin(b.rgb / a);
+  if (vMT.x > 0.0) {                                    // this sheet has a team mask in its bottom half
+    vec4 m = samp(vUV + vec2(0.0, vMT.x));
+    vec3 mk = toLin(m.rgb / max(m.a, 0.0001));
+    lin += mk.r * vPaint + mk.g * vLight;
+  }
+  finalColor = vec4(toSRGB(lin) * b.a, b.a);
+}`;
+
+// ---- a mesh of textured quads; every vertex: x, y, u, v, mask offset, sheet index, paint, light (32 bytes)
+class QuadMesh {
+  constructor(capacity, shadow) {
+    this.cap = capacity; this.n = 0; this.used = 0;
+    this.f32 = new Float32Array(capacity * 4 * 8); this.u32 = new Uint32Array(this.f32.buffer);
+    const idx = new Uint32Array(capacity * 6);
+    for (let i = 0; i < capacity; i++) idx.set([i * 4, i * 4 + 1, i * 4 + 2, i * 4, i * 4 + 2, i * 4 + 3], i * 6);
+    this.buffer = new PIXI.Buffer({ data: this.f32, usage: PIXI.BufferUsage.VERTEX | PIXI.BufferUsage.COPY_DST });
+    const at = (format, offset) => ({ buffer: this.buffer, format, stride: 32, offset });
+    this.geometry = new PIXI.Geometry({
+      attributes: { aPosition: at('float32x2', 0), aUV: at('float32x2', 8), aMT: at('float32x2', 16), aPaint: at('unorm8x4', 24), aLight: at('unorm8x4', 28) },
+      indexBuffer: idx,
+    });
+    const res = { u: { uShadow: { value: shadow ? 1 : 0, type: 'f32' } } };
+    for (let i = 0; i < 8; i++) res['uTex' + i] = PIXI.Texture.WHITE.source;
+    this.shader = PIXI.Shader.from({ gl: { vertex: VS, fragment: FS }, resources: res });
+    this.mesh = new PIXI.Mesh({ geometry: this.geometry, shader: this.shader });
+    if (shadow) this.mesh.blendMode = 'max';
+  }
+  setTextures(sources) { for (let i = 0; i < 8; i++) this.shader.resources['uTex' + i] = sources[i] || PIXI.Texture.WHITE.source; }
+  begin() { this.n = 0; }
+  quad(x, y, w, h, u0, v0, u1, v1, maskDv, tex, paint, light) {
+    if (this.n >= this.cap) return;
+    const f = this.f32, u = this.u32; let o = this.n * 32;
+    const put = (px, py, pu, pv) => { f[o] = px; f[o + 1] = py; f[o + 2] = pu; f[o + 3] = pv; f[o + 4] = maskDv; f[o + 5] = tex; u[o + 6] = paint; u[o + 7] = light; o += 8; };
+    put(x, y, u0, v0); put(x + w, y, u1, v0); put(x + w, y + h, u1, v1); put(x, y + h, u0, v1);
+    this.n++;
+  }
+  end() {
+    if (this.n < this.used) this.f32.fill(0, this.n * 32, this.used * 32);   // quads left from the last frame collapse to nothing
+    this.used = this.n; this.buffer.update();
+  }
+}
+
+(async function main() {
+  if (!window.PIXI) return fail('PixiJS could not be loaded (it comes from cdn.jsdelivr.net, so this page needs the internet).');
+  let M;
+  try { M = await (await fetch(SHEETS + 'tanks.json')).json(); }
+  catch (e) { return fail('The packed sheets were not found at docs/tanks/source/sheets.\nPack them first (python tools/pack_tanks.py bake sheets) and open this page through run_demo.bat.'); }
+
+  const app = new PIXI.Application();
+  await app.init({ resizeTo: window, preference: 'webgl', antialias: false, background: '#7e7462', resolution: window.devicePixelRatio || 1, autoDensity: true });
+  document.body.insertBefore(app.canvas, document.body.firstChild);
+  app.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  const m0 = M.models.heavy_panzer;
+  const PPM = m0.turretGround1x[0][0] / m0.data.turret_pivot[0];          // screen pixels per metre at @1x
+  const TRAVEL = M.track.travelModelUnitsPerFrame / m0.data.model_units_per_metre;   // metres driven per track frame
+  const toScreen = (x, y) => [PPM * (x - y), PPM * (x + y) / 2];
+  const toGround = (sx, sy) => [(sx / PPM + 2 * sy / PPM) / 2, (2 * sy / PPM - sx / PPM) / 2];
+
+  // ---- sheets: one set of textures per resolution, loaded when the zoom first needs it
+  const loaded = {}, loading = {};
+  async function loadRes(res) {
+    if (loaded[res] || loading[res]) return loading[res];
+    loading[res] = (async () => {
+      const tex = await Promise.all(M.sheets[res].map((s) => PIXI.Assets.load(SHEETS + s.file)));
+      tex.forEach((t) => { t.source.scaleMode = 'linear'; });
+      loaded[res] = tex.map((t) => t.source);
+    })();
+    return loading[res];
+  }
+  const wantRes = () => { const need = cam.zoom * (window.devicePixelRatio || 1); return need <= 1.05 ? '1x' : need <= 2.1 ? '2x' : '4x'; };
+
+  // ---- scene
+  const cam = { x: 0, y: 0, zoom: 2 };
+  const world = new PIXI.Container(), shadowWorld = new PIXI.Container(), ground = new PIXI.Graphics(), marks = new PIXI.Graphics();
+  function drawGround() { // ground grid along the game's x and y axes, every 4 metres
+    ground.clear(); const n = Math.ceil((FIELD + 6) / 4) * 4;
+    for (let i = -n; i <= n; i += 4) {
+      ground.moveTo(...toScreen(i, -n)).lineTo(...toScreen(i, n)); ground.moveTo(...toScreen(-n, i)).lineTo(...toScreen(n, i));
+    }
+    ground.stroke({ width: 1, color: 0x000000, alpha: 0.1, pixelLine: true });
+    ground.poly([...toScreen(-FIELD - 2, -FIELD - 2), ...toScreen(FIELD + 2, -FIELD - 2), ...toScreen(FIELD + 2, FIELD + 2), ...toScreen(-FIELD - 2, FIELD + 2)]).stroke({ width: 1, color: 0x000000, alpha: 0.28, pixelLine: true });
+  }
+  let rt = null; const shadowSprite = new PIXI.Sprite(); shadowSprite.tint = 0x000000;
+  function makeRT() {
+    if (rt) rt.destroy(true);
+    rt = PIXI.RenderTexture.create({ width: app.screen.width, height: app.screen.height, resolution: app.renderer.resolution });
+    shadowSprite.texture = rt;
+  }
+  makeRT(); app.renderer.on('resize', makeRT);
+  let tanksMesh, shadowMesh, res = null;
+  world.addChild(ground, marks);
+  app.stage.addChild(world, shadowSprite);
+  const top = new PIXI.Container(); app.stage.addChild(top);            // the tank mesh: same camera as the world, drawn above the shadows
+
+  // ---- tanks
+  let tanks = [], teamMode = 'mixed', stateMode = 0;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  function setCount(n) {
+    tanks = []; FIELD = Math.max(26, Math.round(Math.sqrt(n) * 3.2)); drawGround();
+    const side = Math.ceil(Math.sqrt(n)), gap = Math.min(5.2, (FIELD * 2 - 6) / side);
+    for (let i = 0; i < n; i++) {
+      const size = M.sizes[i % M.sizes.length], d = M.models[size + '_panzer'].data, h = rnd(0, TAU);
+      const x = ((i % side) - (side - 1) / 2) * gap + rnd(-0.4, 0.4), y = (Math.floor(i / side) - (side - 1) / 2) * gap + rnd(-0.4, 0.4);
+      tanks.push({ size, d, md: M.models[size + '_panzer'], team: TEAM_NAMES[Math.floor(i / M.sizes.length) % 6], x, y, h, tur: h, tx: x, ty: y,
+        phase: 0, state: 0, wait: rnd(0, 2.5), r: d.hull_length * 0.5 });
+    }
+    for (const m of [tanksMesh, shadowMesh]) if (m) m.mesh.destroy();
+    tanksMesh = new QuadMesh(n * 3, false); shadowMesh = new QuadMesh(n * 2, true);
+    top.addChild(tanksMesh.mesh); shadowWorld.addChild(shadowMesh.mesh);
+    if (res) { tanksMesh.setTextures(loaded[res]); shadowMesh.setTextures(loaded[res]); }
+  }
+  function order(gx, gy) {                                               // send every tank to a place in a block around the point
+    const live = tanks.filter((t) => stateOf(t) < 3), side = Math.ceil(Math.sqrt(live.length)), gap = Math.min(5, (FIELD * 2) / side);
+    live.forEach((t, i) => {
+      t.tx = Math.max(-FIELD, Math.min(FIELD, gx + ((i % side) - (side - 1) / 2) * gap));
+      t.ty = Math.max(-FIELD, Math.min(FIELD, gy + (Math.floor(i / side) - (side - 1) / 2) * gap)); t.wait = rnd(4, 9);
+    });
+  }
+  const stateOf = (t) => (stateMode === 'mixed' ? t.state : stateMode);
+  const wrap = (a) => { a = (a + Math.PI) % TAU; if (a < 0) a += TAU; return a - Math.PI; };
+  const dirOf = (a) => ((Math.round(a / (TAU / 32)) % 32) + 32) % 32;
+
+  const mouse = { on: false, gx: 0, gy: 0 };
+  function update(dt) {
+    const patrol = document.getElementById('patrol').checked, aim = document.getElementById('aim').checked && mouse.on;
+    for (const t of tanks) {
+      const st = stateOf(t); if (st === 3) continue;
+      const dx = t.tx - t.x, dy = t.ty - t.y, dist = Math.hypot(dx, dy);
+      let travel = 0;
+      if (dist > 0.25) {
+        const diff = wrap(Math.atan2(dy, dx) - t.h), turn = Math.max(-TURN[t.size] * dt, Math.min(TURN[t.size] * dt, diff));
+        t.h = wrap(t.h + turn);
+        const go = Math.abs(diff) < 1.0 ? Math.cos(diff) ** 2 : 0;       // turn towards the goal first, then drive
+        const v = SPEED[t.size] * (st === 2 ? 0.65 : 1) * go * Math.min(1, 0.25 + dist / 2.5);
+        t.x += Math.cos(t.h) * v * dt; t.y += Math.sin(t.h) * v * dt;
+        travel = v * dt + Math.abs(turn) * t.d.hull_width * 0.3;         // the tracks also run while the tank turns on the spot
+      } else if (patrol) {
+        t.wait -= dt;
+        if (t.wait <= 0) { t.tx = rnd(-FIELD, FIELD); t.ty = rnd(-FIELD, FIELD); t.wait = rnd(1, 5); }
+      }
+      // track frame from distance driven; at most 0.45 frame per picture so fast tanks do not seem to run backwards
+      t.phase = (t.phase + Math.min(0.45, travel / TRAVEL)) % M.track.frames;
+      const want = aim ? Math.atan2(mouse.gy - t.y, mouse.gx - t.x) : t.h, td = wrap(want - t.tur);
+      t.tur = wrap(t.tur + Math.max(-TURRET_TURN * dt, Math.min(TURRET_TURN * dt, td)));
+    }
+    for (let i = 0; i < tanks.length; i++) for (let j = i + 1; j < tanks.length; j++) {    // circle collisions: push overlapping tanks apart
+      const a = tanks[i], b = tanks[j], dx = b.x - a.x, dy = b.y - a.y, min = a.r + b.r, d2 = dx * dx + dy * dy;
+      if (d2 >= min * min || d2 === 0) continue;
+      const d = Math.sqrt(d2), push = (min - d) / d, fa = stateOf(a) === 3 ? 0 : stateOf(b) === 3 ? 1 : 0.5;
+      a.x -= dx * push * fa; a.y -= dy * push * fa; b.x += dx * push * (1 - fa) * (stateOf(b) === 3 ? 0 : 1); b.y += dy * push * (1 - fa) * (stateOf(b) === 3 ? 0 : 1);
+    }
+  }
+
+  let sprites = 0;
+  function draw() {
+    const S = M.resolutions[res].scale, F = M.frames[res], SH = M.sheets[res], snap = cam.zoom * app.renderer.resolution;
+    const put = (mesh, key, px, py, team) => {
+      const f = F[key]; if (!f) return;
+      const sh = SH[f[0]], c = team && sh.mask ? COLOURS[team] : null;
+      mesh.quad(px - f[5] / S, py - f[6] / S, f[3] / S, f[4] / S, f[1] / sh.w, f[2] / sh.h, (f[1] + f[3]) / sh.w, (f[2] + f[4]) / sh.h,
+        sh.mask ? sh.maskOffsetY / sh.h : 0, f[0], c ? c.paint : 0, c ? c.light : 0);
+    };
+    tanks.sort((a, b) => (a.x + a.y) - (b.x + b.y));                      // far tanks first
+    tanksMesh.begin(); shadowMesh.begin();
+    for (const t of tanks) {
+      let [px, py] = toScreen(t.x, t.y); px = Math.round(px * snap) / snap; py = Math.round(py * snap) / snap;   // whole screen pixels
+      const st = stateOf(t), hd = dirOf(t.h), td = dirOf(t.tur), team = teamMode === 'mixed' ? t.team : teamMode;
+      const dd = String(hd).padStart(2, '0'), tt = String(td).padStart(2, '0');
+      if (st === 3) { put(tanksMesh, `wreck/${t.size}/panzer/d${String(hd - (hd % 2)).padStart(2, '0')}`, px, py, null); continue; }
+      const tg = t.md.turretGround1x[hd], tp = t.md.turretPivot1x[hd], frame = Math.floor(t.phase) % M.track.frames;
+      put(shadowMesh, `shadow/hull/${t.size}/d${dd}`, px, py, null);
+      put(shadowMesh, `shadow/turret/${t.size}/panzer/d${tt}`, px + tg[0], py + tg[1], null);
+      put(tanksMesh, `hull/${t.size}/s${st}/d${dd}/f0`, px, py, team);
+      if (frame) put(tanksMesh, `hull/${t.size}/s${st}/d${dd}/f${frame}`, px, py, team);
+      put(tanksMesh, `turret/${t.size}/panzer/s${st}/d${tt}`, px + tp[0], py + tp[1], team);
+    }
+    tanksMesh.end(); shadowMesh.end(); sprites = tanksMesh.n + shadowMesh.n;
+    for (const c of [world, shadowWorld, top]) { c.position.set(cam.x, cam.y); c.scale.set(cam.zoom); }
+    app.renderer.render({ container: shadowWorld, target: rt, clear: true, clearColor: [0, 0, 0, 0] });
+  }
+
+  // ---- controls
+  setCount(9);
+  const group = (id, items, get, set) => {
+    const el = document.getElementById(id), btns = [];
+    for (const [value, label, colour] of items) {
+      const b = document.createElement('button'); b.textContent = colour ? '' : label; b.title = label;
+      if (colour) { b.className = 'sw'; b.style.background = colour; }
+      b.onclick = () => { set(value); btns.forEach((x) => x.b.classList.toggle('on', x.value === get())); };
+      el.appendChild(b); btns.push({ b, value });
+    }
+    btns.forEach((x) => x.b.classList.toggle('on', x.value === get()));
+  };
+  group('teams', [['mixed', 'Mixed'], ...TEAM_NAMES.map((n) => [n, n[0].toUpperCase() + n.slice(1), TEAMS[n]])], () => teamMode, (v) => { teamMode = v; });
+  group('states', [[0, 'Intact'], [1, 'Damaged'], [2, 'Burning'], [3, 'Wreck'], ['mixed', 'Mixed']], () => stateMode, (v) => {
+    stateMode = v; if (v === 'mixed') tanks.forEach((t, i) => { t.state = [0, 0, 1, 2, 0, 1, 3, 2][i % 8]; });
+  });
+  group('counts', [[9, '9'], [30, '30'], [90, '90'], [300, '300']], () => tanks.length, (v) => { setCount(v); if (stateMode === 'mixed') tanks.forEach((t, i) => { t.state = [0, 0, 1, 2, 0, 1, 3, 2][i % 8]; }); });
+  const zoomEl = document.getElementById('zoom');
+  function setZoom(z, sx, sy) {
+    z = Math.max(0.5, Math.min(4, z)); sx ??= app.screen.width / 2; sy ??= app.screen.height / 2;
+    cam.x = sx - (sx - cam.x) * (z / cam.zoom); cam.y = sy - (sy - cam.y) * (z / cam.zoom); cam.zoom = z; zoomEl.value = z;
+  }
+  zoomEl.oninput = () => setZoom(+zoomEl.value);
+  app.canvas.addEventListener('wheel', (e) => { e.preventDefault(); setZoom(cam.zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1), e.offsetX, e.offsetY); }, { passive: false });
+  let drag = null; const clicks = [];
+  const groundAt = (e) => toGround((e.offsetX - cam.x) / cam.zoom, (e.offsetY - cam.y) / cam.zoom);
+  app.canvas.addEventListener('pointerdown', (e) => {
+    if (e.button === 0) { const [gx, gy] = groundAt(e); order(gx, gy); clicks.push({ gx, gy, t: 0 }); }
+    else { drag = { x: e.clientX, y: e.clientY }; app.canvas.setPointerCapture(e.pointerId); }
+  });
+  app.canvas.addEventListener('pointermove', (e) => {
+    [mouse.gx, mouse.gy] = groundAt(e); mouse.on = true;
+    if (drag) { cam.x += e.clientX - drag.x; cam.y += e.clientY - drag.y; drag = { x: e.clientX, y: e.clientY }; }
+  });
+  app.canvas.addEventListener('pointerup', () => { drag = null; });
+  app.canvas.addEventListener('pointerleave', () => { mouse.on = false; });
+
+  // ---- start
+  cam.x = app.screen.width / 2; cam.y = app.screen.height / 2;
+  try { await loadRes(wantRes()); } catch (e) { return fail('A sheet could not be loaded: ' + e); }
+  res = wantRes(); tanksMesh.setTextures(loaded[res]); shadowMesh.setTextures(loaded[res]);
+  msg.classList.add('hide');
+  window.tankDemo = { step: (n = 1, dt = 1 / 60) => { for (let i = 0; i < n; i++) update(dt); draw(); return tanks.map((t) => [t.size, +t.x.toFixed(1), +t.y.toFixed(1)]); }, setZoom };   // for testing from the console
+  const stats = document.getElementById('stats'); let fps = 60, statT = 0;
+  app.ticker.add((tk) => {
+    const dt = Math.min(0.05, tk.deltaMS / 1000);
+    const want = wantRes();
+    if (want !== res) { if (loaded[want]) { res = want; tanksMesh.setTextures(loaded[res]); shadowMesh.setTextures(loaded[res]); } else loadRes(want).catch((e) => fail('A sheet could not be loaded: ' + e)); }
+    update(dt); draw();
+    marks.clear();
+    for (const c of clicks) { c.t += dt; const [sx, sy] = toScreen(c.gx, c.gy); marks.ellipse(sx, sy, 6 + c.t * 14, 3 + c.t * 7).stroke({ width: 1.5 / cam.zoom, color: 0xffffff, alpha: Math.max(0, 0.8 - c.t) }); }
+    while (clicks.length && clicks[0].t > 0.8) clicks.shift();
+    fps += (1000 / tk.deltaMS - fps) * 0.05; statT += dt;
+    if (statT > 0.25) {
+      statT = 0;
+      stats.textContent = `zoom ${cam.zoom.toFixed(2)}x  screen density ${(window.devicePixelRatio || 1).toFixed(2)}\nsheets in use @${res}${loaded[wantRes()] ? '' : '  (loading @' + wantRes() + ')'}\n${tanks.length} tanks  ${sprites} sprites\ntanks: 1 draw call, shadows: 1\n${fps.toFixed(0)} pictures per second`;
+    }
+  });
+})().catch((e) => fail('The demo stopped: ' + (e && e.stack || e)));
+</script>
+</body>
+</html>
