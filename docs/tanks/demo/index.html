@@ -293,7 +293,7 @@ class Batcher {
       const x = ((i % side) - (side - 1) / 2) * gap + rnd(-0.4, 0.4), y = (Math.floor(i / side) - (side - 1) / 2) * gap + rnd(-0.4, 0.4);
       tanks.push({ size, d, weapon: tankType ? tankType[1] : WEAPONS[i % WEAPONS.length], team: TEAM_NAMES[Math.floor(i / M.sizes.length) % 6], x, y, h, tur: h, tx: x, ty: y,
         phase: 0, state: 0, wait: rnd(0, 2.5), r: d.hull_length * 0.5,
-        hp: HP[SI[size]], max: HP[SI[size]], aimZ: d.hull_height * 0.7, cool: rnd(0, 1.5), q: [], kick: 0, charge: 0, barrel: 0, flames: [], deadT: 0, tgt: null, scan: rnd(0, 0.3), fireT: 0, dustD: 0 });
+        hp: HP[SI[size]], max: HP[SI[size]], aimZ: d.hull_height * 0.7, cool: rnd(0, 1.5), q: [], kick: 0, charge: 0, barrel: 0, flames: [], deadT: 0, tgt: null, scan: rnd(0, 0.3), fireT: 0, dustD: 0, hold: 0 });
     }
     tanksMesh.reset(n * 3); shadowMesh.reset(n * 2);
   }
@@ -328,7 +328,7 @@ class Batcher {
     const md = M.models[t.size + '_' + weaponOf(t)].data, pv = md.turret_pivot, mz = md.muzzles[b % md.muzzles.length], ha = snapA(t.h), ta = snapA(t.tur), fx0 = mz[0] - t.kick, fy0 = -mz[1];
     return [t.x + pv[0] * Math.cos(ha) + fx0 * Math.cos(ta) - fy0 * Math.sin(ta), t.y + pv[0] * Math.sin(ha) + fx0 * Math.sin(ta) + fy0 * Math.cos(ta), pv[2] + mz[2]];
   }
-  function clearCombat() { for (const t of tanks) t.flames.length = 0; shots.length = 0; later.length = 0; fx.clear(); }
+  function clearCombat() { for (const t of tanks) { t.flames.length = 0; t.hold = 0; } shots.length = 0; later.length = 0; fx.clear(); }
   // damage only counts in a battle. Tanks near (x, y) of another team are hit; a drone is hit directly.
   function hurt(o, dmg) {
     if (fireMode !== 'battle' || o.deadT > 0) return;
@@ -429,6 +429,7 @@ class Batcher {
       const p0 = m.slice(), p1 = [tx, ty, Math.max(0.9, tz)], d = Math.hypot(tx - m[0], ty - m[1], p1[2] - m[2]) || 1;
       fx.muzzleFlash(m, ta, 0, 1.5, 'cyan'); snd('gravfire', t.x, t.y, { dur: d / 13 }); addShake(0.2, t.x, t.y);
       fx.spawn('add', { tex: fx.T.glow, x: m[0], y: m[1], z: m[2], life: 0.3, s0: 3.2, s1: 4.4, c0: 0xff4030, a0: 0.9, tout: 0.2, must: true });
+      t.hold++;                                                          // the tank stands still and keeps its aim until this ball has exploded (owner)
       shots.push({ type: 'orb', x: m[0], y: m[1], z: m[2], p0, p1, u: 0, d0: d, from: t, team: t.team, dmg: W.dmg[si],
         halo: fx.beam(p0, p1, { w: 2.6, col: 0xd01818, life: Infinity, hold: true, alpha: 0.5, core: 0 }),
         beam: fx.beam(p0, p1, { w: 1.05, col: 0xff4a32, life: Infinity, hold: true, core: 0xffe6d8 }), pulse: 0,
@@ -510,9 +511,9 @@ class Batcher {
           fx.spawn('add', { tex: fx.T.spark, streak: true, x: s.p0[0] + bx * q, y: s.p0[1] + by * q, z: s.p0[2] + bz * q, vx: rnd(-3, 3), vy: rnd(-3, 3), vz: rnd(-1, 3), life: 0.28, s0: 0.45, s1: 0.12, c0: 0xff7a50 }); }
         if (Math.random() < 30 * dt) fx.spawn('add', { tex: fx.T.spark, streak: true, x: s.x, y: s.y, z: s.z, vx: rnd(-2.5, 2.5), vy: rnd(-2.5, 2.5), vz: rnd(-1.5, 1.5), life: 0.35, s0: 0.5, s1: 0.15, c0: 0x8fe9ff });
         if (s.u >= 1) {
-          done = true; s.core.life = 0; s.beam.life = 0; s.halo.life = 0; const p = [s.x, s.y, s.z], R = 4, team = s.team, dmg = s.dmg;
+          done = true; s.core.life = 0; s.beam.life = 0; s.halo.life = 0; const p = [s.x, s.y, s.z], R = 4, team = s.team, dmg = s.dmg, from = s.from;
           fx.implosion(p, R); snd('gravimp', s.x, s.y);
-          later.push({ t: 0.45, fn: () => { fx.gravBlast(p, R); addShake(0.9, p[0], p[1]); hurtAt(p[0], p[1], R + 0.5, dmg, team); } });
+          later.push({ t: 0.45, fn: () => { from.hold = Math.max(0, from.hold - 1); fx.gravBlast(p, R); addShake(0.9, p[0], p[1]); hurtAt(p[0], p[1], R + 0.5, dmg, team); } });
         }
       }
       if (s.h) { s.h.x = s.x; s.h.y = s.y; s.h.z = s.z; }
@@ -535,7 +536,7 @@ class Batcher {
       if (st === 3) continue;
       const dx = t.tx - t.x, dy = t.ty - t.y, dist = Math.hypot(dx, dy);
       let travel = 0;
-      if (dist > 0.25) {
+      if (t.hold > 0) { /* a Graviton with a ball in flight: no driving, no turning */ } else if (dist > 0.25) {
         const diff = wrap(Math.atan2(dy, dx) - t.h), turn = Math.max(-TURN[t.size] * dt, Math.min(TURN[t.size] * dt, diff));
         t.h = wrap(t.h + turn);
         const go = Math.abs(diff) < 1.0 ? Math.cos(diff) ** 2 : 0;       // turn towards the goal first, then drive
@@ -556,7 +557,7 @@ class Batcher {
       t.scan -= dt; if (t.scan <= 0) { t.scan = rnd(0.2, 0.35); t.tgt = pickTarget(t); }
       const tg = t.tgt && !(t.tgt.deadT > 0) ? t.tgt : null;             // a tank with a target aims at it
       const want = tg ? Math.atan2(tg.y - t.y, tg.x - t.x) : aim ? Math.atan2(mouse.gy - t.y, mouse.gx - t.x) : t.h, td = wrap(want - t.tur);
-      t.tur = wrap(t.tur + Math.max(-TURRET_TURN * dt, Math.min(TURRET_TURN * dt, td)));
+      if (!(t.hold > 0)) t.tur = wrap(t.tur + Math.max(-TURRET_TURN * dt, Math.min(TURRET_TURN * dt, td)));
       if (combat(t, tg, dt) && onScreen(t.x, t.y)) nFlame++;
     }
     updateShots(dt);

@@ -31,7 +31,7 @@ The three Special weapons:
   run along the beam, every tank on the line is hit, strong recoil.
 - **Heavy, Graviton particle launcher** ("one of the most powerful known weapons"): **a beam and a ball** (owner): a heavy **red** beam
   (a wide soft red glow, a bright red beam and a pale core, with red rings running along it and red sparks jumping off) joins the
-  muzzle to the target, and a slow **cyan** ball with a black core rides along it. Every beam narrows and fades at both ends and closes in a round glow, so it never stops in a flat cut (owner); where the Graviton beam lands there are sparks and a red glow on the ground. Red is a second fixed weapon colour, used only
+  muzzle to the target, and a slow **cyan** ball with a black core rides along it. **The tank stands still and keeps its turret on the target until the ball has exploded** (owner), so the beam never swings away from the barrel. Every beam narrows and fades at both ends and closes in a round glow, so it never stops in a flat cut (owner); where the Graviton beam lands there are sparks and a red glow on the ground. Red is a second fixed weapon colour, used only
   here, so the Graviton cannot be mistaken for the Light's laser. Where the ball
   lands, everything is pulled to one point for half a second (sparks fly inwards, a black sphere grows, the sound is sucked in),
   then the blast: a big cyan burst, two shock rings, debris, a wide scorch mark, the strongest screen shake in the game.
