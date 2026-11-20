@@ -28,8 +28,11 @@ many, not what kind.
 The three Special weapons:
 - **Light, laser cannon:** a thin cyan beam with a white core for a fifth of a second. It hits at once. Small cyan burst where it lands.
 - **Medium, Fusion-Lambda particle cannon** ("fires through any obstacle"): half a second of charging (cyan sparks pulled into
-  the muzzle, a rising whine), then a thick lance that goes **through everything on its line**, to the end of its reach. Rings
+  the muzzle, a rising whine), then a thick lance that **ends on the target** (owner: it used to run on to the end of its reach and looked like a miss) and goes **through everything on its line** on the way there. Rings
   run along the beam, every tank on the line is hit, strong recoil.
+- **All three stand still while they fire** (owner): the Light for the moment its beam is out, the Medium from the start of the
+  charge until the lance has faded, the Heavy until its ball has exploded. Hull and turret do not turn, so a beam never
+  leaves the barrel at an angle.
 - **Heavy, Graviton particle launcher** ("one of the most powerful known weapons"): **a beam and a ball** (owner): a heavy **red** beam
   (a wide soft red glow, a bright red beam and a pale core, with red rings running along it and red sparks jumping off) joins the
   muzzle to the target, and a slow **cyan** ball with a black core rides along it. **The tank stands still and keeps its turret on the target until the ball has exploded** (owner), so the beam never swings away from the barrel. Every beam narrows and fades at both ends and closes in a round glow, so it never stops in a flat cut (owner); where the Graviton beam lands there are sparks and a red glow on the ground. Red is a second fixed weapon colour, used only
@@ -45,7 +48,7 @@ The three Special weapons:
 | Artillery | 30 / 34 / 38, minimum 13 / 15 / 17 | 3.6 / 4.6 / 5.6 | 1 / 1 / 2 | flight 1.5 to 2.7 s, blast radius 2.2 / 2.8 / 3.2 m |
 | Anti-Air | 26 / 28 / 30, minimum 4 | 3 / 3.4 / 4 | 3 / 4 / 6 | rockets 12 to 38 m/s, air targets only |
 | Flamer | 7 / 8.5 / 10 | constant | - | damage per second |
-| Special | 16 / 21 / 22 (Heavy: minimum 5) | 1.1 / 3.6 / 6.5 | 1 | Fusion reach 26 m; Graviton orb 11 m/s, blast radius 4.5 m |
+| Special | 16 / 21 / 22 (Heavy: minimum 5) | 1.1 / 3.6 / 6.5 | 1 |  Graviton orb 11 m/s, blast radius 4.5 m |
 
 Tank health in the demo's battle: 100 / 180 / 300. The damage states follow the approved rule (damaged at 60% or less, burning at
 30% or less, then destroyed).

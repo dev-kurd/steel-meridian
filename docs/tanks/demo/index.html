@@ -296,7 +296,7 @@ class Batcher {
       const x = ((i % side) - (side - 1) / 2) * gap + rnd(-0.4, 0.4), y = (Math.floor(i / side) - (side - 1) / 2) * gap + rnd(-0.4, 0.4);
       tanks.push({ size, d, weapon: tankType ? tankType[1] : WEAPONS[i % WEAPONS.length], team: TEAM_NAMES[Math.floor(i / M.sizes.length) % 6], x, y, h, tur: h, tx: x, ty: y,
         phase: 0, state: 0, wait: rnd(0, 2.5), r: d.hull_length * 0.5,
-        hp: HP[SI[size]], max: HP[SI[size]], aimZ: d.hull_height * 0.7, cool: rnd(0, 1.5), q: [], kick: 0, charge: 0, barrel: 0, flames: [], deadT: 0, tgt: null, scan: rnd(0, 0.3), fireT: 0, dustD: 0, hold: 0 });
+        hp: HP[SI[size]], max: HP[SI[size]], aimZ: d.hull_height * 0.7, cool: rnd(0, 1.5), q: [], kick: 0, charge: 0, barrel: 0, flames: [], deadT: 0, tgt: null, scan: rnd(0, 0.3), fireT: 0, dustD: 0, hold: 0, holdT: 0 });
     }
     tanksMesh.reset(n * 3); shadowMesh.reset(n * 2);
   }
@@ -331,7 +331,7 @@ class Batcher {
     const md = M.models[t.size + '_' + weaponOf(t)].data, pv = md.turret_pivot, mz = md.muzzles[b % md.muzzles.length], ha = snapA(t.h), ta = snapA(t.tur), fx0 = mz[0] - t.kick, fy0 = -mz[1];
     return [t.x + pv[0] * Math.cos(ha) + fx0 * Math.cos(ta) - fy0 * Math.sin(ta), t.y + pv[0] * Math.sin(ha) + fx0 * Math.sin(ta) + fy0 * Math.cos(ta), pv[2] + mz[2]];
   }
-  function clearCombat() { for (const t of tanks) { t.flames.length = 0; t.hold = 0; } shots.length = 0; later.length = 0; fx.clear(); }
+  function clearCombat() { for (const t of tanks) { t.flames.length = 0; t.hold = 0; t.holdT = 0; } shots.length = 0; later.length = 0; fx.clear(); }
   // damage only counts in a battle. Tanks near (x, y) of another team are hit; a drone is hit directly.
   function hurt(o, dmg) {
     if (fireMode !== 'battle' || o.deadT > 0) return;
@@ -413,16 +413,18 @@ class Batcher {
         fl: fx.spawn('add', { tex: fx.T.spark, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: len * 1.5, c0: 0xffb45a }),
         gl: fx.spawn('add', { tex: fx.T.glow, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: len * 0.8, c0: 0xffc880, a0: 0.8 }) });
     } else if (si === 0) {                                               // Special, Light: laser. A short steady beam, the hit is instant
-      const end = [tx, ty, tz];
+      const end = [tx, ty, tz]; t.holdT = 0.25;                           // the tank keeps still while the beam is out (owner)
       fx.beam(m, end, { w: 0.3, col: 0x40dcff, life: 0.2, hold: true }); fx.muzzleFlash(m, ta, 0, 0.45, 'cyan'); fx.energyHit(end, 0.7);
       snd('laser', t.x, t.y, { gain: 0.8 }); hurtAt(tx, ty, 0.4, W.dmg[si], t.team);
     } else if (si === 1) {                                               // Special, Medium: Fusion-Lambda. A lance that goes through everything on its line
-      const a = Math.atan2(ty - m[1], tx - m[0]), L = 26, end = [m[0] + Math.cos(a) * L, m[1] + Math.sin(a) * L, m[2]];
+      // (owner, 2026-11-21: it must end on the target, not far behind it). It still goes through every tank between the muzzle and the target.
+      const a = Math.atan2(ty - m[1], tx - m[0]), L = Math.hypot(tx - m[0], ty - m[1]) || 1, end = [tx, ty, tz];
       fx.beam(m, end, { w: 1, col: 0x38d0ff, life: 0.5 }); fx.muzzleFlash(m, ta, 0, 1.3, 'cyan');
-      for (let s = 3; s < L; s += 4.5) fx.spawn('add', { tex: fx.T.ring, x: m[0] + Math.cos(a) * s, y: m[1] + Math.sin(a) * s, z: m[2], life: 0.4, s0: 0.3, s1: 2, c0: 0x8fe9ff, a0: 0.7, tout: 0.2, sx: 0.5, must: true });
-      fx.energyHit([tx, ty, tz], 1.2); snd('fusion', t.x, t.y); addShake(0.3, t.x, t.y);
+      for (let s = 3; s < L - 1; s += 4.5) { const u = s / L; fx.spawn('add', { tex: fx.T.ring, x: m[0] + (tx - m[0]) * u, y: m[1] + (ty - m[1]) * u, z: m[2] + (tz - m[2]) * u, life: 0.4, s0: 0.3, s1: 2, c0: 0x8fe9ff, a0: 0.7, tout: 0.2, sx: 0.5, must: true }); }
+      fx.energyHit(end, 1.2); snd('fusion', t.x, t.y); addShake(0.3, t.x, t.y);
+      hurt(tg, W.dmg[si]);
       if (fireMode === 'battle') for (const o of tanks) {
-        if (o.team === t.team || o.deadT > 0) continue;
+        if (o === tg || o.team === t.team || o.deadT > 0) continue;
         const rx = o.x - m[0], ry = o.y - m[1], along = rx * Math.cos(a) + ry * Math.sin(a), side = Math.abs(-rx * Math.sin(a) + ry * Math.cos(a));
         if (along > 0 && along < L && side < o.r * 0.7 + 0.5) { fx.energyHit([o.x, o.y, o.aimZ], 1); hurt(o, W.dmg[si]); }
       }
@@ -466,7 +468,7 @@ class Batcher {
     if (w === 'flamer') { flame(t, tg, dist, dt); return true; }
     if (t.cool > 0 || t.q.length) return false;
     t.cool = W.reload[si] * rnd(0.92, 1.08);
-    if (w === 'special' && si === 1) { t.charge = 0.55; t.q.push({ d: 0.55, b: 0, tg }); snd('charge', t.x, t.y, { gain: 0.8 }); return false; }
+    if (w === 'special' && si === 1) { t.charge = 0.55; t.holdT = 0.55 + 0.5; t.q.push({ d: 0.55, b: 0, tg }); snd('charge', t.x, t.y, { gain: 0.8 }); return false; }
     for (let i = 0; i < W.burst[si]; i++) t.q.push({ d: i * W.gap, b: t.barrel++, tg });
     return false;
   }
@@ -538,7 +540,9 @@ class Batcher {
       if (st === 3) continue;
       const dx = t.tx - t.x, dy = t.ty - t.y, dist = Math.hypot(dx, dy);
       let travel = 0;
-      if (t.hold > 0) { /* a Graviton with a ball in flight: no driving, no turning */ } else if (dist > 0.25) {
+      if (t.holdT > 0) t.holdT -= dt;
+      const held = t.hold > 0 || t.holdT > 0;                             // a Special with its beam, lance or ball out: no driving, no turning
+      if (held) { /* stands still */ } else if (dist > 0.25) {
         const diff = wrap(Math.atan2(dy, dx) - t.h), turn = Math.max(-TURN[t.size] * dt, Math.min(TURN[t.size] * dt, diff));
         t.h = wrap(t.h + turn);
         const go = Math.abs(diff) < 1.0 ? Math.cos(diff) ** 2 : 0;       // turn towards the goal first, then drive
@@ -559,7 +563,7 @@ class Batcher {
       t.scan -= dt; if (t.scan <= 0) { t.scan = rnd(0.2, 0.35); t.tgt = pickTarget(t); }
       const tg = t.tgt && !(t.tgt.deadT > 0) ? t.tgt : null;             // a tank with a target aims at it
       const want = tg ? Math.atan2(tg.y - t.y, tg.x - t.x) : aim ? Math.atan2(mouse.gy - t.y, mouse.gx - t.x) : t.h, td = wrap(want - t.tur);
-      if (!(t.hold > 0)) t.tur = wrap(t.tur + Math.max(-TURRET_TURN * dt, Math.min(TURRET_TURN * dt, td)));
+      if (!held) t.tur = wrap(t.tur + Math.max(-TURRET_TURN * dt, Math.min(TURRET_TURN * dt, td)));
       if (combat(t, tg, dt) && onScreen(t.x, t.y)) nFlame++;
     }
     updateShots(dt);
