@@ -96,7 +96,7 @@ target drones in the battle are plain grey placeholders, not an asset.
 ## 3. The sounds
 
 The game already has recordings in `sounds/` (all CC0, see `sounds/README.txt`). The mockup uses them where one fits and
-synthesises the rest in the browser, so it adds no sound files. Size changes the pitch: Light higher, Heavy lower.
+synthesises the rest in the browser. The only sound files it adds are the Graviton candidates in `demo/sounds/` (see the Graviton row). Size changes the pitch: Light higher, Heavy lower.
 
 | Sound | Source in the mockup |
 |---|---|
@@ -110,7 +110,7 @@ synthesises the rest in the browser, so it adds no sound files. Size changes the
 | Flame jet | synthesised roar that runs while any flamer fires (one shared sound, louder with more flamers) |
 | Laser | `laser_1.wav` (cut short) + a synthesised zap |
 | Fusion-Lambda | synthesised: rising whine while it charges, then a crack with a falling tone and a deep thud |
-| Graviton | Two versions to compare in the demo (owner, 2026-11-21: the first one was not good). **Recorded mix** (default): built from the game's recordings like the Panzer gun: `laser_1.wav` at half speed for a heavy beam while the ball flies, a slowed `arty` shot as the kick; on landing a short rising rush, then `bigboom` and `boom` played slow with a deep thump. **Original**: fully synthesised (a deep swelling hum, a rising rush, a very deep blast) |
+| Graviton | **Not decided: seven versions to choose from in the demo** (owner, 2026-11-21: the first one was not good, then asked for more options from the free sound library). Five are built from 13 more recordings out of the same CC0 pack the game's explosion and laser sounds come from (files and credits: `demo/sounds/README.txt`; they stay in the demo folder until one is chosen): **Beam + gravity bomb** (default: a long laser beam while the ball flies, a "gravity bomb" sound on landing, then a deep boom), **Zap launcher** (a launcher zap over a quiet beam, gravity bomb, deep boom), **Heavy zap** (a heavy zap played slower over a quiet beam, gravity bomb, electric explosion), **Charge + EMP** (a rising charge, then an EMP burst and a crunching explosion), **Laser rifle** (a slowed laser rifle shot, an electronic burst, a long deep boom). The two earlier ones stay for comparison. **Recorded mix**: built from the game's recordings like the Panzer gun: `laser_1.wav` at half speed for a heavy beam while the ball flies, a slowed `arty` shot as the kick; on landing a short rising rush, then `bigboom` and `boom` played slow with a deep thump. **Original**: fully synthesised (a deep swelling hum, a rising rush, a very deep blast) |
 | Tank destroyed | `boom` (Heavy: `bigboom`) + low thump + falling-metal clanks |
 | Burning tank | synthesised fire crackle |
 | Engines | synthesised low rumble (one shared sound, louder with more tanks moving on screen) |
@@ -125,7 +125,8 @@ about 28 sounds play at once, and the same sound is not started twice within 35 
    aircraft). Should it also be able to hit tanks or buildings, weakly?
 3. **Synthesised sounds:** keep them synthesised in the game (no files, easy to tune) or turn the approved ones into WAV files
    in `sounds/` like the others (anyone can then replace a file)?
-4. **Artillery shell shape:** Bullet or Sphere (both are in the demo), and is the size right now?
+4. **Artillery shell shape:** Bullet or Sphere (both are in the demo), and is the size right now? And **which Graviton sound**
+   of the seven in the demo?
 5. **Screen shake:** keep it (it can be switched off in the demo), and how strong?
 6. **Drawing effects in front of and behind tanks:** worth sorting flames and smoke with the tanks in the game, or is "above
    everything" good enough?
