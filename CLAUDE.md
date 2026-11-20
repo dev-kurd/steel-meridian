@@ -90,7 +90,7 @@ Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and 
   missing. Pack extension (`.pak` or `.cab`) is **not decided yet**.
 
 ## Not decided yet (ask first)
-Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Gatling spin, Achilles strike, spinning radar · for the tank effects (approved, see `docs/tanks/tank-fx-design.md`): the artillery shell shape (Bullet or Sphere, both kept in the demo), whether Anti-Air may hit ground targets, synthesised sounds or WAV files, whether effects are sorted with the tanks, and the real ranges, reload times and damage · the other improvements the owner wants inside the walker models (not listed yet) · how mockups
+Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Gatling spin, Achilles strike, spinning radar · for the tank effects (approved, see `docs/tanks/tank-fx-design.md`): whether Anti-Air may hit ground targets, synthesised sounds or WAV files, whether effects are sorted with the tanks, and the real ranges, reload times and damage · the other improvements the owner wants inside the walker models (not listed yet) · how mockups
 are shown when a session cannot publish to a design canvas (pictures or a page in the session, or do the mockup in claude.ai).
 
 ## Current order of work (owner, 2026-11-20)

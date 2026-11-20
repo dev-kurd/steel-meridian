@@ -42,7 +42,6 @@
   </div>
   <div class="row" id="fire"><span class="l">Firing (effects mockup)</span></div>
   <div class="row"><button id="kill">Destroy one tank</button></div>
-  <div class="row" id="ashell"><span class="l">Artillery shell (compare)</span></div>
   <div class="row">
     <label><input id="snd" type="checkbox" checked> Sound</label>
     <input id="vol" type="range" min="0" max="1" step="0.05" value="0.7" style="flex:1" title="Volume">
@@ -311,7 +310,7 @@ class Batcher {
   const dirOf = (a) => ((Math.round(a / (TAU / 32)) % 32) + 32) % 32;
 
   // ---- firing, effects and sound (mockup: ../tank-fx-design.md)
-  let fireMode = 'mouse', shake = 0, paused = false, shellMode = 'bullet'; const shots = [], later = [];   // shellMode: the artillery shell's shape, to compare
+  let fireMode = 'mouse', shake = 0, paused = false; const shots = [], later = [];
   const mouseGround = { x: 0, y: 0, z: 0 }, mouseAir = { x: 0, y: 0, z: 9 };   // what the tanks aim at in "At the mouse"
   const drones = [0, 1, 2].map((i) => ({ drone: true, a: i * 2.1, r: 12 + i * 4, w: (i % 2 ? -1 : 1) * (0.22 + i * 0.04), x: 0, y: 0, z: 8.5 + i * 1.5, hp: 40, max: 40, deadT: 0 }));
   const snapA = (a) => dirOf(a) * TAU / 32;                             // the sprites have 32 directions: effects start where the picture's barrel is
@@ -395,12 +394,11 @@ class Batcher {
       fx.muzzleFlash(m, ta, el, k); fx.ring([m[0], m[1], 0], 2.2 * k, 0xd8c8a8, 0.5);
       for (let i = 0; i < 5; i++) fx.dust([t.x + rnd(-1.5, 1.5), t.y + rnd(-1.5, 1.5), 0], 1.3);
       snd('arty', t.x, t.y, { size: si }); addShake(0.12 + si * 0.06, t.x, t.y);
-      shots.push({ type: 'arty', p0: m, c, p1: [px, py, 0], x: m[0], y: m[1], z: m[2], u: 0, tr: 0, T: 0.7 + dist / 38, si, ball: shellMode === 'sphere', team: t.team, dmg: W.dmg[si], splash: W.splash[si], k,
+      shots.push({ type: 'arty', p0: m, c, p1: [px, py, 0], x: m[0], y: m[1], z: m[2], u: 0, tr: 0, T: 0.7 + dist / 38, si, team: t.team, dmg: W.dmg[si], splash: W.splash[si], k,
         // motion blur: a soft dark streak drawn behind the shell, about two shell lengths long and faint (owner: less blur); the shell itself is a little see-through
-        bl: fx.spawn('smoke', { tex: fx.T.spark, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: (shellMode === 'sphere' ? [0.7, 0.83, 0.97][si] * 2.4 : [1.1, 1.3, 1.55][si] * 1.8), ax: 0.8, c0: 0x4c5058, a0: 0.28 }),
-        // two shapes to compare: a pointed bullet (1.1 / 1.3 / 1.55 m long) or a round ball (0.7 / 0.83 / 0.97 m across); bigger on a bigger tank
-        h: shellMode === 'sphere' ? fx.spawn('smoke', { tex: fx.T.ball, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: [0.7, 0.83, 0.97][si], a0: 0.95 })
-          : fx.spawn('smoke', { tex: fx.T.shell, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: [1.1, 1.3, 1.55][si], a0: 0.95 }),
+        bl: fx.spawn('smoke', { tex: fx.T.spark, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: [1.1, 1.3, 1.55][si] * 1.8, ax: 0.8, c0: 0x4c5058, a0: 0.28 }),
+        // the shell: a pointed bullet 1.1 / 1.3 / 1.55 m long, bigger on a bigger tank (owner, 2026-11-21: bullet, not a sphere)
+        h: fx.spawn('smoke', { tex: fx.T.shell, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: [1.1, 1.3, 1.55][si], a0: 0.95 }),
         sh: fx.spawn('decal', { tex: fx.T.dot, held: true, flat: true, life: Infinity, must: true, x: m[0], y: m[1], z: 0, s0: [0.8, 1.0, 1.2][si], c0: 0x000000, a0: 0.3 }) });
     } else if (w === 'antiair') {
       // a rocket with a body: it leaves its own tube along the tube's angle, burns a flame behind it, then turns to the target
@@ -479,7 +477,7 @@ class Batcher {
         s.u += dt / s.T; const u = Math.min(1, s.u), a = (1 - u) * (1 - u), b = 2 * u * (1 - u), e = u * u, ox = s.x, oy = s.y, oz = s.z;
         s.x = a * s.p0[0] + b * s.c[0] + e * s.p1[0]; s.y = a * s.p0[1] + b * s.c[1] + e * s.p1[1]; s.z = a * s.p0[2] + b * s.c[2] + e * s.p1[2];
         fx.aim(s.bl, (1 - u) * (s.c[0] - s.p0[0]) + u * (s.p1[0] - s.c[0]), (1 - u) * (s.c[1] - s.p0[1]) + u * (s.p1[1] - s.c[1]), (1 - u) * (s.c[2] - s.p0[2]) + u * (s.p1[2] - s.c[2]));   // the blur streak lies along the flight
-        if (!s.ball) { s.h.rot = s.bl.rot; s.h.sx = s.bl.sx; }           // a bullet flies nose first; a ball looks the same from every side
+        s.h.rot = s.bl.rot; s.h.sx = s.bl.sx;                           // the shell flies nose first
         s.sh.x = s.x; s.sh.y = s.y; s.bl.x = s.x; s.bl.y = s.y; s.bl.z = s.z;
         s.tr -= Math.hypot(s.x - ox, s.y - oy, s.z - oz); if (s.tr <= 0) { s.tr = 0.9; fx.trail([ox, oy, oz], 0.6 + s.si * 0.2, 0x8f8a80); }      // smoke behind the shell
         if (!s.wh && (1 - u) * s.T < 0.85) { s.wh = true; snd('whistle', s.p1[0], s.p1[1], { dur: (1 - u) * s.T }); }
@@ -635,7 +633,6 @@ class Batcher {
     fireMode = v; for (const t of tanks) { t.hp = t.max; t.deadT = 0; t.tgt = null; t.q.length = 0; t.charge = 0; } for (const d of drones) { d.hp = d.max; d.deadT = 0; }
   });
   document.getElementById('kill').onclick = () => { const live = tanks.filter((t) => stateOf(t) < 3 && onScreen(t.x, t.y)); if (live.length) kill(live[(Math.random() * live.length) | 0]); };
-  group('ashell', [['bullet', 'Bullet'], ['sphere', 'Sphere']], () => shellMode, (v) => { shellMode = v; });
   document.getElementById('snd').onchange = (e) => sfx.setOn(e.target.checked);
   document.getElementById('vol').oninput = (e) => sfx.setVolume(+e.target.value);
   for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, () => sfx.unlock());
