@@ -7,7 +7,7 @@ with your own WAV of the same name. If a file is missing, the game uses its buil
 bullet_1..3   machine-gun bursts        flak_1..2    autocannon rounds
 shell_1..3    tank gun                  arty_1..2    artillery
 boom_1..3     vehicle explosion         bigboom_1..2 structure explosion
-laser_1       laser beam
+laser_1       laser beam                rocket_1     rocket launch (Anti-Air tanks; used by the tank effects, not by the game yet)
 Not supplied (synthesised unless you add them): missile_1.wav, jet_1.wav, thunder_1.wav
 
 Sources, all released under CC0 1.0 (public domain; no credit required):
@@ -21,6 +21,10 @@ Sources, all released under CC0 1.0 (public domain; no credit required):
   https://opengameart.org/node/195932
   Files used come from Kenney "Sci-fi Sounds" (explosions, low-frequency layer under shell and arty)
   and lentikula "Sci-Fi Weapon Shots SFX" (laser beam).
+
+* Missile sound - mikeask
+  https://opengameart.org/content/missile-sound
+  Used for: rocket_1 (an unchanged copy of missile.wav; it is very quiet, so it is played about three times louder).
 
 The tank and artillery sounds are not recordings of real tank guns: they are rifle and shotgun recordings
 slowed to about half speed and mixed with a low explosion.

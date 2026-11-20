@@ -25,9 +25,9 @@ bake_*/
 check_refs*/
 __pycache__/
 
-# Packed sprite sheets and check pictures made inside the source folders. Where the sheets live is not decided yet;
-# until then they stay out of the repository.
-docs/*/source/sheets*/
+# Check pictures made inside the source folders. The packed sheets (docs/*/source/sheets/) are in the repository
+# (owner, 2026-11-21); only test packs with another folder name stay out.
+docs/*/source/sheets_*/
 docs/*/source/check_pack*.jpg
 docs/*/source/contact*.jpg
 
