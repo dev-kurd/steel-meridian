@@ -130,8 +130,8 @@ answered by the approval; the Panzer, Graviton and rocket sounds are decided, se
 1. **The five shot types** (section 1): is each one right, above all the three Special weapons?
 2. **Anti-Air against ground targets:** in the mockup it fires at air targets only (the manual says it protects against
    aircraft). Should it also be able to hit tanks or buildings, weakly?
-3. **Synthesised sounds:** keep them synthesised in the game (no files, easy to tune) or turn the approved ones into WAV files
-   in `sounds/` like the others (anyone can then replace a file)?
+3. ~~Synthesised sounds~~: decided 2026-11-21, **keep them in code for now**: the sounds are mixed from the recordings in
+   `sounds/` and synthesised when they play; there is no WAV file per tank sound. This can change later.
 4. ~~Artillery shell shape~~: decided 2026-11-21, the **Bullet**.
 5. **Screen shake:** keep it (it can be switched off in the demo), and how strong?
 6. **Drawing effects in front of and behind tanks:** worth sorting flames and smoke with the tanks in the game, or is "above
