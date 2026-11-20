@@ -30,3 +30,6 @@ __pycache__/
 docs/*/source/sheets*/
 docs/*/source/check_pack*.jpg
 docs/*/source/contact*.jpg
+
+# Original State of War files: reference only, kept on the PC, not in the repo
+docs/sow original assets/
