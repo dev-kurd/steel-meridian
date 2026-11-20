@@ -10,7 +10,7 @@ window.createSfx = function (base) {
     bigboom: ['bigboom_1.wav', 'bigboom_2.wav'], laser: ['laser_1.wav'] };
   const PITCH = [1.22, 1, 0.82];                             // light, medium, heavy
   const rnd = (a, b) => a + Math.random() * (b - a);
-  let ctx = null, master = null, noiseBuf = null, on = true, vol = 0.7, ends = [], cannonMode = 'mix';
+  let ctx = null, master = null, noiseBuf = null, on = true, vol = 0.7, ends = [];
   const smp = {}, last = {}, loops = {};
 
   function unlock() {                                        // browsers allow sound only after a click or a key
@@ -52,18 +52,13 @@ window.createSfx = function (base) {
 
   // ---- one-shot sounds: (output, start time, options) with o.size 0..2
   const S = {
-    // Panzer gun: two versions to compare in the demo (owner, 2026-11-21: "Recorded mix" is the better one so far).
-    // 'mix' = the game's artillery and explosion recordings, played faster and cut short, with a sharp crack on top;
-    // 'orig' = the first version: the game's tank gun recording (shell_1..3.wav, a slowed rifle) with a low thump.
+    // Panzer gun (owner's choice, 2026-11-21: the "recorded mix"): the game's artillery and explosion recordings, played faster
+    // and cut short, with a sharp crack on top. Until the recordings are loaded, a synthesised stand-in plays.
     cannon(d, t, o) {
       const z = PITCH[o.size];
-      if (cannonMode === 'mix' && smp.arty && smp.arty.length && smp.boom && smp.boom.length) {
-        sample(d, t, 'arty', { rate: 1.5 * z, g: 0.8, cut: 0.7 }); sample(d, t, 'boom', { rate: 1.6 * z, g: 0.5, cut: 0.45 });
-        noise(d, t, 0.025, { type: 'highpass', f0: 2000, g: 0.5, att: 0.001 });
-        return;
-      }
-      if (!sample(d, t, 'shell', { rate: z, g: 0.75 })) noise(d, t, 0.38 / z, { f0: 1400 * z, f1: 110, g: 0.9 });
-      tone(d, t, 0.26 / z, { f0: 150 * z, f1: 40 * z, g: 0.75 }); noise(d, t, 0.05, { type: 'highpass', f0: 2500, g: 0.3 });
+      if (smp.arty && smp.arty.length && smp.boom && smp.boom.length) { sample(d, t, 'arty', { rate: 1.5 * z, g: 0.8, cut: 0.7 }); sample(d, t, 'boom', { rate: 1.6 * z, g: 0.5, cut: 0.45 }); }
+      else { noise(d, t, 0.38 / z, { f0: 1400 * z, f1: 110, g: 0.9 }); tone(d, t, 0.26 / z, { f0: 150 * z, f1: 40 * z, g: 0.75 }); }
+      noise(d, t, 0.025, { type: 'highpass', f0: 2000, g: 0.5, att: 0.001 });
     },
     arty(d, t, o) {                                          // Artillery gun: deeper, longer
       const z = PITCH[o.size];
@@ -132,5 +127,5 @@ window.createSfx = function (base) {
   function loop(name, level) { const l = loops[name]; if (ctx && l) l.g.gain.setTargetAtTime(Math.max(0, Math.min(1, level)) * l.max, ctx.currentTime, 0.09); }
   function setOn(v) { on = v; if (master) master.gain.setTargetAtTime(on ? vol : 0, ctx.currentTime, 0.03); }
   function setVolume(v) { vol = v; if (master && on) master.gain.setTargetAtTime(vol, ctx.currentTime, 0.03); }
-  return { unlock, play, loop, setOn, setVolume, setCannon: (v) => { cannonMode = v; }, cannon: () => cannonMode, ready: () => !!ctx && ctx.state === 'running', samples: () => Object.values(smp).reduce((a, l) => a + l.length, 0) };
+  return { unlock, play, loop, setOn, setVolume, ready: () => !!ctx && ctx.state === 'running', samples: () => Object.values(smp).reduce((a, l) => a + l.length, 0) };
 };

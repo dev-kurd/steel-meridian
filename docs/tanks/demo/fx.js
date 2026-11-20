@@ -122,6 +122,11 @@ window.createFx = function (PIXI, cfg) {
     (u, y) => { const l = 1 - y * 0.25; return u < 0.16 ? [70 * l, 74 * l, 80 * l] : u > 0.76 ? [176 * l, 60 * l, 48 * l] : u > 0.44 && u < 0.5 ? [60, 64, 70] : [214 * l, 216 * l, 220 * l]; }));
   gen('shell', 32, 12, body(32, 12, (u) => (u < 0.07 ? 0.62 : u > 0.5 ? 0.82 * Math.sqrt(Math.max(0, 1 - Math.pow((u - 0.5) / 0.5, 2))) : 0.82),
     (u, y) => { const l = 1 - y * 0.35; return u > 0.1 && u < 0.2 ? [176 * l, 112 * l, 58 * l] : [86 * l, 90 * l, 98 * l]; }));
+  gen('ball', 28, 28, (u, v) => {                           // a round artillery shell: a dark steel ball lit from the upper left
+    const x = u * 2 - 1, y = v * 2 - 1, r = Math.hypot(x, y), a = clamp01((1 - r) * 14); if (a <= 0) return ZERO;
+    const z = Math.sqrt(Math.max(0, 1 - r * r)), l = Math.max(0, (-x * 0.45 - y * 0.6 + z * 0.66)), h = Math.pow(l, 12) * 120, c = 46 + 70 * l;
+    return [c + h, c + 3 + h, c + 10 + h, a * 255];
+  });
   gen('dot', 16, 16, (u, v) => white(1 - smooth(0.5, 0.95, rad(u, v))));
 
   const AW = 2048, PAD = 2; let px = PAD, py = PAD, rowH = 0;
@@ -135,7 +140,7 @@ window.createFx = function (PIXI, cfg) {
   for (const it of items) tex[it.name] = new PIXI.Texture({ source, frame: new PIXI.Rectangle(it.x, it.y, it.W, it.H) });
   const seq = (name, n) => Array.from({ length: n }, (_, i) => tex[name + i]);
   const T = { flame: [0, 1, 2].map((v) => seq(`flame${v}_`, 16)), boom: seq('boom', 24), pop: seq('pop', 12), cpop: seq('cpop', 12), muz: seq('muz', 6), cmuz: seq('cmuz', 6),
-    smoke: seq('smoke', 4), scorch: seq('scorch', 2), debris: seq('debris', 3), glow: tex.glow, ring: tex.ring, spark: tex.spark, beam: tex.beam, dot: tex.dot, rocket: tex.rocket, shell: tex.shell };
+    smoke: seq('smoke', 4), scorch: seq('scorch', 2), debris: seq('debris', 3), glow: tex.glow, ring: tex.ring, spark: tex.spark, beam: tex.beam, dot: tex.dot, rocket: tex.rocket, shell: tex.shell, ball: tex.ball };
 
   // ---- particles
   const parts = [], beams = [], pools = { decal: [], smoke: [], add: [] }; let decals = 0;
