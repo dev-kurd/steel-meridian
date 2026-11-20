@@ -102,8 +102,9 @@ are shown when a session cannot publish to a design canvas (pictures or a page i
    The Flamer and Special firing effects are part of step 3.
 3. **Tank effects and sounds before the walkers (owner, 2026-11-21):** design note `docs/tanks/tank-fx-design.md` and a working
    mockup in the tank demo page (firing, hits, damage smoke and flames, explosions, sounds). **Approved by the owner on
-   2026-11-21** after several review rounds. Next (only when the owner says so): bake the real `fx` sheet and move the effects and
-   sounds into the game.
+   2026-11-21** after several review rounds. The real `fx` sheet is baked (`docs/tanks/source/sheets/fx@1x|2x|4x.webp` + `fx.json`,
+   tool `docs/tanks/source/tools/bake_fx.cjs`) and the demo draws from it. Next (only when the owner says so): move the effects
+   and sounds into the game.
 4. Then the walker changes (re-bake with the new mask method, new damaged look, other improvements).
 
 ## References

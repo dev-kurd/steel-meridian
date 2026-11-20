@@ -18,7 +18,7 @@ One idea per weapon type, so a player can tell the five types apart by the shot 
 many, not what kind.
 
 | Type | Role (from the manual) | The shot | Light | Medium | Heavy |
-|---|---|---|---|---|---|
+|---|---|
 | **Panzer** | Main battle tank | A fast straight shell with a short bright streak | 1 barrel, single shots | 2 barrels, firing in turn, quick | 3 barrels, a salvo of 3 one after another, then a long reload |
 | **Artillery** | Long range, slow fire, best against things that stand still | A shell on a high arc. It **leaves along the barrel** (the barrel's own angle and direction) and bends down to the target; a visible shell that flies nose first, **bigger on a bigger tank**, with a thin smoke trail and a motion-blur streak behind it (owner; the shell was first too large and too slow, then too small, then larger with less blur, then a little smaller again; now a pointed **bullet** 1.1 / 1.3 / 1.55 m long (decided 2026-11-21: bullet; the round sphere that was shown for comparison is removed); the blur streak is short and faint). Its shadow runs on the ground, it whistles down. **Cannot attack at close range** (owner): inside its minimum range, a little under half of its full range, it does not fire and in a battle it ignores the target | small shell, small blast | bigger shell and blast | two barrels, two of the biggest shells a moment apart |
 | **Anti-Air** | Protects against aircraft | **Real rockets** (owner): each one is a small rocket body with a red nose that comes out of its own tube along the tube's angle, with a flame behind it; no gun flash. It speeds up, turns towards the target and bursts in the air. White smoke trails. Fires at air targets only | 3 rockets | 4 rockets | 6 rockets |
@@ -78,11 +78,11 @@ flash and smoke out of the back of the launcher. Energy weapons flash cyan and t
 
 ### What comes from where
 
-| Part | In the mockup | In the game (plan) |
+| Part | Where it comes from |
 |---|---|---|
-| Flames (3 looks x 16 frames, looping), big explosion (24 frames), small explosion (12), energy burst (12, cyan), muzzle flash (6, fire and cyan) | Made in the browser when the page opens, with the same noise formulas as `tools/sprite-pipeline/fx.cjs` | Baked once into the `fx` sheet (@1x / @2x / @4x, WebP lossless), as approved |
-| Soft shapes: smoke puff (4), scorch (2), debris (3), glow, ring, spark, beam, dot | Same picture, made at page load | Same `fx` sheet |
-| Smoke, sparks, embers, debris, dust, trails, the flame jet, beams, rings | Particles (up to 3,500 at once; low-priority ones are skipped first) | The same particle code |
+| Flames (3 looks x 16 frames, looping), big explosion (24 frames), small explosion (12), energy burst (12, cyan), muzzle flash (6, fire and cyan) | **The baked `fx` sheet** (since 2026-11-21): `source/sheets/fx@1x`, `@2x`, `@4x.webp` (WebP lossless) + `fx.json`, made by `source/tools/bake_fx.cjs` from noise formulas (the same as `tools/sprite-pipeline/fx.cjs`). Frames are trimmed; 124 frames, 1.9 MB for the three sizes |
+| Soft shapes: smoke puff (4), scorch (2), debris (3), glow, ring, spark, beam, dot, rocket, shell | The same `fx` sheet |
+| Smoke, sparks, embers, debris, dust, trails, the flame jet, beams, rings | Particles drawn with those pictures (up to 3,500 at once; low-priority ones are skipped first) |
 
 The flame jet is made of soft puffs that grow and cool from yellow to dark red, not of the flame flipbook: a jet has to bend
 with the turret and reach a changing distance, which a fixed picture cannot do.
@@ -137,6 +137,6 @@ answered by the approval; the Panzer, Graviton and rocket sounds are decided, se
 
 ## 5. Next steps (approved, not started)
 
-1. Bake the flipbooks and soft shapes into the real `fx` sheet (three resolutions) and add it to the manifest and the packs.
+1. ~~Bake the flipbooks and soft shapes into the real `fx` sheet (three resolutions)~~: done 2026-11-21 (`source/tools/bake_fx.cjs`, `source/sheets/fx.json`); the demo draws from it and switches resolution with the tanks. Not done: the encrypted desktop packs, which do not exist for the tank sheets either yet.
 2. Move the effect and sound code from the demo into the game, with the weapon rules from section 1.
 3. Set the real ranges, reload times and damage (game balance), which this note does not decide.

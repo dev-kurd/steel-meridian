@@ -277,7 +277,11 @@ class Batcher {
   // effects: target drones, then smoke (normal blend), then everything that glows (additive), all above the tanks
   const air = new PIXI.Graphics(), smokeC = new PIXI.Container(), addC = new PIXI.Container(); app.stage.addChild(air, smokeC, addC);
   const P3 = (x, y, z) => [PPM * (x - y), PPM * (x + y) / 2 - z * PPM / 0.75];   // metres (z up) to screen
-  const fx = createFx(PIXI, { proj: P3, ppm: PPM, layers: { decal: decalC, smoke: smokeC, add: addC } });
+  let FXM;                                                               // the effects sheet: fx.json + fx@1x|2x|4x.webp, next to the tank sheets
+  try { FXM = await (await fetch(SHEETS + 'fx.json')).json(); }
+  catch (e) { return fail('The effects sheet is missing: ' + SHEETS + 'fx.json\nMake it with: node source/tools/bake_fx.cjs\n' + e); }
+  const fx = createFx(PIXI, { proj: P3, ppm: PPM, layers: { decal: decalC, smoke: smokeC, add: addC }, manifest: FXM, base: SHEETS });
+  await fx.useRes(wantRes());
   const sfx = createSfx('../../../sounds/', 'sounds/');                            // the game's recordings, at the repo root
 
   // ---- tanks
@@ -685,7 +689,7 @@ class Batcher {
   app.ticker.add((tk) => {
     const dt = Math.min(0.05, tk.deltaMS / 1000);
     const want = wantRes();
-    if (want !== res && resReady(want)) res = want;                        // switch once the sheets of the new resolution are there
+    if (want !== res && resReady(want)) { res = want; fx.useRes(res); }                        // switch once the sheets of the new resolution are there
     if (!paused) { update(dt); fx.update(dt); shake *= Math.exp(-6 * dt); }
     draw();
     marks.clear(); air.clear();

@@ -37,12 +37,13 @@ The round 2 models (2026-11-20), each rendered from its saved `.blend` scene:
 | `source/tools/pack_tanks.py` | Packs `bake/` into WebP sheets + `tanks.json` (@4x, @2x, @1x) |
 | `source/tools/compose_tanks.py` | Rebuilds tanks from the sheets the way the game will |
 | `source/tools/check_refs.py`, `check_pack.py` | The pack check: whole renders against tanks built from the sheets |
+| `source/tools/bake_fx.cjs` | Bakes the effects sheet (`fx@1x`, `@2x`, `@4x.webp` + `fx.json`) from noise formulas: flames, explosions, muzzle flashes and the soft shapes the particles use. Run `node tools/bake_fx.cjs` in `source/`; needs `npm install` once in `tools/sprite-pipeline` (for the WebP writer) |
 | `source/build_tanks.py`, `source/blend/`, `source/tank_data.json` | Builds and saves the `.blend` scenes (Blender 5.3), one per tank: 3 Panzer + 12 round 2; model data in metres |
 | `source/mockup/` | The scripts behind the mockup boards (`mock.py` round 1, `mock2.py` round 2) |
 | `source/README.md` | How to use the files above, command by command |
 | `demo/` | The tank demo page (PixiJS): all 15 tanks driving, turrets aiming, a weapon filter, team colours, damage states, drawn from the packed sheets in `source/sheets/`. Since 2026-11-21 also the effects and sounds mockup: firing, hits, smoke, flames, explosions, a small battle (`fx.js`, `sfx.js`). Start it with `demo/run_demo.bat` (needs Node.js and the internet for PixiJS) |
 | `tank-fx-design.md` | Effects and sounds for the tanks: the proposal behind the mockup (how each weapon shoots, the effects, the sounds, questions for the owner). **Approved by the owner on 2026-11-21**; a few points stay open (listed in its section 4) |
-| `source/sheets/` | The packed sheets: 46 WebP files and `tanks.json` (93 MB). In the repo since 2026-11-21 (owner's decision) |
+| `source/sheets/` | The packed sheets: 46 tank WebP files and `tanks.json` (93 MB), plus the effects sheet (3 WebP files and `fx.json`, 1.9 MB, since 2026-11-21). In the repo since 2026-11-21 (owner's decision) |
 | `vector-viewer/` | The approved vector tanks (the design reference the 3D models follow) |
 
 **Not in the repo:** the bake frames (`bake/`, 6,000 PNG with round 2, ignored by git). The walker sheets are not in the repo
@@ -115,8 +116,8 @@ yet (they will be re-baked first). Work copy of `source/` on the owner's PC:
 2. **Round 2 tanks** (the owner chose these first): baked, packed, checked and in the demo page. Open: the Flamer flame jet and Special beam
    effects are not decided.
 3. **Tank effects and sounds (owner, 2026-11-21: before the walkers):** design in `tank-fx-design.md`, mockup in the demo
-   page. **Approved on 2026-11-21.** Next, when the owner says so: bake the flipbooks into the real `fx` sheet and move the effects
-   and sounds into the game.
+   page. **Approved on 2026-11-21.** The real `fx` sheet is baked (2026-11-21, `source/tools/bake_fx.cjs`) and the demo draws from
+   it. Next, when the owner says so: move the effects and sounds into the game.
 4. Then the **Walkers:** re-bake with the new mask method, change their damaged look to the tank style (smoky tint, less orange / fire
      colour), plus other improvements the owner wants inside the walker models (not listed yet: ask). See `../walkers/README.md`.
 
