@@ -5,24 +5,12 @@
  * - Sounds the game has no recording for (rockets, flame jet, the Fusion and Graviton weapons, engines, fire) are synthesised
  *   here with the Web Audio API, so the demo adds no sound files.
  * - Every sound gets a stereo position and a loudness from where it happens on the screen. */
-window.createSfx = function (base, demoBase) {
+window.createSfx = function (base) {
   const FILES = { shell: ['shell_1.wav', 'shell_2.wav', 'shell_3.wav'], arty: ['arty_1.wav', 'arty_2.wav'], boom: ['boom_1.wav', 'boom_2.wav', 'boom_3.wav'],
     bigboom: ['bigboom_1.wav', 'bigboom_2.wav'], laser: ['laser_1.wav'] };
-  // Candidate recordings for the Heavy Special, in the demo's own sounds/ folder (see sounds/README.txt there): all CC0, from
-  // the "150 Combat Sound Effects" pack on OpenGameArt, the same pack the game's explosion and laser recordings come from.
-  const GFILES = ['beam', 'rifle', 'zaplauncher', 'heavyzap', 'charge', 'gravbomb_a', 'gravbomb_b', 'lowboom_short', 'lowboom_long', 'electric_explosion', 'emp', 'crunch', 'burst'];
-  // Each option: what plays when the Graviton fires, and what plays when the ball lands (the ball implodes for 0.45 s, then blasts).
-  // fire: [recording, { g: loudness, rate: speed, cut: 'dur' = stop when the ball arrives }]; land: [recording, delay in seconds, { g, rate }]
-  const GRAV = {
-    beam:   { fire: [['beam', { g: 0.55, cut: 'dur' }]], land: [['gravbomb_b', 0, { g: 1 }], ['lowboom_short', 0.45, { g: 0.8 }]] },
-    zap:    { fire: [['zaplauncher', { g: 0.9 }], ['beam', { g: 0.22, cut: 'dur' }]], land: [['gravbomb_a', 0, { g: 1 }], ['lowboom_short', 0.45, { g: 0.9 }]] },
-    heavy:  { fire: [['heavyzap', { g: 1, rate: 0.8 }], ['beam', { g: 0.22, cut: 'dur' }]], land: [['gravbomb_a', 0, { g: 0.6 }], ['electric_explosion', 0.45, { g: 1 }]] },
-    charge: { fire: [['charge', { g: 0.8 }]], land: [['emp', 0.4, { g: 1 }], ['crunch', 0.45, { g: 0.8 }]] },
-    rifle:  { fire: [['rifle', { g: 0.8, rate: 0.7 }]], land: [['burst', 0.4, { g: 0.8 }], ['lowboom_long', 0.45, { g: 1 }]] },
-  };
   const PITCH = [1.22, 1, 0.82];                             // light, medium, heavy
   const rnd = (a, b) => a + Math.random() * (b - a);
-  let ctx = null, master = null, noiseBuf = null, on = true, vol = 0.7, ends = [], gravMode = 'beam';
+  let ctx = null, master = null, noiseBuf = null, on = true, vol = 0.7, ends = [];
   const smp = {}, last = {}, loops = {};
 
   function unlock() {                                        // browsers allow sound only after a click or a key
@@ -37,7 +25,6 @@ window.createSfx = function (base, demoBase) {
       smp[name] = [];
       for (const f of files) fetch(base + f).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject())).then((b) => ctx.decodeAudioData(b)).then((buf) => smp[name].push(buf)).catch(() => {});
     }
-    for (const n of GFILES) { smp['g_' + n] = []; fetch(demoBase + 'g_' + n + '.wav').then((r) => (r.ok ? r.arrayBuffer() : Promise.reject())).then((b) => ctx.decodeAudioData(b)).then((buf) => smp['g_' + n].push(buf)).catch(() => {}); }
     makeLoops();
   }
   const shape = (param, t, dur, g, att = 0.004) => { param.setValueAtTime(0.0001, t); param.linearRampToValueAtTime(g, t + att); param.exponentialRampToValueAtTime(0.0001, t + Math.max(dur, att + 0.01)); };
@@ -109,23 +96,13 @@ window.createSfx = function (base, demoBase) {
     // 'rec' is built from the game's recordings, as the Panzer gun is: the laser recording played at half speed for a heavy
     // beam, with a slowed artillery shot as the kick; on landing a short rush, then the big explosion recordings played slow.
     gravfire(d, t, o) {
-      if (GRAV[gravMode]) {                                  // one of the library recordings
-        let ok = false; const dur = Math.max(0.4, Math.min(3.5, o.dur || 1.2));
-        for (const [n, q] of GRAV[gravMode].fire) ok = sample(d, t, 'g_' + n, { rate: q.rate || 1, g: q.g, cut: q.cut === 'dur' ? dur : 0 }) || ok;
-        if (ok) return;
-      }
-      if (gravMode === 'rec' && smp.laser && smp.laser.length && smp.arty && smp.arty.length) {
+      if (smp.laser && smp.laser.length && smp.arty && smp.arty.length) {
         sample(d, t, 'laser', { rate: 0.5, g: 0.6, cut: Math.max(0.5, Math.min(1.8, o.dur || 1.2)) }); sample(d, t, 'arty', { rate: 0.85, g: 0.4, cut: 0.55 });
         tone(d, t, 0.5, { f0: 70, f1: 38, g: 0.7, att: 0.01 }); return;
       }
       tone(d, t, 0.55, { f0: 48, f1: 150, g: 0.8, att: 0.12 }); tone(d, t, 0.8, { type: 'triangle', f0: 320, f1: 80, g: 0.3, att: 0.05 }); noise(d, t, 0.6, { f0: 180, f1: 500, g: 0.4, att: 0.25 }); },
     gravimp(d, t) {                                          // Graviton lands: the air is sucked in, then the blast
-      if (GRAV[gravMode]) {
-        let ok = false;
-        for (const [n, delay, q] of GRAV[gravMode].land) ok = sample(d, t + delay, 'g_' + n, { rate: q.rate || 1, g: q.g }) || ok;
-        if (ok) return;
-      }
-      if (gravMode === 'rec' && smp.bigboom && smp.bigboom.length && smp.boom && smp.boom.length) {
+      if (smp.bigboom && smp.bigboom.length && smp.boom && smp.boom.length) {
         noise(d, t, 0.46, { type: 'bandpass', q: 1.5, f0: 220, f1: 2600, g: 0.4, att: 0.42 });
         const b = t + 0.45; sample(d, b, 'bigboom', { rate: 0.75, g: 1 }); sample(d, b, 'boom', { rate: 0.6, g: 0.6 }); tone(d, b, 1.1, { f0: 85, f1: 24, g: 0.9, att: 0.004 });
         return;
@@ -163,5 +140,5 @@ window.createSfx = function (base, demoBase) {
   function loop(name, level) { const l = loops[name]; if (ctx && l) l.g.gain.setTargetAtTime(Math.max(0, Math.min(1, level)) * l.max, ctx.currentTime, 0.09); }
   function setOn(v) { on = v; if (master) master.gain.setTargetAtTime(on ? vol : 0, ctx.currentTime, 0.03); }
   function setVolume(v) { vol = v; if (master && on) master.gain.setTargetAtTime(vol, ctx.currentTime, 0.03); }
-  return { unlock, play, loop, setOn, setVolume, setGrav: (v) => { gravMode = v; }, grav: () => gravMode, ready: () => !!ctx && ctx.state === 'running', samples: () => Object.values(smp).reduce((a, l) => a + l.length, 0) };
+  return { unlock, play, loop, setOn, setVolume, ready: () => !!ctx && ctx.state === 'running', samples: () => Object.values(smp).reduce((a, l) => a + l.length, 0) };
 };
