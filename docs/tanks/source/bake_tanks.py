@@ -166,7 +166,8 @@ class Bake:
 
 def bake_all(sizes=None, weapon='panzer', only=('hull', 'turret', 'shadow', 'wreck'), dirs=None, states=STATES, frames=None, samples=SAMPLES,
              gpu=True, team='#33d17a', out=None):
-    b = Bake(out or os.path.join(HERE, 'bake'), list(sizes or TL.SIZES), weapon, list(only), list(dirs if dirs is not None else range(32)),
+    out = os.path.abspath(out) if out else os.path.join(HERE, 'bake')     # Blender resolves a relative render path differently from Python
+    b = Bake(out, list(sizes or TL.SIZES), weapon, list(only), list(dirs if dirs is not None else range(32)),
              list(states), list(frames if frames is not None else range(TRACK_FRAMES)), samples, gpu, team)
     b.run(); return b
 
