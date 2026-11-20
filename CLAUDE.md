@@ -38,6 +38,7 @@ That is too slow. The game is moving to this plan:
   It is switched off (`HF_USE = false`). When a 2:1 factory replaces it, remove that stretch or it is squashed twice.
 
 ## Units
+Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and **`docs/walker-types.md`** (5 walkers).
 - **Tanks:** 15 models, 5 weapon types (Panzer, Artillery, Anti-Air, Flamer, Special) × Light / Medium / Heavy. One shared chassis per
   size, one weapon module per type on the same turret pivot.
 - **Hull and turret are separate sprites**, 32 directions each; the turret aims on its own and always draws above the hull
@@ -79,7 +80,13 @@ That is too slow. The game is moving to this plan:
 Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Walkers' damage look matching
 the new tank damage style · Flamer flame jet and Special beam effects · Gatling spin, Achilles strike, spinning radar.
 
-## References (claude.ai project "State of War Game")
+## References
+In this repo:
+- `docs/tank-types.md`: the 15 tanks (sizes, the 5 weapon types, what each looks like).
+- `docs/walker-types.md`: the 5 walkers (weapons, ranges, roles, modules as built).
+- `assets/README.md`: the current asset and config format.
+
+In the claude.ai project "State of War Game":
 - Design note (rendering, packs, platforms): https://claude.ai/artifact/PC64rsjtPsKykA5zFVADvH
 - Sprite pipeline demo (PixiJS, team-colour shader): https://claude.ai/artifact/TriW94QXYaamgihcBZM7v9
 - Tanks viewer (approved vector designs, reference for the 3D tanks): https://claude.ai/artifact/12ezQYv9on3bk22XzjVgAc
