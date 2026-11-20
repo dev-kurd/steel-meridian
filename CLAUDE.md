@@ -86,12 +86,15 @@ In this repo:
 - `docs/walker-types.md`: the 5 walkers (weapons, ranges, roles, modules as built).
 - `docs/walkers/`: the walker 3D models (`source/walker_lib.py`, `.blend` scenes, pack tools), renders, and how they are baked
   into sheets and described in `walkers.json`. The sheets themselves are not in the repo yet.
+- `docs/tanks/vector-viewer/`: the tanks viewer page (all 15 approved vector tanks, 2:1 view): the design reference for the 3D tanks.
+- `tools/sprite-pipeline/`: the sprite pipeline prototype (bake, team-colour shader, fx, PixiJS test map, encrypted packs,
+  Tauri app). Its models still use the old isometric view; the pack key `pak/secret.txt` is not in the repo.
 - `assets/README.md`: the current asset and config format.
 
 In the claude.ai project "State of War Game":
 - Design note (rendering, packs, platforms): https://claude.ai/artifact/PC64rsjtPsKykA5zFVADvH
-- Sprite pipeline demo (PixiJS, team-colour shader): https://claude.ai/artifact/TriW94QXYaamgihcBZM7v9
-- Tanks viewer (approved vector designs, reference for the 3D tanks): https://claude.ai/artifact/12ezQYv9on3bk22XzjVgAc
+- Sprite pipeline demo (live version of `tools/sprite-pipeline/`): https://claude.ai/artifact/TriW94QXYaamgihcBZM7v9
+- Tanks viewer (live version of `docs/tanks/vector-viewer/`): https://claude.ai/artifact/12ezQYv9on3bk22XzjVgAc
 - Factories viewer (2:1 view): https://claude.ai/artifact/J5TJ35L7R6Y3gGvo1JQqKE
 - Project docs: `art-style-guide.md`, `rendering-design-note.md`, `tanks-3d-model.md`, `walkers-3d-model.md`, `tank-types.md`,
   `robot-types.md`, `tank-units-vector-model.md`

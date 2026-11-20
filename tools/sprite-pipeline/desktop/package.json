@@ -1,0 +1,15 @@
+{
+  "name": "state-of-war-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "State of War desktop build (Tauri): game page + encrypted .pak assets",
+  "scripts": {
+    "sync": "node sync.cjs",
+    "icons": "tauri icon icon-source.png",
+    "start": "node sync.cjs && tauri dev",
+    "dist": "node sync.cjs && tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

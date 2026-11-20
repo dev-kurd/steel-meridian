@@ -1,0 +1,7 @@
+node_modules/
+dist/
+desktop/game/index.html
+desktop/src-tauri/target/
+desktop/src-tauri/gen/
+# the pack key: never commit it (copy pak/secret.example.txt to pak/secret.txt and change it)
+pak/secret.txt

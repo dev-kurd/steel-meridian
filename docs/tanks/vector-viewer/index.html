@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tanks — 2.5D Vector Assets</title>
+<style>
+  :root { --bg:#161c2a; --panel:#1f2738; --line:#2f3a52; --ink:#e7e3d6; --mute:#9aa3b8; --gold:#e2b45c; --green:#5cc23d; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:radial-gradient(1200px 700px at 50% 30%, #222b40, var(--bg)); color:var(--ink); font:14px/1.45 "Segoe UI", system-ui, sans-serif; min-height:100vh; }
+  header { padding:22px 28px 6px; display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+  h1 { margin:0; font:700 22px/1.1 Impact, "Arial Black", sans-serif; letter-spacing:1.5px; color:var(--gold); text-transform:uppercase; }
+  header span { color:var(--mute); }
+  main { display:grid; grid-template-columns: minmax(0,1fr) 310px; gap:20px; padding:12px 28px 28px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .stage { background:repeating-linear-gradient(45deg, #1a2131 0 14px, #1c2334 14px 28px); border:1px solid var(--line); border-radius:10px; padding:10px;
+           position:sticky; top:12px; align-self:start; height:calc(100vh - 110px); min-height:420px; display:flex; align-items:center; justify-content:center; overflow:hidden; touch-action:none; cursor:crosshair; }
+  @media (max-width: 900px) { .stage { position:relative; height:70vh; } }
+  .stage.dragging { cursor:grabbing; }
+  .stage .tag { position:absolute; left:14px; top:12px; z-index:2; background:rgba(0,0,0,.45); border:1px solid var(--line); padding:4px 10px; border-radius:20px; font-size:12px; color:var(--mute); }
+  .stage .tag b { color:var(--gold); }
+  .stage .hint { position:absolute; left:14px; bottom:12px; z-index:2; font-size:12px; color:var(--mute); background:rgba(0,0,0,.35); padding:4px 10px; border-radius:20px; }
+  #slot { width:100%; height:100%; display:flex; align-items:center; justify-content:center; transform-origin:0 0; will-change:transform; }
+  #slot svg { width:100%; height:100%; max-width:1100px; }
+  .zoombar { position:absolute; right:12px; top:12px; z-index:2; display:flex; gap:4px; align-items:center; background:rgba(0,0,0,.45); border:1px solid var(--line); border-radius:20px; padding:3px; }
+  .zoombar button { all:unset; cursor:pointer; width:28px; height:28px; border-radius:50%; text-align:center; line-height:28px; font-size:16px; color:var(--ink); }
+  .zoombar button:hover { background:#2f3a52; }
+  .zoombar span { font-size:12px; color:var(--mute); min-width:42px; text-align:center; }
+  aside { display:flex; flex-direction:column; gap:14px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px; }
+  .card h3 { margin:0 0 10px; font-size:12px; letter-spacing:1.2px; text-transform:uppercase; color:var(--mute); font-weight:600; }
+  .btn { all:unset; cursor:pointer; padding:9px 12px; border-radius:7px; border:1px solid var(--line); background:#263049; display:flex; justify-content:center; align-items:center; text-align:center; flex-direction:column; gap:2px; }
+  .btn:hover { border-color:var(--gold); }
+  .btn:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+  .btn.on { background:#3a3220; border-color:var(--gold); color:#ffe2a0; }
+  .btn[aria-disabled="true"] { opacity:.45; cursor:not-allowed; border-style:dashed; }
+  .btn .st { font-size:11px; color:var(--mute); }
+  .btn.primary { background:#2f5a24; border-color:#4f8f3a; }
+  .btn.danger { background:#5a2424; border-color:#8f3a3a; }
+  .grid { display:grid; gap:6px; }
+  .g2 { grid-template-columns:1fr 1fr; } .g3 { grid-template-columns:repeat(3,1fr); } .g4 { grid-template-columns:repeat(4,1fr); } .g5 { grid-template-columns:repeat(5,1fr); }
+  .row { display:flex; gap:6px; margin-top:8px; } .row .btn { flex:1; }
+  .toggle { display:flex; align-items:center; gap:8px; margin-top:10px; color:var(--mute); cursor:pointer; user-select:none; }
+  .team { display:flex; gap:6px; }
+  .team button { all:unset; width:24px; height:24px; border-radius:50%; cursor:pointer; border:2px solid transparent; }
+  .team button.on { border-color:#fff; }
+  .team button:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+  .info { margin-top:8px; color:var(--mute); font-size:12px; }
+  .info b { color:var(--ink); }
+  #log { font:12px/1.5 ui-monospace, Consolas, monospace; color:#b8c2d6; max-height:130px; overflow:auto; }
+  code { background:#141a27; padding:1px 5px; border-radius:4px; color:#ffd88a; }
+  input[type=range] { accent-color: var(--gold); }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">Light Panzer</h1>
+  <span id="subtitle">2.5D isometric vector unit · separate hull + turret · 32 directions · team colours</span>
+</header>
+<main>
+  <section class="stage" aria-label="Tank preview">
+    <div class="zoombar"><button id="zOut" title="Zoom out" aria-label="Zoom out">−</button><span id="zVal">100%</span><button id="zIn" title="Zoom in" aria-label="Zoom in">+</button><button id="zReset" title="Reset view" aria-label="Reset view" style="font-size:13px">⟲</button></div>
+    <div class="tag" id="tag"></div>
+    <div class="hint">Move the pointer to aim · click to fire · drag to pan · wheel to zoom</div>
+    <div id="slot"></div>
+  </section>
+  <aside>
+    <div class="card">
+      <h3>Unit size (factory)</h3>
+      <div class="grid g3" id="sizeBtns">
+        <button class="btn" data-s="light">Light<span class="st">speed 1.0</span></button>
+        <button class="btn" data-s="medium">Medium<span class="st">speed 0.75</span></button>
+        <button class="btn" data-s="heavy">Heavy<span class="st">speed 0.5</span></button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Weapon type</h3>
+      <div class="grid g2" id="typeBtns"></div>
+      <div class="info" id="typeInfo"></div>
+    </div>
+    <div class="card">
+      <h3>Health &amp; damage</h3>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="range" id="hp" min="0" max="100" value="100" style="flex:1" aria-label="Health">
+        <b id="hpv" style="width:52px;text-align:right">100 HP</b>
+      </div>
+      <div class="grid g2" id="hpBtns" style="margin-top:8px">
+        <button class="btn" data-h="100">Intact</button><button class="btn" data-h="55">Damaged<span class="st">≤ 60</span></button><button class="btn" data-h="25">Burning<span class="st">≤ 30</span></button><button class="btn danger" data-h="0">Destroy</button>
+      </div>
+      <div class="info" id="hpInfo"></div>
+    </div>
+    <div class="card">
+      <h3>Hull (movement)</h3>
+      <div class="row" style="margin-top:0"><button class="btn" id="hullL">⟲ Turn left</button><button class="btn" id="hullR">Turn right ⟳</button></div>
+      <div class="info" id="hullInfo"></div>
+      <label class="toggle"><input type="checkbox" id="drive"> Drive (tracks + ground move)</label>
+      <label class="toggle"><input type="checkbox" id="spin"> Keep turning (all 32 directions)</label>
+    </div>
+    <div class="card">
+      <h3>Turret (aims on its own)</h3>
+      <div class="row" style="margin-top:0"><button class="btn" id="turL">⟲ Left</button><button class="btn" id="turR">Right ⟳</button></div>
+      <div class="row"><button class="btn primary" id="fireBtn">Fire</button></div>
+      <div class="info" id="turInfo"></div>
+      <label class="toggle"><input type="checkbox" id="aimPtr" checked> Aim at the pointer</label>
+      <label class="toggle"><input type="checkbox" id="follow"> Lock turret to hull</label>
+    </div>
+    <div class="card">
+      <h3>View</h3>
+      <label class="toggle" style="margin-top:0"><input type="checkbox" id="explode"> Lift turret off the hull</label>
+      <label class="toggle"><input type="checkbox" id="gridT" checked> Ground grid</label>
+    </div>
+    <div class="card">
+      <h3>Team colour</h3>
+      <div class="team" id="team"></div>
+    </div>
+    <div class="card">
+      <h3>Export</h3>
+      <div class="row" style="margin-top:0"><button class="btn" id="dl">Copy SVG snapshot</button></div>
+    </div>
+    <div class="card"><h3>Events</h3><div id="log" aria-live="polite"></div></div>
+  </aside>
+</main>
+<script>
+/*!
+ * VectorUnit — 2.5D isometric vector (SVG) renderer for State of War Game units (tanks).
+ * Same projection, lighting, outline, palette and team-paint rules as VectorEngine (buildings),
+ * extended for units: 32 directions, separate hull / turret layers, smooth metal tubes,
+ * metallic sheen, heavier weathering, damage states, wreck, animated tracks and effects.
+ * Specs (chassis + weapon modules) register themselves on VectorUnit.chassis / VectorUnit.weapons.
+ */
+(function (global) {
+  'use strict';
+
+  // ---------------------------------------------------------------- math
+  const V = {
+    add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
+    sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+    mul: (a, k) => [a[0] * k, a[1] * k, a[2] * k],
+    dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+    cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+    norm: a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; },
+  };
+  // 2:1 dimetric, the same view as the game (game.js: ix = (x−y)·0.75, iy = (x+y)·0.375 − z), scaled ×1.1547
+  // so models keep their old screen width: camera 30° above the ground, ground edges at 26.57°.
+  const C = 0.8660254, CY = C * 0.5, CZ = C / 0.75;
+  const proj = p => [(p[0] - p[1]) * C, (p[0] + p[1]) * CY - p[2] * CZ];
+  const LIGHT = V.norm([0.35, 0.6, 1]);
+  const VIEW = V.norm([1, 1, 2 * CY / CZ]);   // direction toward the camera: the one that projects to a point
+  const HALF = V.norm(V.add(LIGHT, VIEW));
+  const OUT = '#0b0e13';
+  const DIRS = 32;
+  const dirAngle = d => (((d % DIRS) + DIRS) % DIRS) * (Math.PI * 2 / DIRS);
+  const fmt = n => Math.round(n * 100) / 100;
+
+  // --------------------------------------------------------------- colour
+  const hex2rgb = h => { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+  const rgb2hex = r => '#' + r.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+  const shade = (h, k) => rgb2hex(hex2rgb(h).map(v => v * k));
+  const mix = (a, b, t) => { const A = hex2rgb(a), B = hex2rgb(b); return rgb2hex(A.map((v, i) => v + (B[i] - v) * t)); };
+  function toHsl(hex) { const [r, g, b] = hex2rgb(hex).map(v => v / 255); const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; let h = 0, s = 0;
+    if (mx !== mn) { const d = mx - mn; s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h /= 6; }
+    return [h, s, l]; }
+  function fromHsl(h, s, l) { const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+    const c = t => { t = (t + 1) % 1; return t < 1 / 6 ? p + (q - p) * 6 * t : t < 0.5 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p; };
+    return rgb2hex([c(h + 1 / 3), c(h), c(h - 1 / 3)].map(v => v * 255)); }
+  const lum = hex => { const c = hex2rgb(hex).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+  // identical to VectorEngine.paintOf: clean saturated paint, every hue as bright as the green
+  function paintOf(T) {
+    const [h, s0] = toHsl(T), hd = h * 360;
+    const purple = hd >= 255 && hd <= 320, red = hd >= 335 || hd <= 15;
+    const s = purple ? Math.max(0.42, Math.min(0.5, s0)) : red ? Math.max(0.46, Math.min(0.52, s0)) : Math.max(0.6, Math.min(0.82, s0));
+    const target = lum(fromHsl(146 / 360, 0.65, 0.4)) * (purple ? 1.25 : red ? 0.9 : 1);
+    let lo = 0.3, hi = purple ? 0.64 : red ? 0.5 : 0.56;
+    for (let i = 0; i < 18; i++) { const m = (lo + hi) / 2; if (lum(fromHsl(h, s, m)) < target) lo = m; else hi = m; }
+    return fromHsl(h, s, (lo + hi) / 2);
+  }
+  // units use a muted (tinted) version of the team paint: lower saturation, slightly darker
+  function unitPaint(T) { const [h, s, l] = toHsl(paintOf(T)); return fromHsl(h, s * 0.5, l * 0.9); }
+  const PAL = { plate: '#6b7785', trim: '#808c9a', dark: '#38404a', interior: '#161a20', chip: '#aab2ba', rust: '#7b4a2c', char: '#1e1a17' };
+  const MAT = { paint: { st: 0.16, sh: 14 }, metal: { st: 0.55, sh: 28 }, rubber: { st: 0.05, sh: 8 } };
+  function lit(color, n, mat, ctx) {
+    if (ctx && ctx.wreck) color = mix(color, PAL.char, 0.84);
+    const k = 0.55 + 0.55 * Math.max(0, V.dot(n, LIGHT));
+    const m = MAT[mat] || MAT.paint;
+    const sp = Math.pow(Math.max(0, V.dot(n, HALF)), m.sh) * m.st * (ctx && ctx.wreck ? 0.25 : 1);
+    return mix(shade(color, Math.min(1.25, k)), '#ffffff', Math.min(0.85, sp));
+  }
+
+  // ---------------------------------------------------------------- rng
+  function rng(seed) { let s = 0; for (const ch of String(seed)) s = (Math.imul(s, 31) + ch.charCodeAt(0)) >>> 0; s = s || 1;
+    return () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+
+  // ---------------------------------------------------------- primitives
+  function ccw2(poly) { let a = 0; for (let i = 0; i < poly.length; i++) { const p = poly[i], q = poly[(i + 1) % poly.length]; a += p[0] * q[1] - q[0] * p[1]; } return a > 0 ? poly : poly.slice().reverse(); }
+  function capsToFaces(bottom, top) {
+    const faces = [{ pts: bottom.slice().reverse(), kind: 'cap' }, { pts: top.slice(), kind: 'cap' }];
+    for (let i = 0; i < bottom.length; i++) { const j = (i + 1) % bottom.length; faces.push({ pts: [bottom[i], bottom[j], top[j], top[i]], kind: 'side' }); }
+    return faces;
+  }
+  function prismZ(plan, z0, z1, topScale = 1, topOff = [0, 0]) {
+    plan = ccw2(plan);
+    const cx = plan.reduce((s, p) => s + p[0], 0) / plan.length, cy = plan.reduce((s, p) => s + p[1], 0) / plan.length;
+    return capsToFaces(plan.map(p => [p[0], p[1], z0]), plan.map(p => [cx + (p[0] - cx) * topScale + topOff[0], cy + (p[1] - cy) * topScale + topOff[1], z1]));
+  }
+  const box = (x0, x1, y0, y1, z0, z1) => prismZ([[x0, y0], [x1, y0], [x1, y1], [x0, y1]], z0, z1);
+  // loft: bottom plan at z0 to top plan at z1 (same vertex count, matching edges parallel so side quads stay planar)
+  function loft(bot, z0, top, z1) { const ccw = ccw2(bot) === bot; const B = ccw ? bot : bot.slice().reverse(), T = ccw ? top : top.slice().reverse(); return capsToFaces(B.map(p => [p[0], p[1], z0]), T.map(p => [p[0], p[1], z1])); }
+  function extrudeY(profXZ, y0, y1) { const p = ccw2(profXZ); return capsToFaces(p.map(q => [q[0], y0, q[1]]), p.map(q => [q[0], y1, q[1]])); }
+  function extrudeX(profYZ, x0, x1) { const p = ccw2(profYZ); return capsToFaces(p.map(q => [x0, q[0], q[1]]), p.map(q => [x1, q[0], q[1]])); }
+  function ngon(n, r, cx = 0, cy = 0, rot = Math.PI / n) { const o = []; for (let i = 0; i < n; i++) { const a = rot + i * 2 * Math.PI / n; o.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } return o; }
+  const cylZ = (cx, cy, r, z0, z1, n = 20, topScale = 1) => prismZ(ngon(n, r, cx, cy), z0, z1, topScale);
+  const cylY = (cx, cz, r, y0, y1, n = 20) => extrudeY(ngon(n, r, cx, cz), y0, y1);
+
+  function finalize(faces) {
+    const all = faces.flatMap(f => f.pts);
+    const c = V.mul(all.reduce((s, p) => V.add(s, p), [0, 0, 0]), 1 / all.length);
+    for (const f of faces) {
+      let n = V.norm(V.cross(V.sub(f.pts[1], f.pts[0]), V.sub(f.pts[2], f.pts[0])));
+      const fc = V.mul(f.pts.reduce((s, p) => V.add(s, p), [0, 0, 0]), 1 / f.pts.length);
+      if (V.dot(n, V.sub(fc, c)) < 0) { n = V.mul(n, -1); f.pts = f.pts.slice().reverse(); }
+      f.n = n; f.ln = n; f.lpts = f.pts;
+    }
+    return faces;
+  }
+  // part options: color, paint (team armour), mat, weather 0..1, decals [{match(n,f), draw(api)}], smooth, thin, animated
+  function part(id, faces, opt = {}) { return Object.assign({ id, faces: finalize(faces), color: PAL.plate, paint: false, weather: 0, decals: [] }, opt); }
+  // smooth tube along local X (barrels, pods, exhausts): no facet lines, specular streak
+  function tubeX(id, cy, cz, r, x0, x1, opt = {}) {
+    const pt = part(id, extrudeX(ngon(24, r, cy, cz), x0, x1), Object.assign({ color: PAL.trim, smooth: true }, opt));
+    pt.sheen = function (P, ctx) {
+      const xf = this.xf, o = xf([0, 0, 0]);
+      let best = -1, ba = 0;
+      for (let i = 0; i < 48; i++) {
+        const a = i / 48 * Math.PI * 2, n = V.sub(xf([0, Math.cos(a), Math.sin(a)]), o);
+        if (V.dot(n, VIEW) <= 0.05) continue;
+        const d = V.dot(V.norm(n), HALF); if (d > best) { best = d; ba = a; }
+      }
+      const k = (x1 - x0) * 0.04, y = cy + Math.cos(ba) * r * 0.9, z = cz + Math.sin(ba) * r * 0.9;
+      const a = P(xf([x0 + k, y, z])), b = P(xf([x1 - k, y, z]));
+      const w = Math.max(0.7, r * 0.5 * ctx.S), op = ctx.wreck ? 0.25 : 1;
+      const d = `M${fmt(a[0])} ${fmt(a[1])}L${fmt(b[0])} ${fmt(b[1])}`;
+      let out = `<path d="${d}" stroke="#fff" stroke-width="${fmt(w * 1.8)}" stroke-linecap="round" opacity="${fmt((opt.paint ? 0.12 : 0.18) * op)}"/><path d="${d}" stroke="#fff" stroke-width="${fmt(w * 0.55)}" stroke-linecap="round" opacity="${fmt((opt.paint ? 0.35 : 0.6) * op)}"/>`;
+      // metal bands (straps) drawn on the tube itself, so they can never sort behind it
+      for (const bd of opt.bands || []) {
+        const rr = r * 1.07, N = 40, vis = [];
+        for (let i = 0; i < N; i++) { const a = i / N * Math.PI * 2, n = V.sub(xf([0, Math.cos(a), Math.sin(a)]), o); vis.push(V.dot(n, VIEW) > 0); }
+        let st = vis.findIndex((v, i) => v && !vis[(i - 1 + N) % N]); if (st < 0) st = 0;
+        const angs = []; for (let k = 0; k <= N; k++) { const i = (st + k) % N; if (!vis[i]) break; angs.push(i / N * Math.PI * 2); }
+        if (angs.length < 2) continue;
+        const ring = x => angs.map(a => P(xf([x, cy + Math.cos(a) * rr, cz + Math.sin(a) * rr])));
+        const A = ring(bd.x), B = ring(bd.x + bd.w).reverse();
+        const nrm = V.norm(V.sub(xf([0, Math.cos(ba), Math.sin(ba)]), o));
+        out += `<path d="${pathOf(A.concat(B))}" fill="${lit(bd.color || PAL.trim, nrm, 'metal', ctx)}" stroke="${OUT}" stroke-width="${fmt(0.6 * (ctx.sw || 0.9))}" stroke-linejoin="round"/>`;
+        const mid = ring(bd.x + bd.w / 2), j = Math.floor(mid.length * 0.25);
+        if (mid[j]) out += `<circle cx="${fmt(mid[j][0])}" cy="${fmt(mid[j][1])}" r="${fmt(0.45 * ctx.S)}" fill="#c9d0d7" stroke="${OUT}" stroke-width="0.4"/>`;
+      }
+      return out;
+    };
+    return pt;
+  }
+  function place(pt, fn) {
+    const np = Object.assign({}, pt);
+    const prev = pt.xf || (p => p);
+    np.xf = p => fn(prev(p));
+    const o = fn([0, 0, 0]);
+    np.faces = pt.faces.map(f => Object.assign({}, f, { pts: f.pts.map(fn), n: V.norm(V.sub(fn(f.n), o)) }));
+    return np;
+  }
+  const rotZ = (p, a, c = [0, 0]) => { const s = Math.sin(a), k = Math.cos(a), x = p[0] - c[0], y = p[1] - c[1]; return [c[0] + x * k - y * s, c[1] + x * s + y * k, p[2]]; };
+
+  // ------------------------------------------------------------ sorting
+  function aabb(pt) { const mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; for (const f of pt.faces) for (const p of f.pts) for (let i = 0; i < 3; i++) { if (p[i] < mn[i]) mn[i] = p[i]; if (p[i] > mx[i]) mx[i] = p[i]; } return { mn, mx }; }
+  // Painter's order for convex parts. For each pair whose screen footprints overlap, look for a face plane of
+  // one part that has the whole other part on its outer side: that plane decides which is nearer the camera
+  // (exact for convex solids, works at every angle). Pairs with no such plane fall back to the AABB rule;
+  // the remaining ties go nearest-last by centroid depth.
+  // 2D separating-axis test for two convex polygons (screen silhouettes); a small margin counts as apart
+  function hullsOverlap(A, B) {
+    for (const P of [A, B]) for (let i = 0; i < P.length; i++) {
+      const p = P[i], q = P[(i + 1) % P.length], nx = q[1] - p[1], ny = p[0] - q[0], l = Math.hypot(nx, ny) || 1;
+      let a0 = 1e9, a1 = -1e9, b0 = 1e9, b1 = -1e9;
+      for (const v of A) { const d = (v[0] * nx + v[1] * ny) / l; if (d < a0) a0 = d; if (d > a1) a1 = d; }
+      for (const v of B) { const d = (v[0] * nx + v[1] * ny) / l; if (d < b0) b0 = d; if (d > b1) b1 = d; }
+      if (a1 <= b0 + 0.01 || b1 <= a0 + 0.01) return false;
+    }
+    return true;
+  }
+  function depthSort(parts) {
+    const n = parts.length, eps = 0.02;
+    const info = parts.map(p => {
+      const verts = [], seen = new Set();
+      for (const f of p.faces) for (const q of f.pts) { const k = q.map(v => v.toFixed(3)).join(','); if (!seen.has(k)) { seen.add(k); verts.push(q); } }
+      const planes = p.faces.map(f => ({ n: f.n, d: V.dot(f.n, f.pts[0]) }));
+      const b = aabb(p);
+      let sx0 = 1e9, sy0 = 1e9, sx1 = -1e9, sy1 = -1e9;
+      for (const q of verts) { const s2 = proj(q); if (s2[0] < sx0) sx0 = s2[0]; if (s2[0] > sx1) sx1 = s2[0]; if (s2[1] < sy0) sy0 = s2[1]; if (s2[1] > sy1) sy1 = s2[1]; }
+      return { p, verts, planes, b, sb: [sx0, sy0, sx1, sy1], sh: hull2(verts.map(proj)), d: V.dot(VIEW, [(b.mn[0] + b.mx[0]) / 2, (b.mn[1] + b.mx[1]) / 2, (b.mn[2] + b.mx[2]) / 2]) };
+    });
+    const outside = (pl, verts) => { for (const v of verts) if (V.dot(pl.n, v) < pl.d - eps) return false; return true; };
+    // -1: a drawn before b, 1: b before a, 0: unknown
+    function order(a, b) {
+      for (const pl of a.planes) if (outside(pl, b.verts)) { const c = V.dot(pl.n, VIEW); if (Math.abs(c) > 1e-6) return c > 0 ? -1 : 1; }
+      for (const pl of b.planes) if (outside(pl, a.verts)) { const c = V.dot(pl.n, VIEW); if (Math.abs(c) > 1e-6) return c > 0 ? 1 : -1; }
+      let ab = false, ba = false;
+      for (let k = 0; k < 3; k++) { if (a.b.mx[k] <= b.b.mn[k] + 0.01) ab = true; if (b.b.mx[k] <= a.b.mn[k] + 0.01) ba = true; }
+      if (ab && !ba) return -1; if (ba && !ab) return 1;
+      return 0;
+    }
+    const before = info.map(() => []);
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+      const A = info[i], B = info[j];
+      if (A.sb[2] < B.sb[0] || B.sb[2] < A.sb[0] || A.sb[3] < B.sb[1] || B.sb[3] < A.sb[1]) continue;   // no screen overlap
+      if (!hullsOverlap(A.sh, B.sh)) continue;   // silhouettes do not overlap: any order is fine, add no constraint
+      const o = order(A, B);
+      if (o < 0) before[j].push(i); else if (o > 0) before[i].push(j);
+    }
+    const done = new Uint8Array(n), out = [];
+    while (out.length < n) {
+      let pick = -1;
+      for (let i = 0; i < n; i++) { if (done[i]) continue; let ok = true; for (const b of before[i]) if (!done[b]) { ok = false; break; } if (ok && (pick < 0 || info[i].d < info[pick].d)) pick = i; }
+      if (pick < 0) for (let i = 0; i < n; i++) if (!done[i] && (pick < 0 || info[i].d < info[pick].d)) pick = i;
+      done[pick] = 1; out.push(info[pick].p);
+    }
+    return out;
+  }
+  function hull2(pts) {
+    const p = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const lo = [], up = [];
+    for (const q of p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+    for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+    return lo.slice(0, -1).concat(up.slice(0, -1));
+  }
+  const pathOf = pts => 'M' + pts.map(p => fmt(p[0]) + ' ' + fmt(p[1])).join('L') + 'Z';
+
+  // ------------------------------------------------------------ face frame
+  function faceFrame(f) {
+    const n = f.ln, pts = f.lpts;
+    let u = Math.abs(n[2]) < 0.97 ? V.norm(V.cross([0, 0, 1], n)) : [0, -1, 0];
+    const v = V.norm(V.cross(u, n));
+    const us = pts.map(p => V.dot(p, u)), vs = pts.map(p => V.dot(p, v));
+    return { u, v, n, u0: Math.min(...us), u1: Math.max(...us), v0: Math.min(...vs), v1: Math.max(...vs), d: V.dot(pts[0], n) };
+  }
+
+  // ------------------------------------------------------------ weathering + damage
+  function weather(api, seed, w, fr, mat) {
+    const r = rng(seed), vertical = Math.abs(fr.n[2]) < 0.5, metal = mat === 'metal', lw = k => k * api.S * 0.5;
+    if (vertical) {
+      api.poly([[0, 0.45], [1, 0.45], [1, 1], [0, 1]], '#000', `opacity="${fmt(0.12 * w)}"`);
+      api.poly([[0, 0.72], [1, 0.72], [1, 1], [0, 1]], '#4a3a26', `opacity="${fmt(0.22 * w)}"`);
+      api.poly([[0, 0.9], [1, 0.9], [1, 1], [0, 1]], '#8a7656', `opacity="${fmt(0.25 * w)}"`);
+      const ns = 3 + Math.floor(r() * 4);
+      for (let i = 0; i < ns; i++) { const s0 = 0.05 + r() * 0.9, t0 = r() * 0.35; api.line(s0, t0, s0 + (r() - 0.5) * 0.02, t0 + 0.25 + r() * 0.5, '#15181c', lw(0.6 + r() * 0.8), `opacity="${fmt(0.28 * w)}"`); }
+      const nr = 1 + Math.floor(r() * 3);
+      for (let i = 0; i < nr; i++) { const s0 = 0.08 + r() * 0.84, t0 = 0.12 + r() * 0.55; api.ellipse(s0, t0, 0.018 + r() * 0.025, 0.04 + r() * 0.04, PAL.rust, `opacity="${fmt(0.7 * w)}"`); api.ellipse(s0, t0, 0.008, 0.018, '#3d2414', `opacity="${fmt(0.8 * w)}"`); api.line(s0, t0, s0 + (r() - 0.5) * 0.01, t0 + 0.15 + r() * 0.35, '#8a5330', lw(0.9), `opacity="${fmt(0.5 * w)}"`); }
+      for (let i = 0; i < 3; i++) { const s0 = r(), t0 = r() * 0.8; api.line(s0, t0, s0 + 0.06 + r() * 0.1, t0 + (r() - 0.5) * 0.1, metal ? '#e8edf2' : PAL.chip, lw(0.35), `opacity="${fmt(0.55 * w)}"`); }
+    } else {
+      for (let i = 0; i < 3; i++) api.ellipse(r(), r(), 0.1 + r() * 0.18, 0.08 + r() * 0.14, '#a8987a', `opacity="${fmt(0.16 * w)}"`);
+      for (let i = 0; i < 2; i++) if (r() < 0.7) { const s0 = 0.1 + r() * 0.8, t0 = 0.1 + r() * 0.8; api.ellipse(s0, t0, 0.025 + r() * 0.02, 0.025 + r() * 0.02, PAL.rust, `opacity="${fmt(0.6 * w)}"`); api.ellipse(s0, t0, 0.01, 0.01, '#3d2414', `opacity="${fmt(0.7 * w)}"`); }
+      const nsc = 3 + Math.floor(r() * 3);
+      for (let i = 0; i < nsc; i++) { const s0 = r(), t0 = r(); api.line(s0, t0, s0 + 0.08 + r() * 0.12, t0 + (r() - 0.5) * 0.1, '#eef1f4', lw(0.35), `opacity="${fmt(0.55 * w)}"`); }
+    }
+    const nc = 5 + Math.floor(r() * 6);
+    for (let i = 0; i < nc; i++) {
+      const edge = Math.floor(r() * 4), p = 0.04 + r() * 0.92, sz = 0.015 + r() * 0.035;
+      let s0, t0; if (edge === 0) { s0 = p; t0 = sz * 0.5; } else if (edge === 1) { s0 = 1 - sz * 0.5; t0 = p; } else if (edge === 2) { s0 = p; t0 = 1 - sz * 0.5; } else { s0 = sz * 0.5; t0 = p; }
+      api.poly([[s0 - sz, t0 - sz * 0.6], [s0 + sz * 0.7, t0 - sz * 0.9], [s0 + sz, t0 + sz * 0.5], [s0 - sz * 0.4, t0 + sz]], metal ? '#c9d0d7' : PAL.chip, `opacity="${fmt(0.85 * w)}"`);
+    }
+    if (vertical) api.line(0.01, 0.01, 0.99, 0.01, '#fff', lw(1.1), `opacity="${fmt(0.28 * w)}"`);
+  }
+  // Damage on painted armour. dmg: 1 damaged (≤60), 2 burning (≤30), 3 wreck.
+  // Sizes are in world units (converted per face), counts scale with face area, seeded per face.
+  function damage(api, seed, dmg) {
+    const r = rng('dmg' + seed), lw = k => k * api.S * 0.5;
+    const area = api.wU * api.wV, vertical = Math.abs(api.n[2]) < 0.5;
+    const su = w => w / api.wU, tv = w => w / api.wV;               // world units -> normalized
+    const count = (k, cap) => { const x = k * area / 520; let n = Math.floor(x); if (r() < x - n) n++; return Math.min(cap, n); };
+    const blob = (s0, t0, rad, jit = 0.35, n = 14, rot = 0) => { const pts = []; for (let i = 0; i < n; i++) { const a = rot + i / n * 6.283, k = 1 - jit / 2 + r() * jit; pts.push([s0 + Math.cos(a) * su(rad * k), t0 + Math.sin(a) * tv(rad * k)]); } return pts; };
+    const spot = () => [0.12 + r() * 0.76, 0.12 + r() * 0.76];
+
+    // 1) burn / soot marks: heat-tinted rim, soot body, dark core, soot plume rising on walls
+    const nScorch = count(dmg === 1 ? 0.75 : dmg === 2 ? 1.2 : 2.2, dmg === 3 ? 5 : 3);
+    for (let i = 0; i < nScorch; i++) {
+      const [s0, t0] = spot(), R = (dmg === 1 ? 3.2 : dmg === 2 ? 4.2 : 5.2) * (0.75 + r() * 0.5);
+      if (vertical) for (const [k, o] of [[1, 0.14], [0.7, 0.18]]) api.poly([[s0 - su(R * 0.9 * k), t0], [s0 + su(R * 0.9 * k), t0], [s0 + su(R * 0.4 * k), t0 - tv(R * 3)], [s0 - su(R * 0.35 * k), t0 - tv(R * 2.7)]], '#14100d', `opacity="${o}"`);
+      api.poly(blob(s0, t0, R * 1.45, 0.4), '#6a3f1f', 'opacity="0.2"');                 // heat-tinted paint
+      for (const [k, o] of [[1.3, 0.1], [1.1, 0.14], [0.9, 0.2], [0.7, 0.26], [0.5, 0.34], [0.3, 0.45]]) api.poly(blob(s0, t0, R * k, 0.45), '#120d0a', `opacity="${o}"`);   // soft soot
+      if (dmg >= 2) for (let k = 0; k < 6; k++) { const a = r() * 6.28, d = R * (1.1 + r() * 0.4); api.ellipse(s0 + Math.cos(a) * su(d), t0 + Math.sin(a) * tv(d), su(0.35), tv(0.35), '#9a7a52', 'opacity="0.7"', 8); }   // blistered paint
+    }
+    // 2) shell impacts: bright scraped crater, dark pit, radial cracks, flecks
+    const nHit = count(dmg === 1 ? 0.45 : 0.8, 3);
+    for (let i = 0; i < nHit; i++) {
+      const [s0, t0] = spot(), R = 1.4 + r() * 1.2, rot = r() * 6.28;
+      const star = []; for (let k = 0; k < 10; k++) { const a = rot + k / 10 * 6.283, d = R * (k % 2 ? 0.7 + r() * 0.2 : 1.1 + r() * 0.5); star.push([s0 + Math.cos(a) * su(d), t0 + Math.sin(a) * tv(d)]); }
+      api.poly(star, '#c4cbd2', `opacity="0.9" stroke="#0b0e13" stroke-width="${fmt(lw(0.35))}"`);
+      api.poly(blob(s0, t0, R * 0.62, 0.3, 10), '#4b535c');
+      api.poly(blob(s0 + su(R * 0.08), t0 + tv(R * 0.08), R * 0.36, 0.3, 9), '#0b0d10');
+      for (let k = 0; k < 4; k++) { const a = r() * 6.28, d0 = R * 1.1, d1 = R * (1.8 + r() * 0.9); api.line(s0 + Math.cos(a) * su(d0), t0 + Math.sin(a) * tv(d0), s0 + Math.cos(a) * su(d1), t0 + Math.sin(a) * tv(d1), '#0b0e13', lw(0.4), 'opacity="0.8"'); }
+    }
+    // 3) bullet strikes: small clusters of bright dings with dark centres
+    const nCl = count(dmg === 1 ? 0.8 : 1.2, 3);
+    for (let i = 0; i < nCl; i++) {
+      const [s0, t0] = spot(), n = 4 + Math.floor(r() * 4);
+      for (let k = 0; k < n; k++) { const a = r() * 6.28, d = r() * 3; const x = s0 + Math.cos(a) * su(d), y = t0 + Math.sin(a) * tv(d), q = 0.35 + r() * 0.25;
+        api.poly(blob(x, y, q * 1.6, 0.6, 6, r() * 6), '#d3d9de', 'opacity="0.85"'); api.ellipse(x, y, su(q * 0.6), tv(q * 0.6), '#121417', '', 6); }
+    }
+    // 4) gouges: long scrapes down to bare metal
+    const nG = count(dmg === 1 ? 0.35 : 0.6, 2);
+    for (let i = 0; i < nG; i++) {
+      const [s0, t0] = spot(), a = (r() - 0.5) * 0.9 + (r() < 0.5 ? 0 : Math.PI), len = 5 + r() * 7, s1 = s0 + Math.cos(a) * su(len), t1 = t0 + Math.sin(a) * tv(len);
+      api.line(s0, t0 + tv(0.25), s1, t1 + tv(0.25), '#0b0e13', lw(0.9), 'opacity="0.55"');
+      api.line(s0, t0, s1, t1, '#c9d0d7', lw(0.7), 'opacity="0.9"');
+    }
+    // 5) burning / wreck: torn holes with bent metal petals; glowing edges while burning
+    if (dmg >= 2 && area > 220 && r() < (dmg === 3 ? 0.85 : 0.65)) {
+      const [s0, t0] = [0.25 + r() * 0.5, 0.25 + r() * 0.5], R = 2.2 + r() * 1.8, n = 11;
+      const hole = blob(s0, t0, R, 0.7, n);
+      for (const [k, o] of [[2.4, 0.12], [1.9, 0.2], [1.5, 0.3]]) api.poly(blob(s0, t0, R * k, 0.4), '#0d0a08', `opacity="${o}"`);
+      if (dmg === 2) for (const [k, o] of [[1.7, 0.18], [1.35, 0.25]]) api.poly(blob(s0, t0, R * k, 0.35), '#ff7a1a', `opacity="${o}"`);
+      for (let k = 0; k < n; k += 2) { const p = hole[k], q = hole[(k + 1) % n], m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2], o = [s0 + (m[0] - s0) * 1.55, t0 + (m[1] - t0) * 1.55]; api.poly([p, o, q], dmg === 3 ? '#3a332e' : '#8f979f', `stroke="#0b0e13" stroke-width="${fmt(lw(0.3))}"`); }
+      if (dmg === 2) api.poly(hole, 'none', `stroke="#ff7a1a" stroke-width="${fmt(lw(1.6))}" opacity="0.9"`);
+      api.poly(hole, '#050505', dmg === 2 ? `stroke="#ffd27a" stroke-width="${fmt(lw(0.5))}"` : '');
+      if (dmg === 2) api.poly(blob(s0, t0 + tv(R * 0.2), R * 0.45, 0.5, 8), '#ff6a14', 'opacity="0.55"');
+    }
+    // 6) wreck: whole-face heat discolouration
+    if (dmg === 3) api.poly([[0, 0], [1, 0], [1, 1], [0, 1]], '#4a2c1a', 'opacity="0.25"');
+  }
+
+  // ------------------------------------------------------------ rendering
+  let SEQ = 0;
+  // returns [{ id, svg, animated }] in draw order. ctx: { S, ox, oy, sw, prefix, dmg, wreck, frame, team, glow }
+  function renderParts(parts, ctx) {
+    const S = ctx.S, sw = ctx.sw || 0.9, pre = ctx.prefix || 'vu';
+    const P = p => { const q = proj(p); return [q[0] * S + (ctx.ox || 0), q[1] * S + (ctx.oy || 0)]; };
+    const out = [];
+    for (const pt of parts) {
+      if (pt.custom) { out.push({ id: pt.id, animated: !!pt.animated, svg: pt.custom(ctx) }); continue; }
+      const mat = pt.mat || (pt.paint ? 'paint' : 'metal');
+      const xf = pt.xf || (p => p);
+      let defs = '', body = '';
+      const sil = [];
+      for (let fi = 0; fi < pt.faces.length; fi++) {
+        const f = pt.faces[fi];
+        const p2 = f.pts.map(P);
+        if (pt.smooth) sil.push(...p2);
+        if (V.dot(f.n, VIEW) <= 1e-4) continue;
+        const fill = lit(f.color || pt.color, f.n, mat, ctx);
+        const d = pathOf(p2);
+        if (pt.smooth && f.kind === 'side') { body += `<path d="${d}" fill="${fill}" stroke="${fill}" stroke-width="0.6" stroke-linejoin="round"/>`; continue; }
+        let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const q of p2) { if (q[0] < x0) x0 = q[0]; if (q[1] < y0) y0 = q[1]; if (q[0] > x1) x1 = q[0]; if (q[1] > y1) y1 = q[1]; }
+        const gid = `${pre}g${++SEQ}`;
+        const stops = ctx.wreck ? [[0, 1.05], [1, 0.85]] : mat === 'metal' ? [[0, 1.02], [0.32, 1.2], [0.5, 1.0], [0.78, 0.9], [1, 0.82]] : mat === 'paint' ? [[0, 1.1], [0.4, 1.03], [1, 0.86]] : [[0, 1.04], [1, 0.9]];
+        defs += `<linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="${fmt(x0)}" y1="${fmt(y0)}" x2="${fmt(x1)}" y2="${fmt(y1)}">` + stops.map(s => `<stop offset="${s[0]}" stop-color="${shade(fill, s[1])}"/>`).join('') + '</linearGradient>';
+        const stroke = `stroke="${OUT}" stroke-width="${fmt(pt.thin ? sw * 0.6 : sw)}" stroke-linejoin="round"`;
+        const fr = faceFrame(f);
+        const toScreen = (s, t) => P(xf(V.add(V.add(V.mul(fr.u, fr.u0 + s * (fr.u1 - fr.u0)), V.mul(fr.v, fr.v0 + t * (fr.v1 - fr.v0))), V.mul(fr.n, fr.d + 0.02))));
+        // optional see-through opening in a face (track loop): drawn with an even-odd hole so parts behind show through
+        let holed = false;
+        if (pt.hole && pt.hole.match(fr.n)) {
+          const nf = f.lpts.map(q => [(V.dot(q, fr.u) - fr.u0) / Math.max(1e-6, fr.u1 - fr.u0), (V.dot(q, fr.v) - fr.v0) / Math.max(1e-6, fr.v1 - fr.v0)]);
+          const hp = pt.hole.pts(nf, fr.u1 - fr.u0, fr.v1 - fr.v0);
+          body += `<path d="${d}${pathOf(hp.map(q => toScreen(q[0], q[1])).reverse())}" fill="url(#${gid})" fill-rule="evenodd" ${stroke}/>`;
+          holed = true;
+        } else body += `<path d="${d}" fill="url(#${gid})" ${stroke}/>`;
+        let inner = '';
+        const api = {
+          S, frame: ctx.frame || 0, dmg: ctx.dmg || 0, wreck: !!ctx.wreck,
+          aspect: (fr.u1 - fr.u0) / Math.max(1e-6, fr.v1 - fr.v0), wU: fr.u1 - fr.u0, wV: fr.v1 - fr.v0, n: fr.n,
+          facePts: f.lpts.map(q => [(V.dot(q, fr.u) - fr.u0) / Math.max(1e-6, fr.u1 - fr.u0), (V.dot(q, fr.v) - fr.v0) / Math.max(1e-6, fr.v1 - fr.v0)]),
+          poly(st, c, extra = '') { inner += `<path d="${pathOf(st.map(q => toScreen(q[0], q[1])))}" fill="${c}" ${extra}/>`; },
+          ellipse(cs, ct, rs, rt, c, extra = '', seg = 20) { const pts = []; for (let i = 0; i < seg; i++) { const a = i / seg * Math.PI * 2; pts.push([cs + Math.cos(a) * rs, ct + Math.sin(a) * rt]); } this.poly(pts, c, extra); },
+          line(s0, t0, s1, t1, c, w, extra = '') { const a = toScreen(s0, t0), b = toScreen(s1, t1); inner += `<path d="M${fmt(a[0])} ${fmt(a[1])}L${fmt(b[0])} ${fmt(b[1])}" stroke="${c}" stroke-width="${fmt(w)}" stroke-linecap="round" fill="none" ${extra}/>`; },
+          bolt(s, t, rr) { this.ellipse(s, t + rr * 0.25, rr, rr * this.aspect, '#000', 'opacity="0.35"', 10); this.ellipse(s, t, rr, rr * this.aspect, lit(PAL.trim, f.n, 'metal', ctx), `stroke="${OUT}" stroke-width="${fmt(0.25 * S)}"`, 10); if (!ctx.wreck) this.ellipse(s - rr * 0.3, t - rr * 0.3 * this.aspect, rr * 0.35, rr * 0.35 * this.aspect, '#fff', 'opacity="0.55"', 8); },
+          light: (c, m = mat) => lit(c, f.n, m, ctx),
+          glow: () => (ctx.wreck ? '#2a2522' : ctx.glow),
+        };
+        for (const dc of pt.decals) if (dc.match(fr.n, f, fi)) dc.draw(api, f, fi);
+        const big = (fr.u1 - fr.u0) > 1.5 && (fr.v1 - fr.v0) > 1.5;
+        if (pt.weather > 0 && big && !holed) weather(api, pt.id + ':' + fi, pt.weather, fr, mat);
+        if (pt.paint && ctx.dmg && big && !pt.noDamage) damage(api, pt.id + ':' + fi, ctx.dmg);
+        if (inner) {
+          const cid = `${pre}c${++SEQ}`;
+          defs += `<clipPath id="${cid}"><path d="${d}"/></clipPath>`;
+          body += `<g clip-path="url(#${cid})">${inner}</g>` + (holed ? '' : `<path d="${d}" fill="none" ${stroke}/>`);
+        }
+      }
+      // horizontal rib rings on vertical round parts (collars, drums): only the half facing the viewer
+      if (pt.rings && pt.ring) {
+        const [rcx, rcy, rr] = pt.ring, o0 = xf([0, 0, 0]);
+        for (const rg of pt.rings) {
+          const N = 48, vis = [], pts = [];
+          for (let i = 0; i < N; i++) { const a = i / N * Math.PI * 2; const nn = V.sub(xf([Math.cos(a), Math.sin(a), 0]), o0); let inArc = true; if (rg.a0 !== undefined) { const d = ((a - rg.a0) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2); inArc = d <= ((rg.a1 - rg.a0) + Math.PI * 2) % (Math.PI * 2); } vis.push(V.dot(nn, VIEW) > 0.02 && inArc); pts.push(P(xf([rcx + Math.cos(a) * rr * (rg.k || 1), rcy + Math.sin(a) * rr * (rg.k || 1), rg.z]))); }
+          let st = vis.findIndex((v, i) => v && !vis[(i - 1 + N) % N]); if (st < 0) continue;
+          const arc = []; for (let k = 0; k < N; k++) { const i = (st + k) % N; if (!vis[i]) break; arc.push(pts[i]); }
+          const d = 'M' + arc.map(q => fmt(q[0]) + ' ' + fmt(q[1])).join('L');
+          const col = rg.glow ? (ctx.wreck ? '#2a2522' : ctx.glow) : (rg.color || '#0b0e13');
+          body += `<path d="${d}" fill="none" stroke="${col}" stroke-width="${fmt((rg.w || 0.5) * S)}" stroke-linecap="round" ${rg.glow ? '' : 'opacity="0.7"'}/>`;
+          if (!rg.glow && !rg.flat) body += `<path d="${d}" fill="none" stroke="#fff" stroke-width="${fmt(0.22 * S)}" opacity="0.25" transform="translate(0 ${fmt(0.45 * S)})"/>`;
+        }
+      }
+      if (pt.post) body += pt.post(P, ctx);
+      if (pt.smooth && sil.length) {
+        if (pt.sheen) body += pt.sheen(P, ctx);
+        body += `<path d="${pathOf(hull2(sil))}" fill="none" stroke="${OUT}" stroke-width="${fmt(sw)}" stroke-linejoin="round"/>`;
+      }
+      out.push({ id: pt.id, animated: !!pt.animated, svg: (defs ? `<defs>${defs}</defs>` : '') + body });
+    }
+    return out;
+  }
+
+  // ------------------------------------------------------------ registry + layer builders
+  const chassis = {};   // size -> { dims, build(ctx) -> { parts, pivot:[x,y,z], firePts, speed } }
+  const weapons = {};   // type -> { name, build(size, ctx) -> { parts, muzzles:[[x,y,z]], tH, R } }
+  const SH = [-0.35 / 1, -0.6 / 1];   // ground offset per unit height for shadows (away from the light)
+
+  function ctxFor(o) {
+    return { S: o.S || 3, sw: o.sw || 0.9, team: o.team, paint: unitPaint(o.team), glow: mix(unitPaint(o.team), '#ffffff', 0.5),
+      dmg: o.dmg || 0, wreck: o.dmg === 3, frame: o.frame || 0, prefix: o.prefix || 'vu', ox: o.ox || 0, oy: o.oy || 0 };
+  }
+  // world-placed hull parts for a direction
+  function hullParts(o) {
+    const ctx = ctxFor(o), c = chassis[o.size].build(ctx), a = dirAngle(o.dir || 0);
+    return { ctx, parts: c.parts.map(p => place(p, q => rotZ(q, a))), pivot: rotZ(c.pivot, a), firePts: c.firePts.map(p => rotZ(p, a)), info: c };
+  }
+  function turretParts(o) {
+    const ctx = ctxFor(o), w = weapons[o.type].build(o.size, ctx), a = dirAngle(o.dir || 0) + (o.extraAngle || 0);
+    const fn = q => rotZ(q, a);
+    return { ctx, parts: w.parts.map(p => place(p, fn)), muzzles: w.muzzles.map(fn), tH: w.tH, R: w.R };
+  }
+  function renderHull(o) { const h = hullParts(o); return renderParts(depthSort(h.parts), h.ctx); }
+  function renderTurret(o) {
+    const t = turretParts(o);
+    // soft contact shadow of the turret on the deck (part of the turret layer, so it bakes with it)
+    const S = t.ctx.S, R = t.R, sx = SH[0] * t.tH * 0.6, sy = SH[1] * t.tH * 0.6;
+    const c = proj([sx, sy, 0]);
+    const sh = `<ellipse cx="${fmt(c[0] * S + t.ctx.ox)}" cy="${fmt(c[1] * S + t.ctx.oy)}" rx="${fmt(R * 1.2 * S)}" ry="${fmt(R * 0.6 * S)}" fill="#000" opacity="0.32" filter="url(#${t.ctx.prefix}soft)"/>`;
+    return [{ id: 'turretShadow', svg: sh }].concat(renderParts(depthSort(t.parts), t.ctx));
+  }
+  function groundShadow(o) {
+    const d = chassis[o.size].dims, S = o.S || 3, a = dirAngle(o.dir || 0), h = d.H * 0.7;
+    const pts = [[-d.L * 0.53, -d.W * 0.53], [d.L * 0.53, -d.W * 0.53], [d.L * 0.53, d.W * 0.53], [-d.L * 0.53, d.W * 0.53]].map(p => rotZ([p[0], p[1], 0], a));
+    const all = pts.concat(pts.map(p => [p[0] + SH[0] * h, p[1] + SH[1] * h, 0])).map(p => { const q = proj(p); return [q[0] * S + (o.ox || 0), q[1] * S + (o.oy || 0)]; });
+    return `<path d="${pathOf(hull2(all))}" fill="#000" opacity="${o.dmg === 3 ? 0.42 : 0.32}" filter="url(#${o.prefix || 'vu'}blur)"/>`;
+  }
+  const filterDefs = pre => `<filter id="${pre}blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter><filter id="${pre}soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2"/></filter>`;
+
+  // standalone sprite SVG for baking: layer 'hull' | 'turret' | 'shadow'; origin = tank centre (hull/shadow) or turret pivot (turret)
+  function sprite(o) {
+    const S = o.S || 3, pre = (o.prefix || 'sp') + (++SEQ) + '-';
+    const base = Object.assign({}, o, { S, prefix: pre, ox: 0, oy: 0 });
+    let body = '';
+    if (o.layer === 'shadow') body = groundShadow(base);
+    else if (o.layer === 'turret') body = renderTurret(base).map(p => p.svg).join('');
+    else body = renderHull(base).map(p => p.svg).join('');
+    const m = /(-?\d+(?:\.\d+)?)/g; let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    // bounds from geometry
+    const parts = o.layer === 'turret' ? turretParts(base).parts : hullParts(base).parts;
+    for (const p of parts) for (const f of p.faces) for (const q of f.pts) { const s = proj(q); x0 = Math.min(x0, s[0] * S); x1 = Math.max(x1, s[0] * S); y0 = Math.min(y0, s[1] * S); y1 = Math.max(y1, s[1] * S); }
+    const pad = o.layer === 'shadow' ? 30 : 6; x0 -= pad; y0 -= pad; x1 += pad; y1 += pad;
+    return { svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${fmt(x0)} ${fmt(y0)} ${fmt(x1 - x0)} ${fmt(y1 - y0)}" width="${Math.ceil(x1 - x0)}" height="${Math.ceil(y1 - y0)}"><defs>${filterDefs(pre)}</defs>${body}</svg>`, anchor: [-x0, -y0] };
+  }
+  function pivotScreen(size, dir, S = 3) { const c = chassis[size].build(ctxFor({ team: '#33d17a' })); const p = proj(rotZ(c.pivot, dirAngle(dir))); return [p[0] * S, p[1] * S]; }
+
+  // ------------------------------------------------------------ live instance (viewer / game preview)
+  let counter = 0;
+  function create(el, opts = {}) {
+    const o = Object.assign({ size: 'light', type: 'panzer', team: '#33d17a', hp: 100, hull: 4, turret: 4, S: 3, grid: true, onEvent: null }, opts);
+    const pre = 'vu' + (++counter) + '-';
+    const ns = 'http://www.w3.org/2000/svg';
+    const st = { frame: 0, dist: 0, driving: false, recoil: 0, lift: 0, liftT: 0, aimT: o.turret, turnAcc: 0, autoTurn: false, wreckT: 0, exploding: 0, flashes: [], parts: [], embers: [], alive: true };
+    const emit = (e, d) => o.onEvent && o.onEvent(e, d);
+    const dmgOf = hp => (hp <= 0 ? 3 : hp <= 30 ? 2 : hp <= 60 ? 1 : 0);
+    // fixed viewBox sized for the heavy chassis so sizes keep their true relative scale
+    const vb = (() => {   // fits the heavy chassis + longest turret in every direction, so sizes keep their true relative scale
+      let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+      const big = Object.keys(weapons).reduce((m, t) => m || t, null);
+      for (let d = 0; d < DIRS; d += 2) {
+        const pv = pivotScreen('heavy', d, o.S);
+        const hp = hullParts({ size: 'heavy', team: o.team, dir: d }).parts, tp = turretParts({ size: 'heavy', type: big, team: o.team, dir: d }).parts;
+        for (const [ps, off] of [[hp, [0, 0]], [tp, pv]]) for (const p of ps) for (const f of p.faces) for (const q of f.pts) { const r = proj(q); const x = r[0] * o.S + off[0], y = r[1] * o.S + off[1]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      }
+      const w = x1 - x0, h = y1 - y0;
+      return [x0 - w * 0.06, y0 - h * 0.22, w * 1.12, h * 1.3];
+    })();
+    el.innerHTML = `<svg xmlns="${ns}" viewBox="${vb.map(fmt).join(' ')}" class="vu-svg">
+      <defs>${filterDefs(pre)}
+        <radialGradient id="${pre}smoke"><stop offset="0" stop-color="#9aa2aa" stop-opacity=".75"/><stop offset=".6" stop-color="#7d858d" stop-opacity=".35"/><stop offset="1" stop-color="#6b7179" stop-opacity="0"/></radialGradient>
+        <radialGradient id="${pre}bsmoke"><stop offset="0" stop-color="#3a3532" stop-opacity=".95"/><stop offset=".55" stop-color="#2e2a27" stop-opacity=".6"/><stop offset="1" stop-color="#2a2623" stop-opacity="0"/></radialGradient>
+        <radialGradient id="${pre}fire"><stop offset="0" stop-color="#fff6c8"/><stop offset=".35" stop-color="#ffcc4d"/><stop offset=".7" stop-color="#ff7a1a" stop-opacity=".85"/><stop offset="1" stop-color="#d23a0a" stop-opacity="0"/></radialGradient>
+        <radialGradient id="${pre}flash"><stop offset="0" stop-color="#ffffff"/><stop offset=".3" stop-color="#fff1a8"/><stop offset=".7" stop-color="#ffb02e" stop-opacity=".7"/><stop offset="1" stop-color="#ff7a1a" stop-opacity="0"/></radialGradient>
+      </defs>
+      <g class="vu-grid"></g><g class="vu-shadow"></g><g class="vu-body"><g class="vu-hull"></g><g class="vu-turret"><g class="vu-tin"></g></g></g><g class="vu-fx" style="mix-blend-mode:normal"></g><g class="vu-fx2" style="mix-blend-mode:screen"></g>
+    </svg>`;
+    const svg = el.querySelector('svg'), gGrid = svg.querySelector('.vu-grid'), gShadow = svg.querySelector('.vu-shadow'), gBody = svg.querySelector('.vu-body'),
+      gHull = svg.querySelector('.vu-hull'), gTur = svg.querySelector('.vu-turret'), gTin = svg.querySelector('.vu-tin'), gFx = svg.querySelector('.vu-fx'), gFx2 = svg.querySelector('.vu-fx2');
+    const cache = new Map();
+    const key = (...a) => a.join('|');
+    let trackEls = [];
+    function drawGrid() {
+      if (!o.grid) { gGrid.innerHTML = ''; return; }
+      const T = 24 * o.S, N = 12; let s = '';
+      for (let i = -N; i <= N; i++) { const a = proj([i * T / o.S, -N * T / o.S, 0]), b = proj([i * T / o.S, N * T / o.S, 0]), c = proj([-N * T / o.S, i * T / o.S, 0]), d = proj([N * T / o.S, i * T / o.S, 0]);
+        s += `<path d="M${fmt(a[0] * o.S)} ${fmt(a[1] * o.S)}L${fmt(b[0] * o.S)} ${fmt(b[1] * o.S)}M${fmt(c[0] * o.S)} ${fmt(c[1] * o.S)}L${fmt(d[0] * o.S)} ${fmt(d[1] * o.S)}"/>`; }
+      gGrid.innerHTML = `<g class="vu-gridin" stroke="#3a4558" stroke-width="1" opacity=".55">${s}</g>`;
+    }
+    function hullKey(frame) { return key('h', o.size, o.team, dmgOf(o.hp), o.hull, frame); }
+    function drawHull() {
+      const dmg = dmgOf(o.hp);
+      const k = hullKey(st.frame);
+      let list = cache.get(k);
+      if (!list) { list = renderHull({ size: o.size, team: o.team, dir: o.hull, dmg, frame: st.frame, S: o.S, prefix: pre + 'h' }); cache.set(k, list); }
+      gHull.innerHTML = list.map(p => `<g data-p="${p.id}">${p.svg}</g>`).join('');
+      trackEls = list.map((p, i) => (p.animated ? [i, p.id] : null)).filter(Boolean).map(([i, id]) => gHull.children[i]);
+      gShadow.innerHTML = groundShadow({ size: o.size, dir: o.hull, S: o.S, prefix: pre, dmg });
+      placeTurret();
+    }
+    function updateTracks() {
+      const dmg = dmgOf(o.hp), k = hullKey(st.frame);
+      let list = cache.get(k);
+      if (!list) { list = renderHull({ size: o.size, team: o.team, dir: o.hull, dmg, frame: st.frame, S: o.S, prefix: pre + 'h' }); cache.set(k, list); }
+      const anim = list.filter(p => p.animated);
+      trackEls.forEach((g, i) => { if (anim[i]) g.innerHTML = anim[i].svg; });
+    }
+    let pivot = [0, 0];
+    function wreckExtra() { return dmgOf(o.hp) === 3 ? 0.42 : 0; }
+    function drawTurret() {
+      const dmg = dmgOf(o.hp), k = key('t', o.size, o.type, o.team, dmg, o.turret);
+      let list = cache.get(k);
+      if (!list) { list = renderTurret({ size: o.size, type: o.type, team: o.team, dir: o.turret, dmg, S: o.S, prefix: pre + 't', extraAngle: wreckExtra() }); cache.set(k, list); }
+      gTin.innerHTML = list.map(p => p.svg).join('');
+    }
+    function placeTurret() { pivot = pivotScreen(o.size, o.hull, o.S); if (dmgOf(o.hp) === 3) { pivot = [pivot[0] - 3, pivot[1] + 2]; } applyTransforms(); }
+    function applyTransforms() {
+      const a = dirAngle(o.turret), back = proj([-Math.cos(a), -Math.sin(a), 0]);
+      const rk = st.recoil;   // 0..1 envelope
+      const tr = [back[0] * 1.5 * o.S * rk, back[1] * 1.5 * o.S * rk], hr = [back[0] * 0.55 * o.S * rk, back[1] * 0.55 * o.S * rk];
+      gBody.setAttribute('transform', `translate(${fmt(hr[0])} ${fmt(hr[1])})`);
+      gTur.setAttribute('transform', `translate(${fmt(pivot[0] + tr[0] - hr[0])} ${fmt(pivot[1] + tr[1] - hr[1] - st.lift * o.S)})`);
+    }
+    function redraw() { drawHull(); drawTurret(); }
+
+    // ---- effects
+    const rnd = Math.random;
+    function worldToScreen(p) { const q = proj(p); return [q[0] * o.S, q[1] * o.S]; }
+    function spawn(kind, x, y, extra = {}) { st.parts.push(Object.assign({ kind, x, y, vx: 0, vy: 0, t: 0, life: 1, r: 4, r1: 12 }, extra)); }
+    const fpCache = new Map();
+    function firePoints() { const k = o.size + '|' + o.hull; if (!fpCache.has(k)) { const h = hullParts({ size: o.size, team: o.team, dir: o.hull }); fpCache.set(k, h.firePts.map(worldToScreen)); } return fpCache.get(k); }
+    function muzzlePoints() {
+      const t = turretParts({ size: o.size, type: o.type, team: o.team, dir: o.turret, extraAngle: wreckExtra() });
+      return t.muzzles.map(m => { const s = worldToScreen(m); return [s[0] + pivot[0], s[1] + pivot[1]]; });
+    }
+    function fire() {
+      if (dmgOf(o.hp) === 3 || st.exploding) return false;
+      const ms = muzzlePoints(), a = dirAngle(o.turret), W = weapons[o.type], e = W.elev ? W.elev(o.size) : 0;
+      // flash and smoke leave along the barrel, including its elevation (raised artillery barrels)
+      const fwd = proj([Math.cos(a) * Math.cos(e), Math.sin(a) * Math.cos(e), Math.sin(e)]);
+      ms.forEach((m, i) => setTimeout(() => {
+        st.flashes.push({ x: m[0], y: m[1], t: 0, fwd });
+        for (let k = 0; k < 4; k++) spawn('msmoke', m[0], m[1], { vx: fwd[0] * (20 + rnd() * 25) + (rnd() - 0.5) * 10, vy: fwd[1] * (20 + rnd() * 25) - 8 - rnd() * 8, life: 0.9 + rnd() * 0.6, r: 3, r1: 12 + rnd() * 6 });
+        if (i === 0) st.recoilT = 0;
+      }, i * 70));
+      emit('fire', { barrels: ms.length });
+      return true;
+    }
+    function explode() {
+      const c = worldToScreen([0, 0, chassis[o.size].dims.H * 0.6]);
+      st.exploding = 1.2;
+      const K = chassis[o.size].dims.L / 64;
+      for (let i = 0; i < 11; i++) spawn('ball', c[0] + (rnd() - 0.5) * 70 * K, c[1] + (rnd() - 0.5) * 45 * K, { life: 0.55 + rnd() * 0.55, r: 10, r1: (55 + rnd() * 55) * K, delay: i * 0.045 });
+      for (let i = 0; i < 40; i++) { const a = rnd() * 6.28, v = 120 + rnd() * 220; spawn('debris', c[0], c[1], { vx: Math.cos(a) * v, vy: Math.sin(a) * v * 0.6 - 120, life: 0.6 + rnd() * 0.7, r: 1.4 + rnd() * 1.6 }); }
+      for (let i = 0; i < 14; i++) spawn('bsmoke', c[0] + (rnd() - 0.5) * 60 * K, c[1] - 10, { vy: -35 - rnd() * 35, vx: (rnd() - 0.5) * 25, life: 2.2 + rnd() * 1.8, r: 14, r1: (60 + rnd() * 40) * K, delay: 0.15 + rnd() * 0.3 });
+      emit('destroyed');
+    }
+
+    // ---- loop
+    let last = 0, raf = 0, emitAcc = 0, flameT = 0;
+    function loop(ts) {
+      if (!st.alive) return;
+      const dt = Math.min(0.05, last ? (ts - last) / 1000 : 0.016); last = ts;
+      const dmg = dmgOf(o.hp);
+      // driving: distance-driven 3-frame tracks + scrolling ground
+      if (st.driving && dmg < 3) {
+        const sp = (chassis[o.size].speed || 1) * (dmg === 2 ? 0.65 : 1) * 46;   // world units / s
+        st.dist += sp * dt;
+        const fr = Math.floor(st.dist / 2.2) % 3;
+        if (fr !== st.frame) { st.frame = fr; updateTracks(); }
+        const a = dirAngle(o.hull), T = 24, gx = ((-Math.cos(a) * st.dist) % T + T) % T, gy = ((-Math.sin(a) * st.dist) % T + T) % T, g = proj([gx, gy, 0]);
+        const gi = gGrid.firstChild; if (gi) gi.setAttribute('transform', `translate(${fmt(g[0] * o.S)} ${fmt(g[1] * o.S)})`);
+        if (dmg < 3 && rnd() < dt * 6) { const b = worldToScreen(rotZ([-chassis[o.size].dims.L * 0.5, 0, 1], dirAngle(o.hull))); spawn('dust', b[0] + (rnd() - 0.5) * 20, b[1], { vx: (rnd() - 0.5) * 10, vy: -6, life: 1.2, r: 4, r1: 16 }); }
+      }
+      // auto hull turn
+      if (st.autoTurn && dmg < 3) { st.turnAcc += dt; if (st.turnAcc > 0.12) { st.turnAcc = 0; o.hull = (o.hull + 1) % DIRS; if (st.follow) o.turret = o.hull, st.aimT = o.hull; drawHull(); if (st.follow) drawTurret(); } }
+      // turret slews toward its aim target (one direction step at a time)
+      if (o.turret !== st.aimT && dmg < 3) {
+        st.slew = (st.slew || 0) + dt;
+        if (st.slew > 0.035) { st.slew = 0; const d = ((st.aimT - o.turret + DIRS * 1.5) % DIRS) - DIRS / 2; o.turret = (o.turret + Math.sign(d) + DIRS) % DIRS; drawTurret(); applyTransforms(); }
+      }
+      // recoil envelope (~0.45 s)
+      if (st.recoilT !== undefined) { st.recoilT += dt; const t = st.recoilT; st.recoil = t < 0.06 ? t / 0.06 : Math.max(0, 1 - (t - 0.06) / 0.39); if (t > 0.45) { st.recoil = 0; st.recoilT = undefined; } applyTransforms(); }
+      // exploded view lift
+      const lt = st.liftT; if (Math.abs(st.lift - lt) > 0.05) { st.lift += (lt - st.lift) * Math.min(1, dt * 8); applyTransforms(); }
+      // damage emitters
+      emitAcc += dt;
+      const fps = firePoints();
+      if (dmg >= 1 && emitAcc > (dmg === 1 ? 0.22 : dmg === 2 ? 0.07 : 0.12)) {
+        emitAcc = 0;
+        const p = fps[Math.floor(rnd() * (dmg === 1 ? 1 : fps.length))];
+        spawn(dmg === 1 ? 'smoke' : 'bsmoke', p[0] + (rnd() - 0.5) * 6, p[1] - 4, { vx: 6 + (rnd() - 0.5) * 8, vy: -28 - rnd() * 18, life: dmg === 3 ? 2.6 : 2 + rnd(), r: 5, r1: dmg === 1 ? 22 : 32 + rnd() * 14 });
+        if (dmg >= 2 && rnd() < 0.7) spawn('ember', p[0] + (rnd() - 0.5) * 8, p[1] - 6, { vx: (rnd() - 0.5) * 30, vy: -40 - rnd() * 50, life: 0.6 + rnd() * 0.6, r: 0.9 + rnd() * 0.8 });
+      }
+      if (st.exploding) st.exploding = Math.max(0, st.exploding - dt);
+      // wreck timer -> respawn
+      if (dmg === 3 && st.wreckT > 0) { st.wreckT -= dt; if (st.wreckT <= 0) { emit('respawn'); setHp(100); } }
+      // draw fx
+      let s = '', s2 = '';
+      st.parts = st.parts.filter(p => { if (p.delay > 0) { p.delay -= dt; return true; } p.t += dt; return p.t < p.life; });
+      for (const p of st.parts) {
+        if (p.delay > 0) continue;
+        const k = p.t / p.life; p.x += p.vx * dt; p.y += p.vy * dt;
+        if (p.kind === 'debris') { p.vy += 380 * dt; s2 += `<circle cx="${fmt(p.x)}" cy="${fmt(p.y)}" r="${fmt(p.r)}" fill="#ffb347" opacity="${fmt(1 - k)}"/>`; continue; }
+        if (p.kind === 'ember') { p.vx *= 0.98; s2 += `<circle cx="${fmt(p.x)}" cy="${fmt(p.y)}" r="${fmt(p.r)}" fill="#ffb347" opacity="${fmt(1 - k)}"/>`; continue; }
+        const r = p.r + (p.r1 - p.r) * Math.sqrt(k);
+        if (p.kind === 'ball') { s2 += `<circle cx="${fmt(p.x)}" cy="${fmt(p.y)}" r="${fmt(r)}" fill="url(#${pre}fire)" opacity="${fmt(1 - k * k)}"/>`; continue; }
+        const g = p.kind === 'bsmoke' ? 'bsmoke' : 'smoke';
+        const op = p.kind === 'dust' ? 0.35 * (1 - k) : p.kind === 'msmoke' ? 0.7 * (1 - k) : (k < 0.15 ? k / 0.15 : 1 - (k - 0.15) / 0.85) * 0.9;
+        s += `<circle cx="${fmt(p.x)}" cy="${fmt(p.y)}" r="${fmt(r)}" fill="url(#${pre}${g})" opacity="${fmt(op)}"/>`;
+      }
+      // flames on burning hull
+      flameT += dt;
+      if (dmg === 2 || (dmg === 3 && st.exploding > 0)) {
+        fps.forEach((p, i) => {
+          const fl = 0.75 + 0.25 * Math.sin(flameT * 17 + i * 2.1) + 0.12 * Math.sin(flameT * 31 + i), h = (dmg === 2 ? 30 : 44) * fl, w = 10 + 2.5 * Math.sin(flameT * 23 + i);
+          s2 += `<path d="M${fmt(p[0] - w)} ${fmt(p[1])}C${fmt(p[0] - w)} ${fmt(p[1] - h * 0.5)} ${fmt(p[0] - 1)} ${fmt(p[1] - h * 0.7)} ${fmt(p[0] + Math.sin(flameT * 9 + i) * 2)} ${fmt(p[1] - h)}C${fmt(p[0] + 2)} ${fmt(p[1] - h * 0.6)} ${fmt(p[0] + w)} ${fmt(p[1] - h * 0.45)} ${fmt(p[0] + w)} ${fmt(p[1])}Z" fill="url(#${pre}fire)" opacity=".95"/>`;
+          s2 += `<ellipse cx="${fmt(p[0])}" cy="${fmt(p[1] - 2)}" rx="${fmt(w * 1.8)}" ry="${fmt(w)}" fill="#ff8a1a" opacity="${fmt(0.18 + 0.08 * fl)}"/>`;
+        });
+      }
+      // muzzle flashes
+      st.flashes = st.flashes.filter(f => (f.t += dt) < 0.12);
+      for (const f of st.flashes) {
+        const k = 1 - f.t / 0.12, L = 16 * k + 6, cx = f.x + f.fwd[0] * L * 0.6, cy = f.y + f.fwd[1] * L * 0.6;
+        s2 += `<ellipse cx="${fmt(cx)}" cy="${fmt(cy)}" rx="${fmt(L)}" ry="${fmt(L * 0.55)}" transform="rotate(${fmt(Math.atan2(f.fwd[1], f.fwd[0]) * 180 / Math.PI)} ${fmt(cx)} ${fmt(cy)})" fill="url(#${pre}flash)"/>`;
+        s2 += `<circle cx="${fmt(f.x)}" cy="${fmt(f.y)}" r="${fmt(7 * k + 3)}" fill="#fff8d0" opacity="${fmt(k)}"/>`;
+      }
+      if (st.exploding > 0.9) s2 += `<circle cx="0" cy="${fmt(-chassis[o.size].dims.H * o.S * 0.6)}" r="${fmt(260 * (1.2 - st.exploding))}" fill="url(#${pre}flash)" opacity="${fmt((st.exploding - 0.9) * 3)}"/>`;
+      gFx.innerHTML = s; gFx2.innerHTML = s2;
+      raf = requestAnimationFrame(loop);
+    }
+
+    function setHp(v) {
+      const before = dmgOf(o.hp); o.hp = Math.max(0, Math.min(100, v)); const now = dmgOf(o.hp);
+      if (now !== before) {
+        if (now === 3) { explode(); st.wreckT = 12; setTimeout(() => { if (dmgOf(o.hp) === 3) redraw(); }, 160); }
+        else { st.wreckT = 0; redraw(); }
+        emit('state', ['intact', 'damaged', 'burning', 'destroyed'][now]);
+      }
+    }
+
+    drawGrid(); redraw(); raf = requestAnimationFrame(loop);
+    const api = {
+      get size() { return o.size; }, get type() { return o.type; }, get team() { return o.team; }, get hp() { return o.hp; },
+      get hull() { return o.hull; }, get turret() { return o.turret; }, get damageLevel() { return dmgOf(o.hp); }, get wreckTime() { return st.wreckT; },
+      setSize(s) { o.size = s; cache.clear(); redraw(); }, setType(t) { o.type = t; drawTurret(); },
+      setTeam(c) { o.team = c; cache.clear(); redraw(); }, setHealth: setHp,
+      setHull(d) { o.hull = ((d % DIRS) + DIRS) % DIRS; drawHull(); }, rotate(k) { api.setHull(o.hull + k); },
+      setTurret(d) { o.turret = st.aimT = ((d % DIRS) + DIRS) % DIRS; drawTurret(); applyTransforms(); },
+      aimAt(d) { st.aimT = ((d % DIRS) + DIRS) % DIRS; },
+      // aim at a point in svg user space (e.g. pointer) -> nearest of 32 directions
+      aimAtPoint(x, y) { const u = x / o.S / C, v = 2 * y / o.S, wx = (u + v) / 2, wy = (v - u) / 2; api.aimAt(Math.round(Math.atan2(wy, wx) / (Math.PI * 2 / DIRS))); },
+      clientToSvg(cx, cy) { const p = svg.createSVGPoint(); p.x = cx; p.y = cy; const m = svg.getScreenCTM(); if (!m) return [0, 0]; const q = p.matrixTransform(m.inverse()); return [q.x, q.y]; },
+      setDriving(b) { st.driving = !!b; }, setAutoTurn(b, follow) { st.autoTurn = !!b; st.follow = !!follow; },
+      setExploded(b) { st.liftT = b ? chassis[o.size].dims.H * 1.2 : 0; },
+      setGrid(b) { o.grid = !!b; drawGrid(); },
+      fire, respawn() { setHp(100); },
+      toSVGString() { const c = svg.cloneNode(true); c.querySelector('.vu-fx').innerHTML = ''; c.querySelector('.vu-fx2').innerHTML = ''; return new XMLSerializer().serializeToString(c); },
+      destroy() { st.alive = false; cancelAnimationFrame(raf); el.innerHTML = ''; },
+    };
+    return api;
+  }
+
+  global.VectorUnit = {
+    V, proj, rotZ, mix, shade, paintOf, unitPaint, lit, VIEW, OUT, fmt, PAL, DIRS, dirAngle,
+    part, tubeX, box, loft, prismZ, extrudeX, extrudeY, cylZ, cylY, ngon, place, depthSort, renderParts,
+    chassis, weapons, renderHull, renderPartsRaw: (p, c) => renderParts(p, c), renderTurret, groundShadow, sprite, pivotScreen, create,
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/*!
+ * Shared tank chassis (Light / Medium / Heavy) for VectorUnit.
+ * Every weapon module (Panzer, Anti-Air, Artillery, Flamer, Special) sits on the same turret pivot.
+ * Local axes: x forward, y to the right side, z up. Relative sizes from tank-types.md (1.0 = 64 units).
+ */
+(function (VU) {
+  'use strict';
+  const { V, PAL, mix, part, tubeX, box, prismZ, extrudeY, cylZ, cylY, lit, VIEW, OUT, fmt } = VU;
+  const U = 64;
+  const DIMS = {
+    light:  { L: 1.0 * U, W: 0.7 * U,  H: 0.35 * U, wheels: 4, pods: 0, speed: 1.0 },
+    medium: { L: 1.3 * U, W: 0.9 * U,  H: 0.45 * U, wheels: 5, pods: 1, speed: 0.75 },
+    heavy:  { L: 1.6 * U, W: 1.15 * U, H: 0.55 * U, wheels: 6, pods: 1, speed: 0.5 },   // one row of large pods (stacked pods removed)
+  };
+  const OLIVE = '#596142';
+
+  // ---------- shared decals (also used by weapon modules) ----------
+  const D = VU.decals = {};
+  D.boltRow = (match, t, n, s0 = 0.06, s1 = 0.94, r = 0.012) => ({ match, draw(api) { for (let i = 0; i < n; i++) api.bolt(s0 + (s1 - s0) * i / (n - 1), t, r); } });
+  D.seams = (match, cuts, dir = 's') => ({ match, draw(api) { for (const c of cuts) { if (dir === 's') { api.line(c, 0.04, c, 0.96, '#0b0e13', 0.4 * api.S, 'opacity="0.6"'); api.line(c + 0.006, 0.04, c + 0.006, 0.96, '#fff', 0.25 * api.S, 'opacity="0.2"'); } else { api.line(0.03, c, 0.97, c, '#0b0e13', 0.4 * api.S, 'opacity="0.6"'); api.line(0.03, c + 0.01, 0.97, c + 0.01, '#fff', 0.25 * api.S, 'opacity="0.2"'); } } } });
+  D.strip = (match, t0 = 0.42, t1 = 0.52, s0 = 0.12, s1 = 0.88) => ({
+    match, draw(api) {
+      api.poly([[s0, t0 - 0.07], [s1, t0 - 0.07], [s1, t1 + 0.07], [s0, t1 + 0.07]], '#161b21');
+      api.poly([[s0 + 0.008, t0 - 0.05], [s1 - 0.008, t0 - 0.05], [s1 - 0.008, t0 - 0.035], [s0 + 0.008, t0 - 0.035]], '#fff', 'opacity="0.18"');
+      api.poly([[s0 + 0.012, t0], [s1 - 0.012, t0], [s1 - 0.012, t1], [s0 + 0.012, t1]], api.glow());
+      if (!api.wreck) api.poly([[s0 + 0.03, t0 + (t1 - t0) * 0.3], [s1 - 0.03, t0 + (t1 - t0) * 0.3], [s1 - 0.03, t0 + (t1 - t0) * 0.55], [s0 + 0.03, t0 + (t1 - t0) * 0.55]], '#fff', 'opacity="0.75"');
+    },
+  });
+  D.grille = (match, n = 7) => ({
+    match, draw(api) {
+      api.poly([[0.07, 0.08], [0.93, 0.08], [0.93, 0.92], [0.07, 0.92]], '#12161b');
+      for (let i = 0; i < n; i++) { const s = 0.12 + i * (0.76 / (n - 1)); api.poly([[s - 0.025, 0.13], [s + 0.025, 0.13], [s + 0.025, 0.87], [s - 0.025, 0.87]], api.light('#5f6a76', 'metal')); api.line(s - 0.02, 0.15, s - 0.02, 0.85, '#fff', 0.25 * api.S, 'opacity="0.35"'); }
+      for (const [s, t] of [[0.04, 0.04], [0.96, 0.04], [0.04, 0.96], [0.96, 0.96]]) api.bolt(s, t, 0.018);
+    },
+  });
+  D.latch = match => ({ match, draw(api) { api.poly([[0.42, 0.25], [0.58, 0.25], [0.58, 0.5], [0.42, 0.5]], api.light('#8a96a3', 'metal'), `stroke="#0b0e13" stroke-width="${0.25 * api.S}"`); api.bolt(0.15, 0.2, 0.03); api.bolt(0.85, 0.2, 0.03); } });
+  D.bore = (match, r = 0.36) => ({ match, draw(api) { api.ellipse(0.5, 0.5, r, r, '#07080a'); } });
+
+  // Track side: a belt loop running round the face outline, the dark void inside it, and the running gear
+  // (toothed sprocket at the front, idler at the rear, road wheels on the lower belt, return rollers under the top belt).
+  // Animated by api.frame (0..2): links run round the loop and the wheels turn.
+  // inner edge of the track belt loop (normalized face coords), belt thickness bw world units
+  function trackInset(F, wU, wV, bw = 1.9) {
+    const n = F.length, cs = F.reduce((a, p) => a + p[0], 0) / n, ct = F.reduce((a, p) => a + p[1], 0) / n;
+    const W = F.map(p => [p[0] * wU, p[1] * wV]);
+    return W.map((p, k) => {
+      const a = W[(k - 1 + n) % n], b = W[(k + 1) % n];
+      const e1 = [p[0] - a[0], p[1] - a[1]], e2 = [b[0] - p[0], b[1] - p[1]];
+      const l1 = Math.hypot(e1[0], e1[1]) || 1, l2 = Math.hypot(e2[0], e2[1]) || 1;
+      let n1 = [-e1[1] / l1, e1[0] / l1], n2 = [-e2[1] / l2, e2[0] / l2];
+      const toC = [cs * wU - p[0], ct * wV - p[1]];
+      if (n1[0] * toC[0] + n1[1] * toC[1] < 0) n1 = [-n1[0], -n1[1]];
+      if (n2[0] * toC[0] + n2[1] * toC[1] < 0) n2 = [-n2[0], -n2[1]];
+      const m = [n1[0] + n2[0], n1[1] + n2[1]], ml = Math.hypot(m[0], m[1]) || 1, cosh = (m[0] * n1[0] + m[1] * n1[1]) / ml;
+      const d = bw / Math.max(0.35, cosh);
+      return [(p[0] + m[0] / ml * d) / wU, (p[1] + m[1] / ml * d) / wV];
+    });
+  }
+  const TRACK_HOLE = { match: n => Math.abs(n[1]) > 0.9, pts: (F, wU, wV) => trackInset(F, wU, wV) };
+
+  function trackSide(nW) {
+    return {
+      match: n => Math.abs(n[1]) > 0.9,
+      draw(api) {
+        const F = api.facePts, n = F.length;
+        const inset = trackInset(F, api.wU, api.wV);
+        const top = Math.min(...inset.map(p => p[1])), bot = Math.max(...inset.map(p => p[1]));
+        const su = w => w / api.wU, tv = w => w / api.wV;
+        // the loop itself is an opening (see-through); only a soft shadow under the top run
+        api.poly(inset.map(p => [p[0], Math.min(p[1], top + (bot - top) * 0.22)]), '#000', 'opacity="0.35"');
+        // links: cross bars between the outer and inner loop, moving with the frame
+        const ph = api.frame / 3;
+        for (let k = 0; k < n; k++) {
+          const a = F[k], b = F[(k + 1) % n], c = inset[k], d = inset[(k + 1) % n];
+          const len = Math.hypot((b[0] - a[0]) * api.wU, (b[1] - a[1]) * api.wV), cnt = Math.max(1, Math.round(len / 1.5));
+          for (let j = 0; j < cnt; j++) {
+            const t = (j + ph) / cnt; if (t > 1) continue;
+            const o = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], q = [c[0] + (d[0] - c[0]) * t, c[1] + (d[1] - c[1]) * t];
+            api.line(o[0], o[1], q[0], q[1], '#5a646f', 0.42 * api.S, 'opacity="0.85"');
+          }
+        }
+        api.poly(F, 'none', `stroke="#0b0e13" stroke-width="${0.3 * api.S}"`);
+        api.poly(inset, 'none', `stroke="#0b0e13" stroke-width="${0.3 * api.S}"`);
+        // running gear
+        const sgn = api.n[1] > 0 ? 1 : -1, spin = api.frame * (Math.PI * 2 / 6 / 3) * sgn;
+        const s0 = Math.min(...inset.map(p => p[0])), s1 = Math.max(...inset.map(p => p[0]));
+        const ih = (bot - top) * api.wV;                              // inner height (world)
+        const wheel = (s, t, R, teeth) => {
+          const rs = su(R), rt = tv(R);
+          api.ellipse(s + rs * 0.06, t + rt * 0.1, rs * 1.02, rt * 1.02, '#000', 'opacity="0.45"');
+          api.ellipse(s, t, rs, rt, '#22272d', `stroke="#0b0e13" stroke-width="${0.35 * api.S}"`);                 // rubber tyre
+          if (teeth) for (let i = 0; i < teeth; i++) { const a = i / teeth * Math.PI * 2 + spin, c = Math.cos(a), dd = Math.sin(a); api.poly([[s + c * rs * 0.92 - dd * rs * 0.12, t + dd * rt * 0.92 + c * rt * 0.12], [s + c * rs * 1.16, t + dd * rt * 1.16], [s + c * rs * 0.92 + dd * rs * 0.12, t + dd * rt * 0.92 - c * rt * 0.12]], '#3a424c', `stroke="#0b0e13" stroke-width="${0.15 * api.S}"`); }
+          api.ellipse(s, t, rs * 0.8, rt * 0.8, api.light('#5d6874', 'metal'));                                 // steel disc
+          api.ellipse(s, t, rs * 0.8, rt * 0.8, 'none', `stroke="#0b0e13" stroke-width="${0.2 * api.S}" opacity="0.7"`);
+          if (!api.wreck) api.ellipse(s - rs * 0.15, t - rt * 0.15, rs * 0.45, rt * 0.45, '#fff', 'opacity="0.13"');
+          for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + spin; api.ellipse(s + Math.cos(a) * rs * 0.5, t + Math.sin(a) * rt * 0.5, rs * 0.08, rt * 0.08, '#20252b'); }
+          api.ellipse(s, t, rs * 0.26, rt * 0.26, api.light('#8a96a3', 'metal'), `stroke="#0b0e13" stroke-width="${0.25 * api.S}"`);
+        };
+        const front = sgn > 0 ? 0 : 1;                                // face u runs opposite on the two sides
+        const Re = ih * 0.42, endS = su(Re + 0.6);
+        const sF = front ? s1 - endS : s0 + endS, sR = front ? s0 + endS : s1 - endS, tm = (top + bot) / 2;
+        wheel(sF, tm, Re, 12); wheel(sR, tm, Re * 0.92, 0);
+        // road wheels sit on the lower belt with void above and between them
+        const span0 = Math.min(sF, sR) + su(Re * 1.15), span1 = Math.max(sF, sR) - su(Re * 1.15);
+        const Rw = Math.min(ih * 0.36, (span1 - span0) * api.wU / nW / 2 * 0.9);
+        for (let i = 0; i < nW; i++) wheel(span0 + (span1 - span0) * (i + 0.5) / nW, bot - tv(Rw), Rw, 0);
+        // return rollers hang under the top run
+        const Rr = Math.min(1.1, ih * 0.12);
+        for (let i = 0; i < 3; i++) { const sx = span0 + (span1 - span0) * (0.2 + i * 0.3); api.ellipse(sx, top + tv(Rr), su(Rr), tv(Rr), api.light('#6f7b88', 'metal'), `stroke="#0b0e13" stroke-width="${0.2 * api.S}"`); }
+      },
+    };
+  }
+
+  // ---------- 3D running gear ----------
+  // Belt = plates following a loop (in motion order: top run rear→front, down the front, bottom run front→rear, up the rear),
+  // so links drawn at (k + frame/3) · pitch along the loop move the right way. Wheels turn the matching way
+  // (top of every wheel moves forward when driving forward). Everything is real geometry, so the loop is open.
+  const PITCH = 2.0;
+  function inset2(P, d) {   // inward offset of a closed convex 2D polygon (x, z), any winding
+    const n = P.length; let area = 0;
+    for (let k = 0; k < n; k++) { const a = P[k], b = P[(k + 1) % n]; area += a[0] * b[1] - b[0] * a[1]; }
+    const sgn = area < 0 ? 1 : -1;            // clockwise → interior on the right of travel
+    const nrm = (a, b) => { const ex = b[0] - a[0], ez = b[1] - a[1], l = Math.hypot(ex, ez) || 1; return [sgn * ez / l, -sgn * ex / l]; };
+    return P.map((p, k) => {
+      const a = P[(k - 1 + n) % n], b = P[(k + 1) % n], n1 = nrm(a, p), n2 = nrm(p, b);
+      const m = [n1[0] + n2[0], n1[1] + n2[1]], ml = Math.hypot(...m) || 1, cosh = (m[0] * n1[0] + m[1] * n1[1]) / ml;
+      const dd = d / Math.max(0.35, cosh);
+      return [p[0] + m[0] / ml * dd, p[1] + m[1] / ml * dd];
+    });
+  }
+  const seg = (P, d) => 'M' + P.map(q => fmt(q[0]) + ' ' + fmt(q[1])).join('L') + (d ? 'Z' : '');
+  // convex hull (x, z), returned clockwise in (x, z) = top run goes rear → front (+x), i.e. motion order
+  function hullXZ(pts) {
+    const p = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const lo = [], up = [];
+    for (const q of p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 1e-9) lo.pop(); lo.push(q); }
+    for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 1e-9) up.pop(); up.push(q); }
+    const ccw = lo.slice(0, -1).concat(up.slice(0, -1));   // counter-clockwise: bottom run first, left → right
+    return ccw.reverse();                                    // clockwise: top run left (rear) → right (front)
+  }
+  const circ = (cx, cz, r, n, a0 = 0) => { const o = []; for (let i = 0; i < n; i++) { const a = a0 + i / n * Math.PI * 2; o.push([cx + Math.cos(a) * r, cz + Math.sin(a) * r]); } return o; };
+
+  // Running gear: the belt wraps the drive sprocket (front), the idler (rear) and the road wheels.
+  // Layout is derived from the track height so wheels always fill the loop. Every piece is a convex solid
+  // that only touches its neighbours, so the separating-plane sort is exact at every angle.
+  function runningGear(side, c, L, W, th, tw, paintC) {
+    const parts = [], y0 = side < 0 ? -W / 2 : W / 2 - tw, y1 = y0 + tw, yc = (y0 + y1) / 2;
+    const bt = Math.max(1.1, th * 0.11);                     // belt thickness
+    const ih = th - 2 * bt;                                  // inner height of the loop
+    const Rs = ih * 0.44, Ri = ih * 0.4;                     // sprocket / idler radius
+    const xs = L / 2 - bt - Rs, zs = th - bt - Rs;           // sprocket centre (front, top of it sets the top run)
+    const xi = -L / 2 + bt + Ri, zi = th - bt - Ri;          // idler centre (rear)
+    const nW = c.wheels, gap = 0.5;
+    const xa = xi + Ri * 0.55, xb = xs - Rs * 0.55;          // road wheels tuck under the sprocket / idler a little
+    const Rw = Math.min(ih * 0.43, (xb - xa) / nW / 2 - gap / 2);
+    const wheels = [];
+    for (let i = 0; i < nW; i++) wheels.push([xa + Rw + (xb - xa - 2 * Rw) * (nW === 1 ? 0.5 : i / (nW - 1)), bt + Rw]);
+    // belt loop = convex hull of all wheel circles grown by the belt thickness
+    const N = 20, pts = [...circ(xs, zs, Rs + bt, N), ...circ(xi, zi, Ri + bt, N)];
+    for (const [x, z] of wheels) pts.push(...circ(x, z, Rw + bt, N));
+    const loop = hullXZ(pts), inner = inset2(loop, bt);
+    const lens = loop.map((p, i) => { const q = loop[(i + 1) % loop.length]; return Math.hypot(q[0] - p[0], q[1] - p[1]); });
+    let off = 0;
+    loop.forEach((A, i) => {
+      const k = (i + 1) % loop.length, B = loop[k], A2 = inner[i], B2 = inner[k], len = lens[i], start = off;
+      off += len;
+      if (len < 0.05) return;
+      const pt = part(`belt${side}_${i}`, extrudeY([A, B, B2, A2], y0, y1), { color: '#2b3037', thin: true, mat: 'metal' });
+      pt.out2 = [-(B[1] - A[1]) / len, (B[0] - A[0]) / len];
+      pt.post = function (P, ctx) {
+        const xf = this.xf, o = xf([0, 0, 0]), vis = nn => V.dot(V.sub(xf(nn), o), VIEW) > 0.02;
+        const out2 = [-(B[1] - A[1]) / len, (B[0] - A[0]) / len];   // outward normal for a clockwise loop
+        const ph = (ctx.frame || 0) / 3; let sOut = '', sSide = '';
+        const outVis = vis([out2[0], 0, out2[1]]), sides = [vis([0, -1, 0]) ? y0 - 0.02 : null, vis([0, 1, 0]) ? y1 + 0.02 : null].filter(v => v !== null);
+        for (let m = Math.floor(start / PITCH) - 1; m * PITCH < start + len + PITCH; m++) {
+          const u = (m + ph) * PITCH - start; if (u < 0 || u > len) continue;
+          const t = u / len, O = [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t], I = [A2[0] + (B2[0] - A2[0]) * t, A2[1] + (B2[1] - A2[1]) * t];
+          if (outVis) { const a = P(xf([O[0] + out2[0] * 0.04, y0 + 0.3, O[1] + out2[1] * 0.04])), b = P(xf([O[0] + out2[0] * 0.04, y1 - 0.3, O[1] + out2[1] * 0.04])); sOut += `M${fmt(a[0])} ${fmt(a[1])}L${fmt(b[0])} ${fmt(b[1])}`; }
+          for (const yy of sides) { const a = P(xf([O[0], yy, O[1]])), b = P(xf([I[0], yy, I[1]])); sSide += `M${fmt(a[0])} ${fmt(a[1])}L${fmt(b[0])} ${fmt(b[1])}`; }
+        }
+        const S = ctx.S; let r = '';
+        if (sOut) r += `<path d="${sOut}" stroke="#0b0e13" stroke-width="${fmt(0.5 * S)}" opacity="0.85"/>`;
+        if (sSide) r += `<path d="${sSide}" stroke="#596470" stroke-width="${fmt(0.3 * S)}" opacity="0.9"/>`;
+        return r;
+      };
+      parts.push(pt);
+    });
+    // wheels: real cylinders, slightly smaller than their slot so they never touch the belt plates
+    const ww = tw * 0.7;
+    const wheel = (id, cx, cz, R, kind) => {
+      const pt = part(id, cylY(cx, cz, R, yc - ww / 2, yc + ww / 2, 24), { color: kind === 'road' ? '#22262b' : '#4d5762', smooth: true, mat: kind === 'road' ? 'rubber' : 'metal', animated: true });
+      const nb = kind === 'sprocket' ? 10 : 6;
+      pt.post = function (P, ctx) {
+        const xf = this.xf, o = xf([0, 0, 0]); let r = '';
+        const th0 = (ctx.frame || 0) * (Math.PI * 2 / nb) / 3;     // top moves forward (+x) when driving
+        for (const sg of [-1, 1]) {
+          const nW2 = V.norm(V.sub(xf([0, sg, 0]), o)); if (V.dot(nW2, VIEW) <= 0.02) continue;
+          const yy = yc + sg * (ww / 2 + 0.03);
+          const ring = (rho, n = 24) => { const q = []; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; q.push(P(xf([cx + Math.cos(a) * rho, yy, cz + Math.sin(a) * rho]))); } return q; };
+          const at = (rho, a) => P(xf([cx + Math.cos(a) * rho, yy, cz + Math.sin(a) * rho]));
+          const nL = V.norm([nW2[0], nW2[1], nW2[2] + 0.9]);
+          const M = c2 => lit(c2, nL, 'metal', ctx);
+          if (kind === 'sprocket') {
+            const tp = []; for (let i = 0; i < nb; i++) { const a = i / nb * Math.PI * 2 - th0; for (const [k, da] of [[0.82, -0.16], [1.0, -0.08], [1.0, 0.08], [0.82, 0.16]]) tp.push(at(R * k, a + da)); }
+            r += `<path d="${seg(tp, 1)}" fill="${M('#3d464f')}" stroke="${OUT}" stroke-width="${fmt(0.25 * ctx.S)}" stroke-linejoin="round"/>`;
+          }
+          const hubR = kind === 'road' ? 0.72 : 0.7;
+          r += `<path d="${seg(ring(R * hubR), 1)}" fill="${kind === 'road' ? lit(paintC, nL, 'paint', ctx) : M('#6f7b88')}" stroke="${OUT}" stroke-width="${fmt(0.22 * ctx.S)}"/>`;
+          r += `<path d="${seg(ring(R * hubR * 0.7), 1)}" fill="none" stroke="#0b0e13" stroke-width="${fmt(0.14 * ctx.S)}" opacity="0.4"/>`;
+          for (let i = 0; i < 6; i++) { const b0 = at(R * hubR * 0.62, i / 6 * Math.PI * 2 - th0 * nb / 6); r += `<circle cx="${fmt(b0[0])}" cy="${fmt(b0[1])}" r="${fmt(Math.max(0.5, R * 0.07) * ctx.S)}" fill="#1c2026"/>`; }
+          r += `<path d="${seg(ring(R * 0.22, 14), 1)}" fill="${M('#8a96a3')}" stroke="${OUT}" stroke-width="${fmt(0.18 * ctx.S)}"/>`;
+          if (!ctx.wreck) { const h = at(R * 0.45, 2.3); r += `<circle cx="${fmt(h[0])}" cy="${fmt(h[1])}" r="${fmt(R * 0.16 * ctx.S)}" fill="#fff" opacity="0.1"/>`; }
+        }
+        return r;
+      };
+      return pt;
+    };
+    const k = 0.96, wl = [];
+    wl.push(wheel(`sprocket${side}`, xs, zs, Rs * k, 'sprocket'));
+    wl.push(wheel(`idler${side}`, xi, zi, Ri * k, 'idler'));
+    wheels.forEach(([x, z], i) => wl.push(wheel(`road${side}_${i}`, x, z, Rw * k, 'road')));
+    // One compound part per track. A closed belt around wheels cannot be painter-sorted piece by piece
+    // (top run is in front of the wheels, bottom run behind), so it is drawn in a fixed order:
+    // inner belt surfaces → wheels (sorted) → outer belt surfaces and the visible belt side.
+    // For the global sort it is the track's bounding box, which touches the hull only along planes.
+    const xmin = Math.min(...loop.map(q => q[0])), xmax = Math.max(...loop.map(q => q[0]));
+    const proxy = part(`track${side}`, box(xmin, xmax, y0, y1, 0, th), { animated: true });
+    const belts = parts.splice(0);
+    const faceSel = (bp, want) => Object.assign({}, bp, { faces: bp.faces.filter(f => {
+      const ln = f.ln; if (Math.abs(ln[1]) > 0.9) return want === 'outer';
+      const d = ln[0] * bp.out2[0] + ln[2] * bp.out2[1];
+      return want === 'outer' ? d > 0.7 : d < -0.7;
+    }), post: want === 'outer' ? bp.post : null, weather: want === 'outer' ? bp.weather : 0 });
+    proxy.custom = function (ctx) {
+      const xf = this.xf || (q => q);
+      const pl = q => VU.place(q, xf);
+      const inner = belts.map(b => faceSel(pl(b), 'inner'));
+      const outer = belts.map(b => faceSel(pl(b), 'outer'));
+      const wh = VU.depthSort(wl.map(pl));
+      return [inner, wh, outer].map(g => VU.renderPartsRaw(g, ctx).map(r => r.svg).join('')).join('');
+    };
+    return [proxy];
+  }
+
+  function build(size, ctx) {
+    const c = DIMS[size], { L, W, H } = c, T = ctx.paint, parts = [];
+    const tw = W * (size === 'heavy' ? 0.2 : 0.22), th = H * 0.6, hw = W / 2 - tw;
+    const podR0 = H * (size === 'heavy' ? 0.165 : 0.15);
+    const uw = size === 'light' ? W / 2 - 0.5 : W / 2 - 2 * podR0 - 1.0;   // upper hull stays clear of the pods
+    const trackProfile = [[-L / 2, th * 0.4], [-L / 2 + L * 0.09, 0], [L / 2 - L * 0.09, 0], [L / 2, th * 0.42], [L / 2 - L * 0.025, th], [-L / 2 + L * 0.025, th]];
+    for (const side of [-1, 1]) {
+      const y0 = side < 0 ? -W / 2 : W / 2 - tw, y1 = y0 + tw;
+      parts.push(...runningGear(side, c, L, W, th, tw, T));
+      // fender runs from the hull side (|y| = uw) to just past the track, so it never overlaps the upper hull
+      const fy0 = side < 0 ? y0 - 0.6 : uw, fy1 = side > 0 ? y1 + 0.6 : -uw;
+      if (size !== 'light') parts.push(part(`fender${side}`, extrudeY([[-L * 0.48, th], [L * 0.47, th], [L * 0.47, th + H * 0.04], [L * 0.42, th + H * 0.09], [-L * 0.48, th + H * 0.09]], fy0, fy1), {
+        color: T, paint: true, weather: 0.85,
+        decals: [{ match: n => n[0] > 0.3 && n[2] > 0.3, draw(api) { api.poly([[0.32, 0.15], [0.68, 0.15], [0.68, 0.85], [0.32, 0.85]], '#161b21'); api.ellipse(0.5, 0.5, 0.13, 0.3, api.wreck ? '#3a3632' : '#f6f0d6'); } }, D.strip(n => Math.abs(n[1]) > 0.9, 0.32, 0.6, 0.22, 0.66), D.boltRow(n => Math.abs(n[1]) > 0.9, 0.16, 12, 0.04, 0.96, 0.008), D.seams(n => n[2] > 0.9, [0.33, 0.66])],
+      }));
+      const bx0 = size === 'light' ? -L * 0.42 : L * 0.25, bx1 = size === 'light' ? -L * 0.2 : L * 0.42;
+      let by0 = side < 0 ? fy0 + 0.8 : Math.max(fy1 - (fy1 - fy0) * 0.85, uw + 0.3), by1 = side < 0 ? Math.min(fy0 + (fy1 - fy0) * 0.85, -uw - 0.3) : fy1 - 0.8;
+    }
+    parts.push(part('lowerHull', extrudeY([[-L * 0.47, th * 0.3], [L * 0.36, th * 0.3], [L * 0.47, th * 0.72], [L * 0.47, th], [-L * 0.5, th], [-L * 0.5, th * 0.6]], -hw, hw), {
+      color: T, paint: true, weather: 0.7,
+      decals: [{ match: n => n[0] > 0.3 && n[2] > 0.2, draw(api) {
+        for (let j = 0; j < 7; j++) api.bolt(0.08 + j * 0.14, 0.15, 0.012);
+        if (size === 'heavy') {   // Heavy nose: two bolted armour panels either side of a recessed intake grille
+          for (const [a0, a1] of [[0.05, 0.33], [0.67, 0.95]]) {
+            api.poly([[a0, 0.3], [a1, 0.3], [a1, 0.85], [a0, 0.85]], 'none', `stroke="#0b0e13" stroke-width="${0.35 * api.S}" opacity="0.7"`);
+            for (const u of [a0 + 0.03, a1 - 0.03]) for (const v of [0.38, 0.77]) api.bolt(u, v, 0.012);
+          }
+          api.poly([[0.38, 0.35], [0.62, 0.35], [0.62, 0.8], [0.38, 0.8]], '#161b21', `stroke="#0b0e13" stroke-width="${0.3 * api.S}"`);
+          for (let j = 0; j < 5; j++) api.line(0.39, 0.42 + j * 0.08, 0.61, 0.42 + j * 0.08, '#5d6873', 0.45 * api.S);
+        }
+      } }],
+    }));
+    const up = [[-L * 0.5, th], [L * 0.47, th], [L * 0.47, th + H * 0.07], [L * 0.24, H], [-L * 0.42, H], [-L * 0.5, H * 0.86]];   // nose flush with fenders and lower hull
+    parts.push(part('upperHull', extrudeY(up, -uw, uw), {
+      color: T, paint: true, weather: 0.85,
+      decals: [
+        D.seams(n => n[2] > 0.97, [0.3, 0.7], 's'),
+        ...(size === 'light' ? [D.strip(n => Math.abs(n[1]) > 0.9, 0.42, 0.56, 0.12, 0.7)] : size === 'heavy' ? [D.strip(n => Math.abs(n[1]) > 0.9, 0.36, 0.5, 0.1, 0.62), D.strip(n => Math.abs(n[1]) > 0.9, 0.36, 0.5, 0.68, 0.84)] : []),
+        D.boltRow(n => n[2] > 0.97, 0.04, 14, 0.04, 0.96, 0.007), D.boltRow(n => n[2] > 0.97, 0.96, 14, 0.04, 0.96, 0.007),
+        { match: n => n[0] > 0.3 && n[2] > 0.2 && n[2] < 0.97, draw(api) { // glacis
+          for (let k = 0; k < (api.dmg >= 2 ? 1 : 3); k++) { const s0 = 0.33 + k * 0.12; api.poly([[s0, 0.12], [s0 + 0.1, 0.12], [s0 + 0.1, 0.55], [s0, 0.55]], '#22272e', `stroke="#0b0e13" stroke-width="${0.25 * api.S}"`); for (let j = 0; j < 4; j++) api.line(s0 + 0.01, 0.17 + j * 0.1, s0 + 0.09, 0.17 + j * 0.1, '#6d7884', 0.4 * api.S); }
+          api.poly([[0.3, 0.8], [0.7, 0.8], [0.7, 0.87], [0.3, 0.87]], '#161b21'); api.poly([[0.31, 0.815], [0.69, 0.815], [0.69, 0.855], [0.31, 0.855]], api.glow());
+          for (let j = 0; j < 9; j++) api.bolt(0.06 + j * 0.11, 0.95, 0.008);
+          if (size === 'heavy') {   // Heavy front: applique armour plates, panel seams, two sensor lenses
+            for (const [a0, a1] of [[0.04, 0.25], [0.75, 0.96]]) {
+              api.poly([[a0, 0.5], [a1, 0.5], [a1, 0.74], [a0, 0.74]], api.light(mix(T, '#2a3038', 0.18), 'paint'), `stroke="#0b0e13" stroke-width="${0.3 * api.S}"`);
+              api.line(a0 + 0.005, 0.505, a1 - 0.005, 0.505, '#ffffff', 0.25 * api.S, 'opacity="0.3"');
+              for (const u of [a0 + 0.025, a1 - 0.025]) for (const v of [0.54, 0.7]) api.bolt(u, v, 0.009);
+            }
+            for (const c of [0.27, 0.73]) api.line(c, 0.06, c, 0.46, '#0b0e13', 0.35 * api.S, 'opacity="0.55"');
+            for (const c of [0.14, 0.86]) {
+              api.ellipse(c, 0.27, 0.07, 0.13, '#0e1116', `stroke="#3e464f" stroke-width="${0.5 * api.S}"`);
+              api.ellipse(c, 0.27, 0.035, 0.065, api.wreck ? '#2a2622' : api.glow());
+              if (!api.wreck) api.ellipse(c - 0.015, 0.24, 0.012, 0.022, '#ffffff', 'opacity="0.8"');
+            }
+          }
+        } },
+        { match: n => n[0] < -0.9 && Math.abs(n[2]) < 0.3, draw(api) { // rear plate only: tail lights + exhaust soot
+          for (const s of [0.035, 0.905]) { api.poly([[s, 0.3], [s + 0.06, 0.3], [s + 0.06, 0.7], [s, 0.7]], '#161b21'); api.poly([[s + 0.01, 0.35], [s + 0.05, 0.35], [s + 0.05, 0.65], [s + 0.01, 0.65]], api.wreck ? '#2a1612' : '#ff4a3a'); }
+          const rs = H * 0.065 / api.wU, rt = H * 0.065 / api.wV;   // soot around each exhaust (pipes at y = ±0.55 uw, z = 0.73 H)
+          for (const s of [0.225, 0.775]) { api.ellipse(s, 0.32, rs * 2.2, rt * 2.6, '#0a0b0d', 'opacity="0.3"'); api.ellipse(s, 0.5, rs * 1.6, rt * 1.6, '#0a0b0d', 'opacity="0.45"'); }
+        } },
+      ],
+    }));
+    if (size !== 'heavy') parts.push(part('grille', box(-L * 0.42, -L * 0.27, -uw * 0.55, uw * 0.55, H, H + 1.3), { color: PAL.dark, weather: 0.5, decals: [D.grille(n => n[2] > 0.9, size === 'light' ? 7 : 9)] }));
+    else for (const s of [-1, 1]) {   // Heavy engine deck: two round turbine intakes with fan blades and a glowing hub
+      const r = uw * 0.32, cx = -L * 0.34, cy = s * uw * 0.5;
+      parts.push(part(`turbine${s}`, cylZ(cx, cy, r, H, H + 1.6, 28), { color: PAL.dark, smooth: true, weather: 0.4, decals: [{ match: n => n[2] > 0.9, draw(api) {
+        api.ellipse(0.5, 0.5, 0.46, 0.46, '#0e1116');
+        for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2 + 0.3, b = a + 0.42; api.poly([[0.5 + Math.cos(a) * 0.12, 0.5 + Math.sin(a) * 0.12], [0.5 + Math.cos(a) * 0.43, 0.5 + Math.sin(a) * 0.43], [0.5 + Math.cos(b) * 0.43, 0.5 + Math.sin(b) * 0.43]], api.light('#5d6873', 'metal')); }
+        api.ellipse(0.5, 0.5, 0.13, 0.13, '#22272e'); api.ellipse(0.5, 0.5, 0.07, 0.07, api.glow());
+        for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; api.bolt(0.5 + Math.cos(a) * 0.48, 0.5 + Math.sin(a) * 0.48, 0.016); }
+      } }] }));
+    }
+    if (size === 'heavy') {
+      // star emblem on a low plate on the front deck, opposite the hatch: light team tint, worn with metal grunge
+      const STAR = mix(T, '#e9eef3', 0.62);
+      parts.push(part('starPlate', box(L * 0.125, L * 0.228, uw * 0.1, uw * 0.78, H, H + 0.45), { color: T, paint: true, weather: 0.85, thin: true, decals: [{ match: n => n[2] > 0.9, draw(api) {
+        const pts = []; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 0.19 : 0.46; pts.push([0.5 + Math.cos(a) * r, 0.5 + Math.sin(a) * r]); }
+        api.poly(pts, api.light(STAR, 'paint'), `stroke="#0b0e13" stroke-width="${0.3 * api.S}" stroke-opacity="0.7"`);
+        // metal grunge: bare-metal chips at the points, scratches, grime specks (fixed pattern, same on every load)
+        let k = 7; const rnd = () => ((k = (k * 9301 + 49297) % 233280) / 233280);
+        for (let i = 0; i < 10; i += 2) { const [x, y] = pts[i]; api.poly([[x, y], [x + (0.5 - x) * 0.18 + (rnd() - 0.5) * 0.05, y + (0.5 - y) * 0.18], [x + (0.5 - x) * 0.12, y + (0.5 - y) * 0.22 + (rnd() - 0.5) * 0.05]], '#aab2ba', 'opacity="0.85"'); }
+        for (let i = 0; i < 6; i++) { const x = 0.3 + rnd() * 0.4, y = 0.3 + rnd() * 0.4, a = rnd() * Math.PI; api.line(x, y, x + Math.cos(a) * 0.12, y + Math.sin(a) * 0.12, '#3a3530', 0.25 * api.S, 'opacity="0.55"'); }
+        for (let i = 0; i < 14; i++) api.ellipse(0.25 + rnd() * 0.5, 0.25 + rnd() * 0.5, 0.008 + rnd() * 0.012, 0.008 + rnd() * 0.012, i % 3 ? '#2b2620' : '#7b4a2c', 'opacity="0.5"');
+        api.poly(pts.slice(0, 3).concat([[0.5, 0.5]]), '#ffffff', 'opacity="0.12"');
+      } }] }));
+    }
+    parts.push(part('hatchDeck', box(L * 0.145, L * 0.225, -uw * 0.5, -uw * 0.12, H, H + 0.8), { color: T, paint: true, weather: 0.85, thin: true, noDamage: true, decals: [{ match: n => n[2] > 0.9, draw(api) { api.line(0.25, 0.5, 0.75, 0.5, api.light('#8a96a3', 'metal'), 0.6 * api.S); for (const s of [0.08, 0.92]) for (const t of [0.12, 0.88]) api.bolt(s, t, 0.035); } }] }));
+    for (const s of [-1, 1]) {
+      const y = s * uw * 0.78;
+      const ly = s * (W / 2 - tw / 2);
+      parts.push(part(`hook${s}`, box(L * 0.47, L * 0.5, s * hw * 0.6 - 1.2, s * hw * 0.6 + 1.2, th * 0.76, th * 0.94), { color: PAL.dark, thin: true }));
+      parts.push(tubeX(`exhaust${s}`, s * uw * 0.55, H * 0.73, H * 0.065, -L * 0.55, -L * 0.5, { color: '#3a3f45', decals: [D.bore(n => n[0] < -0.9)] }));
+    }
+    if (size === 'light') for (const s of [-1, 1]) if (!(ctx.dmg >= 2 && s > 0)) parts.push(part(`can${s}`, box(-L * 0.55, -L * 0.5, s * uw * 0.24 - 2.6, s * uw * 0.24 + 2.6, th + H * 0.02, th + H * 0.3), { color: OLIVE, paint: true, noDamage: true, weather: 0.7, thin: true, decals: [{ match: n => n[0] < -0.9, draw(api) { api.line(0.15, 0.3, 0.85, 0.7, '#2b2f22', 0.4 * api.S); api.line(0.15, 0.7, 0.85, 0.3, '#2b2f22', 0.4 * api.S); } }] }));
+    const dmg = ctx.dmg || 0;
+    let podTop = 0;
+    for (let row = 0; row < c.pods; row++) {
+      const r = H * (size === 'heavy' ? 0.165 : 0.15);
+      for (const s of [-1, 1]) {
+        const cy = s * (W / 2 - r - 0.5), cz = th + H * 0.11 + r + row * r * 2.05;
+        podTop = Math.max(podTop, cz + r);
+        parts.push(tubeX(`pod${row}${s}`, cy, cz, r, -L * 0.36, L * 0.2, {
+          color: T, paint: true, mat: 'paint', bands: size === 'heavy'
+            ? [   // Heavy power cells: ribbed cooling fins at the rear, two glowing seams between dark joints
+                ...[0, 1, 2, 3, 4].map(k => ({ x: -L * 0.355 + k * 1.9, w: 1.0, color: '#2b3138' })),
+                { x: -L * 0.16, w: 1.4, color: '#161b21' }, { x: -L * 0.16 + 1.4, w: 1.2, color: ctx.wreck ? '#2a2622' : ctx.glow }, { x: -L * 0.16 + 2.6, w: 1.4, color: '#161b21' },
+                { x: L * 0.03, w: 1.4, color: '#161b21' }, { x: L * 0.03 + 1.4, w: 1.2, color: ctx.wreck ? '#2a2622' : ctx.glow }, { x: L * 0.03 + 2.6, w: 1.4, color: '#161b21' }]
+            : [{ x: -L * 0.25, w: 2.4 }, { x: L * 0.06, w: 2.4 }],
+          decals: [{ match: n => n[0] > 0.9, draw(api) { api.ellipse(0.5, 0.5, 0.36, 0.36, api.light('#5f6a76', 'metal'), `stroke="#0b0e13" stroke-width="${0.3 * api.S}"`); for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; api.bolt(0.5 + Math.cos(a) * 0.42, 0.5 + Math.sin(a) * 0.42, 0.03); } api.ellipse(0.5, 0.5, 0.15, 0.15, api.glow()); if (size === 'heavy') { api.ellipse(0.5, 0.5, 0.26, 0.26, 'none', `stroke="#161b21" stroke-width="${0.9 * api.S}"`); api.ellipse(0.5, 0.5, 0.26, 0.26, 'none', `stroke="${api.glow()}" stroke-width="${0.45 * api.S}"`); } } }],
+        }));
+        if (size === 'heavy') parts.push(tubeX(`podNose${row}${s}`, cy, cz, r * 0.7, L * 0.2, L * 0.235, {   // armoured nose cap with a glowing core
+          color: '#3e464f', weather: 0.5, bands: [{ x: L * 0.2, w: 0.9, color: '#22272e' }],
+          decals: [{ match: n => n[0] > 0.9, draw(api) { api.ellipse(0.5, 0.5, 0.4, 0.4, '#161b21'); for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; api.bolt(0.5 + Math.cos(a) * 0.4, 0.5 + Math.sin(a) * 0.4, 0.035); } api.ellipse(0.5, 0.5, 0.2, 0.2, api.wreck ? '#2a2622' : api.glow()); if (!api.wreck) api.ellipse(0.45, 0.45, 0.06, 0.06, '#ffffff', 'opacity="0.75"'); } }],
+        }));
+      }
+    }
+    // turret ring collar: the turret sits above every hull part it can sweep over, so it can turn freely
+    const pivotZ = Math.max(H + 1.6, podTop + 1.4), pvx = -L * 0.06, Rc = Math.min(L * 0.19, uw - 0.3);
+    if (size === 'heavy') {
+      // Heavy: the turret sits on a raised armoured deck block that is part of the hull (team paint, bevelled, glowing strips, vents)
+      const Rs = uw * 0.72, oct = [];
+      for (let k = 0; k < 8; k++) { const a = (k + 0.5) / 8 * Math.PI * 2; oct.push([pvx + Math.cos(a) * Rs * 1.1, Math.sin(a) * Rs]); }
+      parts.push(part('turretDeck', prismZ(oct, H, pivotZ, 0.9, [0, 0]), { color: T, paint: true, weather: 0.85, decals: [
+        D.strip(n => Math.abs(n[2]) < 0.9 && Math.abs(n[0]) < 0.75, 0.38, 0.6, 0.15, 0.85),
+        { match: n => Math.abs(n[2]) < 0.9 && Math.abs(n[0]) >= 0.75, draw(api) { for (let k = 0; k < 4; k++) { const s0 = 0.22 + k * 0.15; api.poly([[s0, 0.3], [s0 + 0.08, 0.3], [s0 + 0.08, 0.72], [s0, 0.72]], '#161b21'); } } },
+        D.boltRow(n => n[2] > 0.9, 0.08, 10, 0.1, 0.9, 0.01),
+      ] }));
+    } else parts.push(part('turretCollar', cylZ(pvx, 0, Rc, H, pivotZ, 32), { color: PAL.plate, smooth: true, weather: 0, decals: [{ match: n => n[2] > 0.9, draw(api) { for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; api.bolt(0.5 + Math.cos(a) * 0.46, 0.5 + Math.sin(a) * 0.46, 0.012); } } }] }));
+    return {
+      parts,
+      pivot: [pvx, 0, pivotZ],
+      firePts: [[-L * 0.345, 0, H + 1.3], [L * 0.12, -uw * 0.3, H], [-L * 0.38, uw * 0.55, H]],
+    };
+  }
+
+  for (const size of Object.keys(DIMS)) VU.chassis[size] = { dims: DIMS[size], speed: DIMS[size].speed, build: ctx => build(size, ctx) };
+})(typeof window !== 'undefined' ? window.VectorUnit : globalThis.VectorUnit);
+
+</script>
+<script>
+/*!
+ * Panzer weapon module (main battle tank) for VectorUnit.
+ * Light: 1 short barrel · Medium: 2 barrels side by side · Heavy: 3 long barrels.
+ * Turret-local axes, pivot at the origin (z = 0 is the hull deck).
+ */
+(function (VU) {
+  'use strict';
+  const { PAL, part, tubeX, box, prismZ, extrudeY, cylZ, cylY, decals: D } = VU;
+  const CFG = {
+    light:  { barrels: 1, barrelLen: 0.52, barrelR: 0.028, turretR: 0.24 },
+    medium: { barrels: 2, barrelLen: 0.54, barrelR: 0.029, turretR: 0.25 },
+    heavy:  { barrels: 3, barrelLen: 0.62, barrelR: 0.031, turretR: 0.26 },
+  };
+  const CANVAS = '#7d7458', GLASS = '#1d3a44';
+
+  function build(size, ctx) {
+    const c = CFG[size], dims = VU.chassis[size].dims, L = dims.L, H = dims.H, T = ctx.paint;
+    const R = L * c.turretR, tH = H * (size === 'heavy' ? 0.5 : 0.55);
+    const parts = [], muzzles = [];
+    const mW = R * (0.36 + 0.16 * (c.barrels - 1)), mz0 = tH * 0.15, mz1 = tH * 0.88;
+    const fw = Math.max(0.34, mW / R + 0.06);   // turret front is wide enough to carry the gun mantlet (no overhang)
+    const plan = [[1.0 * R, fw * R], [0.42 * R, 0.78 * R], [-0.72 * R, 0.78 * R], [-1.0 * R, 0.42 * R], [-1.0 * R, -0.42 * R], [-0.72 * R, -0.78 * R], [0.42 * R, -0.78 * R], [1.0 * R, -fw * R]];
+    parts.push(part('ring', cylZ(0, 0, R * 0.74, -1.5, 0, 28), { color: PAL.dark, smooth: true }));
+    parts.push(part('turret', prismZ(plan, 0, tH, 0.8, [-R * 0.06, 0]), {
+      color: T, paint: true, weather: 0.85,
+      decals: [
+        D.strip(n => Math.abs(n[1]) > 0.6 && Math.abs(n[2]) < 0.8, 0.44, 0.58, 0.1, 0.9),
+        D.boltRow(n => Math.abs(n[2]) < 0.8, 0.9, 8, 0.06, 0.94, 0.018),
+        { match: n => n[2] > 0.97, draw(api) { api.line(0.12, 0.62, 0.88, 0.62, '#0b0e13', 0.4 * api.S, 'opacity="0.55"'); api.line(0.12, 0.635, 0.88, 0.635, '#fff', 0.25 * api.S, 'opacity="0.2"'); } },
+      ],
+    }));
+    parts.push(part('hatch', cylZ(-R * 0.35, R * 0.28, R * 0.25, tH, tH + 1.6, 24), { color: T, paint: true, smooth: true, noDamage: true, decals: [{ match: n => n[2] > 0.9, draw(api) { api.ellipse(0.5, 0.5, 0.42, 0.42, '#000', 'opacity="0.15"'); api.line(0.25, 0.5, 0.75, 0.5, api.light('#8a96a3', 'metal'), 0.6 * api.S); api.bolt(0.5, 0.12, 0.05); } }] }));
+    parts.push(part('mgMount', box(-R * 0.18, -R * 0.02, R * 0.38, R * 0.5, tH + 1.6, tH + 3.4), { color: PAL.dark, thin: true }));
+    parts.push(tubeX('mgBarrel', R * 0.44, tH + 2.8, 0.45, -R * 0.02, R * 0.45, { color: '#2c3239' }));
+    for (const y of [-0.3, 0, 0.3]) parts.push(part(`vision${y}`, box(R * 0.42, R * 0.56, y * R - 1.6, y * R + 1.6, tH, tH + 1.2), { color: PAL.dark, thin: true, decals: [{ match: n => n[0] > 0.9, draw(api) { api.poly([[0.1, 0.2], [0.9, 0.2], [0.9, 0.85], [0.1, 0.85]], api.wreck ? '#141210' : GLASS); if (!api.wreck) api.poly([[0.15, 0.25], [0.5, 0.25], [0.3, 0.8], [0.15, 0.8]], '#9fd9e6', 'opacity="0.5"'); } }] }));
+    // Light: no roof sensor box and no rear stowage basket / tarp (too small on screen for that much detail)
+    if (size !== 'light') parts.push(part('sensor', box(-R * 0.62, -R * 0.24, -R * 0.58, -R * 0.26, tH, tH + 3.2), { color: PAL.plate, weather: 0.5, decals: [{ match: n => n[0] > 0.9, draw(api) { api.poly([[0.12, 0.18], [0.88, 0.18], [0.88, 0.7], [0.12, 0.7]], '#12161b'); api.poly([[0.18, 0.25], [0.82, 0.25], [0.82, 0.62], [0.18, 0.62]], api.glow()); } }] }));
+    for (const s of [-1, 1]) {
+      const y0 = s > 0 ? R * 0.8 : -R * 0.8 - 3.4, y1 = y0 + 3.4;
+      parts.push(part(`smokeBlock${s}`, box(R * 0.1, R * 0.36, y0, y1, tH * 0.42, tH * 0.8), { color: PAL.plate, weather: 0.5, thin: true }));
+      for (let k = 0; k < 3; k++) parts.push(tubeX(`smoke${s}${k}`, y0 + 0.6 + k * 1.1, tH * 0.68, 0.55, R * 0.36, R * 0.5, { color: '#4b5560', decals: [D.bore(n => n[0] > 0.9, 0.35)] }));
+    }
+    if (size !== 'light') parts.push(part('bustle', box(-R * 1.32, -R * 1.0, -R * 0.6, R * 0.6, tH * 0.15, tH * 0.7), { color: PAL.dark, weather: 0.5, thin: true, decals: [{ match: () => true, draw(api) { for (let i = 1; i < 8; i++) api.line(i / 8, 0.05, i / 8, 0.95, '#7d8996', 0.3 * api.S, 'opacity="0.7"'); for (let i = 1; i < 4; i++) api.line(0.03, i / 4, 0.97, i / 4, '#7d8996', 0.3 * api.S, 'opacity="0.7"'); } }] }));
+    if (size !== 'light' && !(ctx.dmg >= 2)) parts.push(part('tarp', cylY(-R * 1.16, tH * 0.7 + 1.85, 1.8, -R * 0.55, R * 0.55), { color: CANVAS, paint: true, noDamage: true, smooth: true }));
+    const frontX = z => R - 0.275 * R * (z / tH) + 0.02;
+    parts.push(part('mantlet', extrudeY([[frontX(mz0), mz0], [R * 1.13, mz0 + 1.5], [R * 1.13, mz1 - 1.5], [frontX(mz1), mz1]], -mW, mW), { color: PAL.plate, weather: 0.6, decals: [D.boltRow(n => n[0] > 0.5, 0.12, 6, 0.08, 0.92, 0.03), D.boltRow(n => n[0] > 0.5, 0.88, 6, 0.08, 0.92, 0.03)] }));
+    const bl = L * c.barrelLen, br = L * c.barrelR, bz = tH * 0.52;
+    const spacing = c.barrels === 1 ? 0 : (2 * mW * 0.72) / (c.barrels - 1);
+    for (let i = 0; i < c.barrels; i++) {
+      const by = c.barrels === 1 ? 0 : -mW * 0.72 + i * spacing;
+      const x0 = R * 1.13, x1 = x0 + bl, xe0 = x0 + bl * 0.4, xe1 = x0 + bl * 0.56, xm = x1 - bl * 0.13, mr = br * 1.5;
+      parts.push(tubeX(`collar${i}`, by, bz, br * 1.55, x0, x0 + bl * 0.09, { color: PAL.plate }));
+      parts.push(tubeX(`tube${i}`, by, bz, br, x0 + bl * 0.09, xm, { color: PAL.trim }));
+      parts.push(part(`brake${i}`, box(xm, x1, by - mr, by + mr, bz - mr * 0.8, bz + mr * 0.8), {
+        color: '#3e464f', weather: 0.4, thin: true,
+        decals: [
+          { match: n => n[0] > 0.9, draw(api) { api.ellipse(0.5, 0.5, 0.3, 0.38, '#050608'); } },
+          { match: n => Math.abs(n[1]) > 0.9, draw(api) { for (const s of [0.22, 0.62]) api.poly([[s, 0.25], [s + 0.2, 0.25], [s + 0.2, 0.75], [s, 0.75]], '#07090c'); api.poly([[0.8, 0], [1, 0], [1, 1], [0.8, 1]], '#000', 'opacity="0.35"'); } },
+          { match: n => n[2] > 0.9, draw(api) { api.poly([[0.75, 0], [1, 0], [1, 1], [0.75, 1]], '#000', 'opacity="0.3"'); } },
+        ],
+      }));
+      muzzles.push([x1 + 0.5, by, bz]);
+    }
+    parts.push(part('antenna', box(-R * 0.92, -R * 0.89, R * 0.52, R * 0.55, tH + 1.4, tH + 1.4 + H * (ctx.dmg >= 2 ? 0.25 : 0.8)), { color: '#22272e', thin: true }));
+    parts.push(part('antennaBase', cylZ(-R * 0.905, R * 0.535, 1.2, tH, tH + 1.4, 12), { color: PAL.dark, smooth: true }));
+    return { parts, muzzles, tH, R };
+  }
+
+  VU.weapons.panzer = { name: 'Panzer', role: 'Main battle tank', build };
+})(typeof window !== 'undefined' ? window.VectorUnit : globalThis.VectorUnit);
+
+</script>
+<script>
+/*!
+ * Artillery weapon module for VectorUnit (game role "Bastion", kind "arty").
+ * Light: one long thick barrel · Medium: a heavier barrel on a ribbed cradle · Heavy: twin heavy barrels on a big cradle.
+ * Every barrel ends in a round muzzle brake; a solid armoured mount joins the cradle to the turret roof.
+ * The barrels are raised at a steep angle. Everything that elevates (cradle, barrels, brakes) is
+ * built along +x in barrel space and then rotated up about the trunnion, so its pieces touch and never overlap.
+ * Turret-local axes, pivot at the origin (z = 0 is the hull deck).
+ */
+(function (VU) {
+  'use strict';
+  const { PAL, part, tubeX, box, prismZ, extrudeY, cylZ, place, decals: D } = VU;
+  const CFG = {
+    //        barrels  length      radius      elevation   turret       cradle (barrel radii)  ribs
+    light:  { n: 1, len: 0.92, r: 0.047, elev: 30, turretR: 0.23, tH: 0.40, cw: 1.55, ch: 1.5, ribs: 0 },
+    medium: { n: 1, len: 0.96, r: 0.058, elev: 33, turretR: 0.24, tH: 0.40, cw: 1.5, ch: 1.45, ribs: 4 },
+    heavy:  { n: 2, len: 0.96, r: 0.051, elev: 36, turretR: 0.25, tH: 0.38, cw: 0.7, ch: 1.4, ribs: 5 },
+  };
+  const DARK_STEEL = '#3e464f';
+
+  function build(size, ctx) {
+    const c = CFG[size], dims = VU.chassis[size].dims, L = dims.L, H = dims.H, T = ctx.paint;
+    const R = L * c.turretR, tH = H * c.tH, parts = [], muzzles = [];
+    const br = L * c.r, len = L * c.len, a = c.elev * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
+
+    // ---- turret: a low armoured box, wider at the back (ammunition), front narrowed toward the gun
+    // footprint as wide as the Panzer's, so it always covers the hull's turret collar
+    const plan = [[1.0 * R, 0.5 * R], [0.42 * R, 0.8 * R], [-0.78 * R, 0.8 * R], [-1.0 * R, 0.6 * R], [-1.0 * R, -0.6 * R], [-0.78 * R, -0.8 * R], [0.42 * R, -0.8 * R], [1.0 * R, -0.5 * R]];
+    parts.push(part('ring', cylZ(0, 0, R * 0.72, -1.5, 0, 28), { color: PAL.dark, smooth: true }));
+    parts.push(part('turret', prismZ(plan, 0, tH, 0.84, [-R * 0.04, 0]), {
+      color: T, paint: true, weather: 0.85,
+      decals: [
+        D.strip(n => Math.abs(n[1]) > 0.6 && Math.abs(n[2]) < 0.8, 0.42, 0.56, 0.1, 0.9),
+        D.boltRow(n => Math.abs(n[2]) < 0.8, 0.88, 8, 0.06, 0.94, 0.018),
+      ],
+    }));
+
+    // ---- elevating mass, in barrel space: x along the barrel, origin on the trunnion axis
+    const gap = c.n === 1 ? br * 1.3 : br * 1.25;                 // half distance between twin barrels
+    const by = c.n === 1 ? [0] : [-gap - br * 0.2, gap + br * 0.2];
+    const cw = (c.n === 1 ? br * c.cw : gap + br * 1.2 + br * c.cw * 0.5);   // cradle half width
+    const chh = br * c.ch;                                         // cradle half height
+    const cf = R * 0.42, cb = R * 0.5;                             // cradle length in front of / behind the trunnion
+    const xp = R * 0.18;                                           // trunnion position on the roof
+    const zp = tH + cb * sa + chh * ca + 0.6;                      // high enough that the cradle's rear clears the roof
+    const up = p => [xp + p[0] * ca - p[2] * sa, p[1], zp + p[0] * sa + p[2] * ca];
+    const E = pt => place(pt, up);
+
+    // cradle (ribbed on Medium / Heavy): a box round the breeches
+    parts.push(E(part('cradle', box(-cb, cf, -cw, cw, -chh, chh), {
+      color: DARK_STEEL, weather: 0.5,
+      decals: c.ribs ? [{ match: n => Math.abs(n[1]) > 0.9, draw(api) { for (let i = 1; i <= c.ribs; i++) { const s = i / (c.ribs + 1); api.poly([[s - 0.025, 0.08], [s + 0.025, 0.08], [s + 0.025, 0.92], [s - 0.025, 0.92]], api.light('#6b7785', 'metal')); api.line(s + 0.03, 0.08, s + 0.03, 0.92, '#0b0e13', 0.25 * api.S, 'opacity="0.6"'); } } }] : [],
+    })));
+    // barrels: collar, long smooth tube, muzzle brake
+    by.forEach((y, i) => {
+      const x0 = cf, xm = cf + len * 0.8, x1 = cf + len, mr = br * 1.45;   // long muzzle brake: the last 20% of the barrel
+      parts.push(E(tubeX(`collar${i}`, y, 0, br * 1.45, x0, x0 + len * 0.07, { color: PAL.plate })));
+      parts.push(E(tubeX(`tube${i}`, y, 0, br, x0 + len * 0.07, xm, { color: PAL.trim })));
+      // rounded muzzle brake: a short fat cylinder with two dark vent rings and a dark bore on its face
+      parts.push(E(tubeX(`brake${i}`, y, 0, mr, xm, x1, {
+        color: DARK_STEEL, weather: 0.4,
+        bands: [{ x: xm + (x1 - xm) * 0.22, w: (x1 - xm) * 0.16, color: '#14181d' }, { x: xm + (x1 - xm) * 0.56, w: (x1 - xm) * 0.16, color: '#14181d' }],
+        decals: [{ match: n => n[0] > 0.9, draw(api) { api.ellipse(0.5, 0.5, 0.34, 0.34, '#050608'); } }],
+      })));
+      muzzles.push(up([x1 + 0.5, y, 0]));
+    });
+    // gun mount: a solid armoured block from the turret roof up to the underside of the cradle, between the cheek plates,
+    // so the gun sits on the turret instead of floating above it (its top lies on the cradle's underside: touching, no overlap)
+    {
+      const ua = -cb * 0.9, ub = cf * 0.6, A = up([ua, 0, -chh]), B = up([ub, 0, -chh]);
+      parts.push(part('mount', extrudeY([[A[0], tH], [B[0], tH], [B[0], B[2]], [A[0], A[2]]], -cw, cw), {
+        color: T, paint: true, weather: 0.8,
+        decals: [D.boltRow(n => Math.abs(n[1]) < 0.5 && Math.abs(n[2]) < 0.9, 0.85, 4, 0.15, 0.85, 0.04)],
+      }));
+    }
+    // no recoil cylinders: too small to read at game size (removed at the user's request)
+    // cheek plates either side of the cradle, carrying the trunnion (bolt circle on the outside)
+    const ct = Math.max(1.4, br * 0.4), pinR = chh * 1.05;
+    for (const s of [-1, 1]) {
+      const y0 = s > 0 ? cw : -cw - ct, y1 = y0 + ct;
+      const prof = [[xp - cb * 0.95, tH], [xp + cf * 0.75, tH], [xp + pinR * 0.9, zp + pinR * 0.5], [xp - pinR * 0.9, zp + pinR * 0.5]];
+      parts.push(part(`cheek${s}`, extrudeY(prof, y0, y1), {
+        color: T, paint: true, weather: 0.7,
+        decals: [{ match: n => Math.abs(n[1]) > 0.9, draw(api) {
+          for (let i = 0; i < 6; i++) { const t = i / 6 * Math.PI * 2; api.bolt(0.62 + Math.cos(t) * 0.1, 0.3 + Math.sin(t) * 0.16, 0.03); }
+          api.ellipse(0.62, 0.3, 0.06, 0.09, api.light('#808c9a', 'metal'), `stroke="#0b0e13" stroke-width="${0.25 * api.S}"`);
+        } }],
+      }));
+    }
+
+    // Medium / Heavy: commander hatch and an ammunition box at the back; the Light stays clean (small on screen)
+    if (size !== 'light') {
+      parts.push(part('hatch', cylZ(-R * 0.55, -R * 0.42, R * 0.2, tH, tH + 1.4, 20), { color: T, paint: true, smooth: true, noDamage: true }));
+      parts.push(part('ammo', box(-R * 1.22, -R * 1.0, -R * 0.5, R * 0.5, tH * 0.2, tH * 0.85), { color: PAL.dark, weather: 0.5, thin: true,
+        decals: [{ match: n => n[0] < -0.9, draw(api) { api.line(0.5, 0.1, 0.5, 0.9, '#7d8996', 0.3 * api.S, 'opacity="0.7"'); for (const s of [0.25, 0.75]) api.poly([[s - 0.06, 0.35], [s + 0.06, 0.35], [s + 0.06, 0.55], [s - 0.06, 0.55]], '#c9b25a', 'opacity="0.8"'); } }] }));
+    }
+    parts.push(part('antenna', box(-R * 0.9, -R * 0.87, -R * 0.62, -R * 0.59, tH + 1.4, tH + 1.4 + H * (ctx.dmg >= 2 ? 0.25 : 0.75)), { color: '#22272e', thin: true }));
+    parts.push(part('antennaBase', cylZ(-R * 0.885, -R * 0.605, 1.2, tH, tH + 1.4, 12), { color: PAL.dark, smooth: true }));
+    return { parts, muzzles, tH, R };
+  }
+
+  VU.weapons.artillery = { name: 'Artillery', role: 'Long-range siege gun', build, elev: size => CFG[size].elev * Math.PI / 180 };
+})(typeof window !== 'undefined' ? window.VectorUnit : globalThis.VectorUnit);
+</script>
+<script>
+/*!
+ * Anti-Air weapon module for VectorUnit (game role "Skyguard", kind "ad").
+ * A ribbed rocket-launcher block tilted up toward the sky, on a solid mount between two cheek plates.
+ * Light: 3 tubes in a row · Medium: 4 tubes (2 × 2) · Heavy: 6 tubes (2 × 3).
+ * Each tube is a short fat stub on the block's front face, showing a dark bore and a rocket nose, so it reads round and
+ * chunky at game size. The block and stubs are built in launcher space (x forward) and rotated up about the trunnion.
+ */
+(function (VU) {
+  'use strict';
+  const { PAL, part, tubeX, box, prismZ, extrudeY, cylZ, place, decals: D } = VU;
+  const CFG = {
+    //        rows cols  tube r (× L)  block length  elevation  turret R   tH     ribs
+    light:  { rows: 1, cols: 3, r: 0.034, blen: 0.36, elev: 38, turretR: 0.23, tH: 0.40, ribs: 3 },
+    medium: { rows: 2, cols: 2, r: 0.045, blen: 0.40, elev: 40, turretR: 0.24, tH: 0.40, ribs: 4 },
+    heavy:  { rows: 2, cols: 3, r: 0.037, blen: 0.44, elev: 42, turretR: 0.25, tH: 0.38, ribs: 5 },
+  };
+  const DARK_STEEL = '#3e464f';
+
+  function build(size, ctx) {
+    const c = CFG[size], dims = VU.chassis[size].dims, L = dims.L, H = dims.H, T = ctx.paint;
+    const R = L * c.turretR, tH = H * c.tH, parts = [], muzzles = [];
+    const tr = L * c.r, a = c.elev * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
+
+    // ---- turret: the same low armoured base as the Artillery (Panzer-width footprint covers the hull's turret collar)
+    const plan = [[1.0 * R, 0.5 * R], [0.42 * R, 0.8 * R], [-0.78 * R, 0.8 * R], [-1.0 * R, 0.6 * R], [-1.0 * R, -0.6 * R], [-0.78 * R, -0.8 * R], [0.42 * R, -0.8 * R], [1.0 * R, -0.5 * R]];
+    parts.push(part('ring', cylZ(0, 0, R * 0.72, -1.5, 0, 28), { color: PAL.dark, smooth: true }));
+    parts.push(part('turret', prismZ(plan, 0, tH, 0.84, [-R * 0.04, 0]), {
+      color: T, paint: true, weather: 0.85,
+      decals: [
+        D.strip(n => Math.abs(n[1]) > 0.6 && Math.abs(n[2]) < 0.8, 0.42, 0.56, 0.1, 0.9),
+        D.boltRow(n => Math.abs(n[2]) < 0.8, 0.88, 8, 0.06, 0.94, 0.018),
+      ],
+    }));
+
+    // ---- launcher block, in launcher space: x forward along the tubes, origin on the trunnion axis
+    const pitch = tr * 2.3, cw = c.cols * pitch / 2 + tr * 0.35, chh = c.rows * pitch / 2 + tr * 0.35;
+    const blen = L * c.blen, cb = blen * 0.45, cf = blen * 0.55;
+    const xp = R * 0.12;
+    const zp = tH + cb * sa + chh * ca + 0.6;                      // the block's rear corner clears the roof
+    const up = p => [xp + p[0] * ca - p[2] * sa, p[1], zp + p[0] * sa + p[2] * ca];
+    const E = pt => place(pt, up);
+
+    // the block: team paint, raised dark ribs across the top, bottom and sides ("ribbed")
+    const ribs = { match: n => Math.abs(n[0]) < 0.5, draw(api) {
+      for (let i = 1; i <= c.ribs; i++) {
+        const s = i / (c.ribs + 1);
+        api.poly([[s - 0.03, 0], [s + 0.03, 0], [s + 0.03, 1], [s - 0.03, 1]], api.light('#2b3138', 'metal'));
+        api.line(s - 0.03, 0, s - 0.03, 1, '#c9d0d7', 0.25 * api.S, 'opacity="0.35"');
+      }
+    } };
+    parts.push(E(part('launcher', box(-cb, cf, -cw, cw, -chh, chh), {
+      color: T, paint: true, weather: 0.8,
+      decals: [ribs, D.boltRow(n => n[0] < -0.9, 0.5, 4, 0.2, 0.8, 0.05)],
+    })));
+    // launch tubes: short fat stubs on the front face, dark bore with a rocket nose inside
+    const stub = tr * 0.8;
+    for (let r = 0; r < c.rows; r++) for (let k = 0; k < c.cols; k++) {
+      const y = (k - (c.cols - 1) / 2) * pitch, z = (r - (c.rows - 1) / 2) * pitch;
+      parts.push(E(tubeX(`tube${r}${k}`, y, z, tr, cf, cf + stub, {
+        color: DARK_STEEL, weather: 0.4,
+        bands: [{ x: cf + stub * 0.55, w: stub * 0.25, color: '#14181d' }],
+        decals: [{ match: n => n[0] > 0.9, draw(api) {
+          api.ellipse(0.5, 0.5, 0.38, 0.38, '#050608');
+          api.ellipse(0.5, 0.5, 0.22, 0.22, api.light('#c9d0d7', 'metal'), `stroke="#0b0e13" stroke-width="${0.2 * api.S}"`);
+          api.ellipse(0.44, 0.44, 0.07, 0.07, '#ffffff', 'opacity="0.7"');
+        } }],
+      })));
+      muzzles.push(up([cf + stub + 0.5, y, z]));
+    }
+
+    // launcher mount: a solid block from the roof to the launcher's underside (touching, no overlap), between the cheek plates
+    {
+      const ua = -cb * 0.9, ub = cf * 0.6, A = up([ua, 0, -chh]), B = up([ub, 0, -chh]);
+      parts.push(part('mount', extrudeY([[A[0], tH], [B[0], tH], [B[0], B[2]], [A[0], A[2]]], -cw, cw), {
+        color: T, paint: true, weather: 0.8,
+        decals: [D.boltRow(n => Math.abs(n[1]) < 0.5 && Math.abs(n[2]) < 0.9, 0.85, 4, 0.15, 0.85, 0.04)],
+      }));
+    }
+    // cheek plates either side, carrying the trunnion (bolt circle on the outside)
+    const ct = Math.max(1.4, tr * 0.45), pinR = Math.min(chh * 0.9, tr * 2.2);
+    for (const s of [-1, 1]) {
+      const y0 = s > 0 ? cw : -cw - ct, y1 = y0 + ct;
+      const prof = [[xp - cb * 0.85, tH], [xp + cf * 0.6, tH], [xp + pinR * 0.9, zp + pinR * 0.5], [xp - pinR * 0.9, zp + pinR * 0.5]];
+      parts.push(part(`cheek${s}`, extrudeY(prof, y0, y1), {
+        color: DARK_STEEL, weather: 0.6,
+        decals: [{ match: n => Math.abs(n[1]) > 0.9, draw(api) {
+          for (let i = 0; i < 6; i++) { const t = i / 6 * Math.PI * 2; api.bolt(0.62 + Math.cos(t) * 0.1, 0.3 + Math.sin(t) * 0.16, 0.03); }
+          api.ellipse(0.62, 0.3, 0.06, 0.09, api.light('#808c9a', 'metal'), `stroke="#0b0e13" stroke-width="${0.25 * api.S}"`);
+        } }],
+      }));
+    }
+
+    // no hatch: the launcher's cheek plates fill the roof (and the turret reads cleaner without it)
+    parts.push(part('antenna', box(-R * 0.9, -R * 0.87, R * 0.59, R * 0.62, tH + 1.4, tH + 1.4 + H * (ctx.dmg >= 2 ? 0.25 : 0.75)), { color: '#22272e', thin: true }));
+    parts.push(part('antennaBase', cylZ(-R * 0.885, R * 0.605, 1.2, tH, tH + 1.4, 12), { color: PAL.dark, smooth: true }));
+    return { parts, muzzles, tH, R };
+  }
+
+  VU.weapons.antiair = { name: 'Anti-Air', role: 'Rocket launcher against air units', build, elev: size => CFG[size].elev * Math.PI / 180 };
+})(typeof window !== 'undefined' ? window.VectorUnit : globalThis.VectorUnit);
+</script>
+<script>
+/*!
+ * Flamer weapon module for VectorUnit (game role "Scorcher", kind "fl") — v3.
+ * Reads as a flame thrower: large pressurised gas containers on the turret (domed ends, straps, valves, pressure gauges), feed
+ * pipes running from the containers through couplings into the nozzle housing, a fuel pipe clamped along a long barrel, and a
+ * heat-tinted flared nozzle glowing orange-yellow in its mouth. A flame warning sign marks the housing.
+ * Light: one large container · Medium: two · Heavy: two bigger ones and twin large barrels. The barrels reach well past the hull's nose.
+ */
+(function (VU) {
+  'use strict';
+  const { PAL, part, tubeX, box, prismZ, cylZ, loft, ngon, place, decals: D } = VU;
+  const CFG = {
+    //        barrel r   barrel len   turret R   tH     containers  container r (× R)
+    light:  { r: 0.048, len: 0.56, turretR: 0.23, tH: 0.40, n: 1, cr: 0.32, barrels: 1 },
+    medium: { r: 0.054, len: 0.58, turretR: 0.24, tH: 0.40, n: 2, cr: 0.27, barrels: 1 },
+    heavy:  { r: 0.048, len: 0.60, turretR: 0.25, tH: 0.38, n: 2, cr: 0.30, barrels: 2 },   // twin large barrels
+  };
+  const DARK_STEEL = '#3e464f', PIPE = '#8a949e', COUPLING = '#2b3138';
+  const along = (x0, y, z) => q => [x0 + q[2], y + q[0], z + q[1]];   // loft is built along z: turn it to point along +x
+
+  function build(size, ctx) {
+    const c = CFG[size], dims = VU.chassis[size].dims, L = dims.L, H = dims.H, T = ctx.paint, hot = !ctx.wreck;
+    const R = L * c.turretR, tH = H * c.tH, parts = [], muzzles = [];
+
+    // ---- turret: the same low armoured base as the other non-Panzer tanks
+    const plan = [[1.0 * R, 0.5 * R], [0.42 * R, 0.8 * R], [-0.78 * R, 0.8 * R], [-1.0 * R, 0.6 * R], [-1.0 * R, -0.6 * R], [-0.78 * R, -0.8 * R], [0.42 * R, -0.8 * R], [1.0 * R, -0.5 * R]];
+    parts.push(part('ring', cylZ(0, 0, R * 0.72, -1.5, 0, 28), { color: PAL.dark, smooth: true }));
+    parts.push(part('turret', prismZ(plan, 0, tH, 0.84, [-R * 0.04, 0]), {
+      color: T, paint: true, weather: 0.85,
+      decals: [D.strip(n => Math.abs(n[1]) > 0.6 && Math.abs(n[2]) < 0.8, 0.42, 0.56, 0.1, 0.9), D.boltRow(n => Math.abs(n[2]) < 0.8, 0.88, 8, 0.06, 0.94, 0.018)],
+    }));
+
+    // ---- nozzle housing (front half of the roof) with a flame warning sign on each side
+    const br = L * c.r, bl = L * c.len;
+    const y0 = br * 1.8, bys = c.barrels === 2 ? [-y0, y0] : [0];   // twin barrels sit far enough apart that their nozzles don't touch
+    const hw = c.barrels === 2 ? y0 + br * 1.45 + 0.6 : br * 2.2, hh = br * 3.4, hx0 = -R * 0.05, hx1 = R * 0.72, nz = tH + hh * 0.5;
+    const pr = br * 0.42, ys = c.n === 1 ? [0] : [-R * 0.46, R * 0.46];
+    const hwR = c.n === 1 ? hw : Math.max(hw, R * 0.46 + pr * 1.1 + 1.2);   // rear half-width: wide enough to take both feed pipes
+    const warn = { match: n => Math.abs(n[1]) > 0.6 && Math.abs(n[2]) < 0.5, draw(api) {
+      api.poly([[0.62, 0.22], [0.78, 0.5], [0.62, 0.78], [0.46, 0.5]], '#e8a33a', `stroke="#16181b" stroke-width="${0.35 * api.S}"`);
+      api.poly([[0.62, 0.34], [0.67, 0.5], [0.65, 0.62], [0.59, 0.62], [0.57, 0.5]], '#16181b');
+      api.poly([[0.62, 0.45], [0.645, 0.55], [0.6, 0.6]], '#e8a33a');
+    } };
+    parts.push(part('housing', prismZ([[hx1, hw], [hx0, hwR], [hx0, -hwR], [hx1, -hw]], tH, tH + hh, 1, [0, 0]), {
+      color: T, paint: true, weather: 0.8, decals: [warn, D.boltRow(n => Math.abs(n[1]) > 0.6 && Math.abs(n[2]) < 0.5, 0.12, 4, 0.12, 0.88, 0.05), D.boltRow(n => n[0] > 0.9, 0.12, 3, 0.2, 0.8, 0.05)],
+    }));
+
+    // ---- barrel: collar, long steel tube with pipe clamps, heat tint toward the nozzle
+    const x0 = hx1, xc = x0 + bl * 0.08, xn = x0 + bl * 0.86, x1 = x0 + bl;
+    const r0 = br * 1.05, r1 = br * 1.75;
+    bys.forEach((by, k) => {
+      parts.push(tubeX(`collar${k}`, by, nz, br * 1.45, x0, xc, { color: DARK_STEEL }));
+      parts.push(tubeX(`barrel${k}`, by, nz, br, xc, xn, { color: PAL.trim, bands: [
+        { x: xc + (xn - xc) * 0.3, w: br * 0.6, color: COUPLING }, { x: xc + (xn - xc) * 0.66, w: br * 0.6, color: COUPLING },
+        { x: xn - br * 2.8, w: br * 1.0, color: '#6f6a7a' }, { x: xn - br * 1.8, w: br * 1.0, color: '#7a5a3e' }, { x: xn - br * 0.8, w: br * 0.8, color: '#8a4a22' },   // heat tint: blued → straw → bronze
+      ] }));
+      // flared nozzle, heat-coloured, glowing in its mouth
+      parts.push(place(part(`nozzle${k}`, loft(ngon(20, r0), 0, ngon(20, r1), x1 - xn), { color: hot ? '#9a4a1e' : '#2e2a26', smooth: true, weather: 0.3, decals: [{ match: n => n[2] > 0.9, draw(api) {
+        api.ellipse(0.5, 0.5, 0.47, 0.47, hot ? '#3a1a0c' : '#050404');
+        if (hot) { api.ellipse(0.5, 0.5, 0.42, 0.42, '#d8481a'); api.ellipse(0.5, 0.52, 0.32, 0.32, '#ff7a1a'); api.ellipse(0.5, 0.55, 0.2, 0.2, '#ffb43a'); api.ellipse(0.5, 0.58, 0.1, 0.1, '#fff0b0'); }
+        api.ellipse(0.5, 0.5, 0.47, 0.47, 'none', `stroke="#2a1a10" stroke-width="${0.6 * api.S}"`);
+      } }] }), along(xn, by, nz)));
+      muzzles.push([x1 + 0.5, by, nz]);
+      // fuel pipe along the outer side of the barrel, from the collar's front face to the nozzle
+      const side = by === 0 ? 1 : Math.sign(by);
+      parts.push(tubeX(`barrelPipe${k}`, by + side * (br + pr + 0.25), nz - br * 0.3, pr, xc, xn - br * 0.3, { color: PIPE, weather: 0.4 }));
+    });
+
+    // ---- large gas containers on the back of the roof, with domed ends, straps, valves and gauges; feed pipes into the housing
+    const cr = R * c.cr, tx0 = -R * 1.12, tx1 = -R * 0.3, cz = tH + cr;
+    const gauge = { match: n => n[0] > 0.9, draw(api) {   // pressure gauge on the front dome cap
+      api.ellipse(0.5, 0.5, 0.3, 0.3, '#e9eef3', `stroke="#16181b" stroke-width="${0.5 * api.S}"`);
+      api.line(0.5, 0.5, 0.66, 0.38, '#c0392b', 0.5 * api.S); api.ellipse(0.5, 0.5, 0.05, 0.05, '#16181b');
+    } };
+    ys.forEach((y, i) => {
+      parts.push(tubeX(`gas${i}`, y, cz, cr, tx0, tx1, { color: T, paint: true, weather: 0.75, bands: [
+        { x: tx0 + (tx1 - tx0) * 0.2, w: cr * 0.22, color: PAL.dark }, { x: tx0 + (tx1 - tx0) * 0.72, w: cr * 0.22, color: PAL.dark },   // straps
+        { x: tx0 + (tx1 - tx0) * 0.46, w: cr * 0.12, color: ctx.wreck ? '#2a2622' : ctx.glow },                                         // fill-level light
+      ] }));
+      // domed ends (two tapering steps each), front dome carries the gauge
+      parts.push(place(part(`domeF${i}`, loft(ngon(20, cr), 0, ngon(20, cr * 0.72), cr * 0.32), { color: T, paint: true, smooth: true, weather: 0.75, decals: [gauge] }), along(tx1, y, cz)));
+      parts.push(place(part(`domeR${i}`, loft(ngon(20, cr), 0, ngon(20, cr * 0.72), cr * 0.32), { color: T, paint: true, smooth: true, weather: 0.75 }), q => { const p = along(0, y, cz)(q); return [tx0 - p[0], -(p[1] - y) + y, p[2]]; }));
+      // valve block on top of the container's front end; an exposed feed pipe runs forward over the dome into a coupling on the housing roof
+      const vw = Math.max(cr * 0.22, pr * 1.3), vz0 = cz + cr + 0.05, vz1 = vz0 + pr * 2.4, fz = (vz0 + vz1) / 2, fr = pr * 0.9;
+      const vx0 = tx1 - cr * 0.6, vx1 = tx1 - cr * 0.15;
+      parts.push(part(`valve${i}`, box(vx0, vx1, y - vw, y + vw, vz0, vz1), { color: COUPLING, thin: true, weather: 0.4,
+        decals: [{ match: n => n[2] > 0.9, draw(api) { api.ellipse(0.5, 0.5, 0.36, 0.36, 'none', `stroke="#c0392b" stroke-width="${0.7 * api.S}"`); api.line(0.14, 0.5, 0.86, 0.5, '#c0392b', 0.5 * api.S); } }] }));
+      parts.push(tubeX(`feed${i}`, y, fz, fr, vx1, hx0, { color: PIPE, weather: 0.4, bands: [{ x: vx1 + (hx0 - vx1) * 0.5 - fr * 0.6, w: fr * 1.2, color: COUPLING }] }));
+      parts.push(part(`coupling${i}`, box(hx0, hx0 + pr * 2.6, y - vw, y + vw, tH + hh, Math.max(tH + hh + pr * 2.2, fz + fr + 0.4)), { color: COUPLING, thin: true, weather: 0.4 }));
+    });
+    // antenna: front corner on the Light (one centred tank), rear centre between the two tanks on Medium / Heavy (clear of the wide housing)
+    const [ax, ay] = c.n === 1 ? [R * 0.515, -R * 0.625] : [-R * 0.88, 0];
+    parts.push(part('antenna', box(ax - R * 0.015, ax + R * 0.015, ay - R * 0.015, ay + R * 0.015, tH + 1.4, tH + 1.4 + H * (ctx.dmg >= 2 ? 0.25 : 0.75)), { color: '#22272e', thin: true }));
+    parts.push(part('antennaBase', cylZ(ax, ay, 1.2, tH, tH + 1.4, 12), { color: PAL.dark, smooth: true }));
+    return { parts, muzzles, tH, R };
+  }
+
+  VU.weapons.flamer = { name: 'Flamer', role: 'Short-range flame thrower', build, elev: () => 0 };
+})(typeof window !== 'undefined' ? window.VectorUnit : globalThis.VectorUnit);
+</script>
+<script>
+/*!
+ * Special weapon module for VectorUnit (game role "Prism", kind "en"): an energy weapon that differs by size.
+ *  Light  — Laser cannon: a finned, ribbed emitter block with a short focusing barrel and a glowing lens.
+ *  Medium — Fusion-Lambda particle cannon: a long barrel with a stack of radiator fins, a ribbed accelerator and an emitter tip;
+ *           a power cell on the back of the roof feeds it.
+ *  Heavy  — Graviton particle launcher: a big ribbed tube on a heavy cradle with a wide gravity-lens ring at the muzzle;
+ *           two capacitor cells on the back of the roof.
+ * Energy glows use one fixed cyan colour (not the team colour), baked into the sprite; all of them go dark on a wreck.
+ * Every finned or ribbed run is cut into coaxial segments that only touch end to end, so nothing overlaps (depth-sort rule).
+ */
+(function (VU) {
+  'use strict';
+  const { PAL, part, tubeX, box, prismZ, cylZ, decals: D } = VU;
+  const CFG = {
+    light:  { turretR: 0.23, tH: 0.40 },
+    medium: { turretR: 0.24, tH: 0.40 },
+    heavy:  { turretR: 0.25, tH: 0.38 },
+  };
+  const DARK_STEEL = '#3e464f', FIN = '#2b3138', CORE = '#14181d';
+  const E1 = '#3fc8f0', E2 = '#8fe6ff', E3 = '#e8fbff', OFF = '#1f2a30';   // energy cyan: rim → glow → white-hot centre; dark when dead
+
+  // the glowing lens / emitter face on the front cap of a tube
+  const lens = (hot, k = 1) => ({ match: n => n[0] > 0.9, draw(api) {
+    api.ellipse(0.5, 0.5, 0.46 * k, 0.46 * k, CORE);
+    if (hot) { api.ellipse(0.5, 0.5, 0.36 * k, 0.36 * k, E1); api.ellipse(0.5, 0.5, 0.25 * k, 0.25 * k, E2); api.ellipse(0.5, 0.5, 0.12 * k, 0.12 * k, E3); }
+    else api.ellipse(0.5, 0.5, 0.36 * k, 0.36 * k, OFF);
+  } });
+
+  function build(size, ctx) {
+    const c = CFG[size], dims = VU.chassis[size].dims, L = dims.L, H = dims.H, T = ctx.paint, hot = !ctx.wreck;
+    const R = L * c.turretR, tH = H * c.tH, parts = [], muzzles = [];
+    const glowBand = hot ? E2 : OFF;
+
+    // ---- turret: the same low armoured base as the Artillery, Anti-Air and Flamer
+    const plan = [[1.0 * R, 0.5 * R], [0.42 * R, 0.8 * R], [-0.78 * R, 0.8 * R], [-1.0 * R, 0.6 * R], [-1.0 * R, -0.6 * R], [-0.78 * R, -0.8 * R], [0.42 * R, -0.8 * R], [1.0 * R, -0.5 * R]];
+    parts.push(part('ring', cylZ(0, 0, R * 0.72, -1.5, 0, 28), { color: PAL.dark, smooth: true }));
+    parts.push(part('turret', prismZ(plan, 0, tH, 0.84, [-R * 0.04, 0]), {
+      color: T, paint: true, weather: 0.85,
+      decals: [D.strip(n => Math.abs(n[1]) > 0.6 && Math.abs(n[2]) < 0.8, 0.42, 0.56, 0.1, 0.9), D.boltRow(n => Math.abs(n[2]) < 0.8, 0.88, 8, 0.06, 0.94, 0.018)],
+    }));
+
+    // dark raised ribs across a painted block's sides (seen on faces whose normal is not along x)
+    const ribs = (n0) => ({ match: n => Math.abs(n[0]) < 0.5 && n[2] < 0.9, draw(api) {
+      for (let i = 1; i <= n0; i++) { const s = i / (n0 + 1); api.poly([[s - 0.035, 0.08], [s + 0.035, 0.08], [s + 0.035, 0.92], [s - 0.035, 0.92]], api.light(FIN, 'metal')); }
+    } });
+    // a run of coaxial segments along x: [{x0, x1, r, color, bands, decals}] — each piece touches the next end to end
+    const run = (id, y, z, segs) => segs.forEach((s, i) => parts.push(tubeX(`${id}${i}`, y, z, s.r, s.x0, s.x1, Object.assign({ color: s.color || PAL.trim, weather: 0.35 }, s.opt || {}))));
+    // power cell on the back of the roof: team-paint cylinder with dark end rings and a glowing charge band
+    const cell = (id, y, cr, x0, x1) => {
+      const cz = tH + cr, d = (x1 - x0);
+      run(id, y, cz, [
+        { x0, x1: x0 + d * 0.12, r: cr * 0.86, color: DARK_STEEL },
+        { x0: x0 + d * 0.12, x1: x1 - d * 0.12, r: cr, color: T, opt: { paint: true, weather: 0.75, bands: [{ x: x0 + d * 0.3, w: d * 0.08, color: FIN }, { x: x0 + d * 0.47, w: d * 0.07, color: glowBand }, { x: x0 + d * 0.62, w: d * 0.08, color: FIN }] } },
+        { x0: x1 - d * 0.12, x1, r: cr * 0.86, color: DARK_STEEL, opt: { decals: [lens(hot, 0.7)] } },
+      ]);
+      return cz;
+    };
+
+    if (size === 'light') {
+      // ---- Laser cannon: finned, ribbed emitter block on the roof, short focusing barrel, glowing lens
+      const hw = R * 0.36, bh = R * 0.64, bx0 = -R * 0.55, bx1 = R * 0.62, bz1 = tH + bh;
+      parts.push(part('emitter', box(bx0, bx1, -hw, hw, tH, bz1), { color: T, paint: true, weather: 0.8, decals: [ribs(4), D.boltRow(n => n[0] < -0.9, 0.5, 3, 0.2, 0.8, 0.05)] }));
+      // cooling fins standing across the block's top
+      const nf = 4, fw = R * 0.05, fh = R * 0.2;
+      for (let i = 0; i < nf; i++) { const x = bx0 + (bx1 - bx0) * (0.14 + i * 0.17); parts.push(part(`fin${i}`, box(x, x + fw, -hw * 0.82, hw * 0.82, bz1, bz1 + fh), { color: FIN, thin: true, weather: 0.3 })); }
+      // focusing barrel: dark collar, ribbed steel tube with a glowing coil, wide lens housing
+      const br = L * 0.05, z = tH + bh * 0.5, x1 = bx1 + L * 0.26;
+      run('barrel', 0, z, [
+        { x0: bx1, x1: bx1 + L * 0.04, r: br * 1.35, color: DARK_STEEL },
+        { x0: bx1 + L * 0.04, x1: x1 - L * 0.06, r: br, opt: { bands: [{ x: bx1 + L * 0.07, w: br * 0.5, color: FIN }, { x: bx1 + L * 0.11, w: br * 0.6, color: glowBand }, { x: bx1 + L * 0.15, w: br * 0.5, color: FIN }] } },
+        { x0: x1 - L * 0.06, x1, r: br * 1.4, color: DARK_STEEL, opt: { bands: [{ x: x1 - L * 0.045, w: br * 0.35, color: CORE }], decals: [lens(hot)] } },
+      ]);
+      muzzles.push([x1 + 0.5, 0, z]);
+    } else if (size === 'medium') {
+      // ---- Fusion-Lambda particle cannon: housing, a long barrel with radiator fins, ribbed accelerator, emitter tip
+      const br = L * 0.064, hw = br * 2.1, hh = br * 2.9, hx0 = -R * 0.3, hx1 = R * 0.85, z = tH + br * 1.45;   // short, fat barrel
+      parts.push(part('housing', box(hx0, hx1, -hw, hw, tH, tH + hh), { color: T, paint: true, weather: 0.8, decals: [ribs(3), D.boltRow(n => n[0] > 0.9, 0.15, 3, 0.2, 0.8, 0.05)] }));
+      const segs = [{ x0: hx1, x1: hx1 + L * 0.04, r: br * 1.4, color: DARK_STEEL }];   // collar; the fins start past the turret's front
+      let x = hx1 + L * 0.04;
+      const fins = 4, fw = br * 0.3, gap = br * 0.5;                         // radiator stack: thin wide discs on a steel core
+      for (let i = 0; i < fins; i++) { segs.push({ x0: x, x1: x + gap, r: br }); x += gap; segs.push({ x0: x, x1: x + fw, r: br * 1.7, color: FIN }); x += fw; }
+      const xa = x, xb = xa + L * 0.14;                                      // ribbed accelerator with glowing coils
+      segs.push({ x0: xa, x1: xb, r: br, opt: { bands: [0.15, 0.45, 0.75].map((f, i) => ({ x: xa + (xb - xa) * f, w: br * 0.45, color: i % 2 ? glowBand : FIN })) } });
+      segs.push({ x0: xb, x1: xb + L * 0.05, r: br * 1.3, color: DARK_STEEL, opt: { bands: [{ x: xb + L * 0.017, w: br * 0.25, color: CORE }], decals: [lens(hot)] } });
+      run('barrel', 0, z, segs);
+      muzzles.push([xb + L * 0.05 + 0.5, 0, z]);
+      // power cell behind the housing, joined by a conduit
+      const cr = R * 0.24, cz = cell('cell', 0, cr, -R * 1.08, -R * 0.42);
+      parts.push(tubeX('conduit', 0, cz, cr * 0.38, -R * 0.42, hx0, { color: PAL.trim, weather: 0.4 }));
+    } else {
+      // ---- Graviton particle launcher: heavy cradle, big ribbed tube, wide gravity-lens ring at the muzzle
+      const tr = L * 0.082, mh = tr * 0.35, z = tH + mh + tr * 1.14, x0 = -R * 0.62, x1 = x0 + L * 0.66;
+      parts.push(part('cradle', box(-R * 0.5, R * 0.6, -tr * 0.75, tr * 0.75, tH, tH + mh), { color: DARK_STEEL, weather: 0.5 }));
+      const cw = R * 0.13, cy0 = tr * 1.13 + 0.4;
+      [-1, 1].forEach(s => parts.push(part(`cheek${s}`, box(-R * 0.42, R * 0.5, s > 0 ? cy0 : -cy0 - cw, s > 0 ? cy0 + cw : -cy0, tH, z + tr * 0.25), {
+        color: T, paint: true, weather: 0.8, decals: [ribs(3), D.boltRow(n => Math.abs(n[1]) > 0.9, 0.85, 4, 0.12, 0.88, 0.05)],
+      })));
+      const segs = [{ x0, x1: x0 + L * 0.05, r: tr * 0.82, color: DARK_STEEL, opt: { decals: [] } }];
+      let x = x0 + L * 0.05;
+      const xl = x1 - L * 0.1, ribsN = 5, rw = tr * 0.3, span = (xl - x - ribsN * rw) / (ribsN + 1);
+      for (let i = 0; i < ribsN; i++) {
+        segs.push({ x0: x, x1: x + span, r: tr, color: T, opt: { paint: true, weather: 0.75, bands: i === 2 ? [{ x: x + span * 0.35, w: span * 0.3, color: glowBand }] : [] } }); x += span;
+        segs.push({ x0: x, x1: x + rw, r: tr * 1.13, color: FIN }); x += rw;
+      }
+      segs.push({ x0: x, x1: xl, r: tr, color: T, opt: { paint: true, weather: 0.75 } });
+      // gravity lens: a wide dark ring, its face a dark well with a cyan halo and a violet singularity
+      segs.push({ x0: xl, x1, r: tr * 1.38, color: DARK_STEEL, opt: { bands: [{ x: xl + (x1 - xl) * 0.35, w: (x1 - xl) * 0.2, color: CORE }], decals: [{ match: n => n[0] > 0.9, draw(api) {
+        api.ellipse(0.5, 0.5, 0.44, 0.44, '#07090c');
+        if (hot) {
+          api.ellipse(0.5, 0.5, 0.4, 0.4, 'none', `stroke="${E1}" stroke-width="${0.9 * api.S}"`);
+          api.ellipse(0.5, 0.5, 0.28, 0.28, 'none', `stroke="${E2}" stroke-width="${0.6 * api.S}" opacity="0.8"`);
+          api.ellipse(0.5, 0.5, 0.15, 0.15, '#b48cff'); api.ellipse(0.5, 0.5, 0.07, 0.07, E3);
+        }
+      } }] } });
+      run('tube', 0, z, segs);
+      muzzles.push([x1 + 0.5, 0, z]);
+      // two capacitor cells on the back of the roof, either side of the tube's breech
+      const cr = R * 0.17, cyy = cy0 + cw * 0.5 + 0.2;   // centred under the cheeks' line, clear of the tube
+      [-1, 1].forEach(s => cell(`cap${s}`, s * Math.max(cyy, tr * 0.82 + cr + 0.8), cr, -R * 1.06, -R * 0.66));
+    }
+    return { parts, muzzles, tH, R };
+  }
+
+  VU.weapons.special = { name: 'Special', role: 'Energy weapon: Laser / Fusion-Lambda / Graviton', build, elev: () => 0 };
+})(typeof window !== 'undefined' ? window.VectorUnit : globalThis.VectorUnit);
+
+</script>
+<script>
+(function () {
+  const VU = window.VectorUnit;
+  const $ = id => document.getElementById(id);
+  const slot = $('slot'), logEl = $('log');
+  const log = m => { logEl.innerHTML = `<div>${new Date().toLocaleTimeString()} · ${m}</div>` + logEl.innerHTML; };
+  const TYPES = [
+    ['panzer', 'Panzer', 'Main battle tank: 1 / 2 / 3 forward barrels by size.'],
+    ['antiair', 'Anti-Air', 'Ribbed rocket-launcher block tilted at the sky on a solid mount: 3 / 4 / 6 launch tubes by size.'],
+    ['artillery', 'Artillery', 'Long, thick barrel raised steeply on a solid mount, round muzzle brake: 1 / 1 / 2 barrels by size.'],
+    ['flamer', 'Flamer', 'Large gas containers with feed pipes, long thick barrel(s) with a glowing flared nozzle: 1 / 1 / 2 barrels by size.'],
+    ['special', 'Special', 'Energy weapons: finned laser emitter (Light), short finned Fusion-Lambda cannon (Medium), ribbed Graviton launcher with a gravity lens (Heavy).'],
+  ];
+  const SIZE_NAME = { light: 'Light', medium: 'Medium', heavy: 'Heavy' };
+  const STATE = ['Intact', 'Damaged', 'Burning', 'Destroyed'];
+  let team = '#33d17a';
+  const tank = VU.create(slot, { size: 'light', type: 'panzer', team, hull: 0, turret: 0, onEvent: (e, d) => {
+    if (e === 'fire') log(`Fired ${d.barrels} barrel${d.barrels > 1 ? 's' : ''}`);
+    if (e === 'state') { log(`State: ${d}`); syncHp(); }
+    if (e === 'destroyed') log('Destroyed: explosion → charred wreck (12 s)');
+    if (e === 'respawn') { log('Wreck cleared → respawned at the factory'); syncHp(); }
+  } });
+
+  function name() { return `${SIZE_NAME[tank.size]} ${VU.weapons[tank.type].name}`; }
+  function syncTag() {
+    $('title').textContent = name();
+    $('tag').innerHTML = `<b>${name()}</b> · ${tank.hp} HP · ${STATE[tank.damageLevel]}`;
+  }
+  // size
+  const sizeBtns = $('sizeBtns');
+  const markSize = () => sizeBtns.querySelectorAll('.btn').forEach(b => { b.classList.toggle('on', b.dataset.s === tank.size); b.setAttribute('aria-pressed', b.dataset.s === tank.size); });
+  sizeBtns.onclick = e => { const b = e.target.closest('.btn'); if (!b || b.dataset.s === tank.size) return; tank.setSize(b.dataset.s); markSize(); syncTag(); log(`Showing ${name()}`); };
+  markSize();
+  // type
+  const typeBtns = $('typeBtns');
+  typeBtns.innerHTML = TYPES.map(t => { const ok = !!VU.weapons[t[0]]; return `<button class="btn" data-t="${t[0]}" ${ok ? '' : 'aria-disabled="true"'}>${t[1]}<span class="st">${ok ? 'modelled' : 'not modelled yet'}</span></button>`; }).join('');
+  const markType = () => { typeBtns.querySelectorAll('.btn').forEach(b => { b.classList.toggle('on', b.dataset.t === tank.type); b.setAttribute('aria-pressed', b.dataset.t === tank.type); }); $('typeInfo').textContent = TYPES.find(t => t[0] === tank.type)[2]; };
+  typeBtns.onclick = e => { const b = e.target.closest('.btn'); if (!b) return; if (!VU.weapons[b.dataset.t]) { log(`${b.firstChild.textContent.trim()} is not modelled yet`); return; } tank.setType(b.dataset.t); markType(); syncTag(); };
+  markType();
+  // health
+  const hp = $('hp'), hpv = $('hpv');
+  function syncHp() {
+    hp.value = tank.hp; hpv.textContent = tank.hp + ' HP';
+    const lv = tank.damageLevel;
+    $('hpInfo').innerHTML = ['<b>Intact</b> · weathering only', '<b>Damaged</b> · scorch marks, bullet holes, grey smoke', '<b>Burning</b> · cracks, ember holes, flames, black smoke · speed ×0.65', '<b>Destroyed</b> · explosion, charred wreck, turret knocked askew · respawns in 12 s'][lv];
+    $('hpBtns').querySelectorAll('.btn').forEach(b => b.classList.toggle('on', [100, 55, 25, 0][lv] === +b.dataset.h));
+    syncTag();
+  }
+  hp.oninput = () => { tank.setHealth(+hp.value); syncHp(); };
+  $('hpBtns').onclick = e => { const b = e.target.closest('.btn'); if (!b) return; tank.setHealth(+b.dataset.h); syncHp(); };
+  syncHp();
+  setInterval(() => { if (tank.damageLevel === 3) $('hpInfo').innerHTML = `<b>Destroyed</b> · charred wreck · respawn in ${Math.max(0, Math.ceil(tank.wreckTime))} s`; }, 250);
+  // hull
+  const deg = d => Math.round(d * 11.25 * 100) / 100;
+  const syncDir = () => { $('hullInfo').innerHTML = `Direction <b>${tank.hull}</b> / 32 · ${deg(tank.hull)}°`; $('turInfo').innerHTML = `Direction <b>${tank.turret}</b> / 32 · ${deg(tank.turret)}° (hull-relative ${deg((tank.turret - tank.hull + 32) % 32)}°)`; };
+  setInterval(syncDir, 120); syncDir();
+  const follow = $('follow');
+  $('hullL').onclick = () => { tank.rotate(-1); if (follow.checked) tank.setTurret(tank.hull); };
+  $('hullR').onclick = () => { tank.rotate(1); if (follow.checked) tank.setTurret(tank.hull); };
+  $('drive').onchange = e => { tank.setDriving(e.target.checked); log(e.target.checked ? 'Driving' : 'Stopped'); };
+  $('spin').onchange = e => tank.setAutoTurn(e.target.checked, follow.checked);
+  follow.onchange = () => { if (follow.checked) { tank.setTurret(tank.hull); $('aimPtr').checked = false; } tank.setAutoTurn($('spin').checked, follow.checked); };
+  // turret
+  $('turL').onclick = () => tank.setTurret(tank.turret - 1);
+  $('turR').onclick = () => tank.setTurret(tank.turret + 1);
+  $('fireBtn').onclick = () => { if (!tank.fire()) log('Cannot fire: destroyed'); };
+  // view
+  $('explode').onchange = e => tank.setExploded(e.target.checked);
+  $('gridT').onchange = e => tank.setGrid(e.target.checked);
+  // team
+  const teamEl = $('team');
+  [['#33d17a', 'Green'], ['#3b82f6', 'Blue'], ['#e5484d', 'Red'], ['#f5a524', 'Orange'], ['#a855f7', 'Purple'], ['#22d3ee', 'Cyan']].forEach(([c, n]) => {
+    const b = document.createElement('button'); b.style.background = c; b.setAttribute('aria-label', n + ' team'); b.title = n; if (c === team) b.className = 'on';
+    b.onclick = () => { team = c; teamEl.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); tank.setTeam(c); log(`Team colour: ${n}`); };
+    teamEl.appendChild(b);
+  });
+  // export
+  $('dl').onclick = async e => {
+    const b = e.currentTarget;
+    try { await navigator.clipboard.writeText(tank.toSVGString()); b.textContent = 'Copied! Paste into a .svg file'; }
+    catch (err) { b.textContent = 'Copy blocked by browser'; }
+    setTimeout(() => b.textContent = 'Copy SVG snapshot', 2200);
+  };
+
+  // ---- zoom, pan, aim, click to fire
+  const stage = document.querySelector('.stage');
+  const view = { s: 1, x: 0, y: 0 };
+  const applyView = () => { slot.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.s})`; $('zVal').textContent = Math.round(view.s * 100) + '%'; };
+  function zoomAt(f, cx, cy) { const s = Math.max(0.5, Math.min(8, view.s * f)), k = s / view.s; view.x = cx - (cx - view.x) * k; view.y = cy - (cy - view.y) * k; view.s = s; applyView(); }
+  const center = () => { const r = stage.getBoundingClientRect(); return [r.width / 2, r.height / 2]; };
+  stage.addEventListener('wheel', e => { e.preventDefault(); const r = stage.getBoundingClientRect(); zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  const ptrs = new Map(); let pinch = null, moved = 0;
+  stage.addEventListener('pointerdown', e => { if (e.target.closest('.zoombar')) return; stage.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]); moved = 0; });
+  stage.addEventListener('pointermove', e => {
+    if ($('aimPtr').checked && !follow.checked) { const p = tank.clientToSvg(e.clientX, e.clientY); tank.aimAtPoint(p[0], p[1]); }
+    if (!ptrs.has(e.pointerId)) return;
+    const prev = ptrs.get(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+    moved += Math.abs(e.clientX - prev[0]) + Math.abs(e.clientY - prev[1]);
+    if (moved > 4) stage.classList.add('dragging');
+    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]), r = stage.getBoundingClientRect(); if (pinch) zoomAt(d / pinch, (a[0] + b[0]) / 2 - r.left, (a[1] + b[1]) / 2 - r.top); pinch = d; }
+    else if (moved > 4) { view.x += e.clientX - prev[0]; view.y += e.clientY - prev[1]; applyView(); }
+  });
+  const endPtr = e => {
+    if (!ptrs.has(e.pointerId)) return;
+    ptrs.delete(e.pointerId); pinch = null;
+    if (e.type === 'pointerup' && moved <= 4 && !e.target.closest('.zoombar')) { if (!tank.fire()) log('Cannot fire: destroyed'); }
+    if (!ptrs.size) stage.classList.remove('dragging');
+  };
+  stage.addEventListener('pointerup', endPtr); stage.addEventListener('pointercancel', endPtr);
+  $('zIn').onclick = () => zoomAt(1.25, ...center());
+  $('zOut').onclick = () => zoomAt(0.8, ...center());
+  $('zReset').onclick = () => { view.s = 1; view.x = 0; view.y = 0; applyView(); };
+  syncTag(); log(`Showing ${name()}`);
+})();
+</script>
+</body>
+</html>
