@@ -8,5 +8,5 @@ File here        Original file   Author    Page
 k_missile.wav    missile.wav     mikeask   https://opengameart.org/content/missile-sound
 
 Released under CC0 1.0 (public domain; no credit required), as its page states. Downloaded 2026-11-21.
-The file is an unchanged copy. It is very quiet, so the demo plays it about six times louder, a little faster, starting a
+The file is an unchanged copy. It is very quiet, so the demo plays it about three times louder, a little faster, starting a
 quarter of a second in, and 1.1 seconds long (see `rocket` in ../sfx.js).

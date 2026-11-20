@@ -9,7 +9,7 @@ window.createSfx = function (base, demoBase) {
   const FILES = { shell: ['shell_1.wav', 'shell_2.wav', 'shell_3.wav'], arty: ['arty_1.wav', 'arty_2.wav'], boom: ['boom_1.wav', 'boom_2.wav', 'boom_3.wav'],
     bigboom: ['bigboom_1.wav', 'bigboom_2.wav'], laser: ['laser_1.wav'] };
   // The Anti-Air rocket launch (owner, 2026-11-21): a missile launch recording in the demo's own sounds/ folder (CC0, see
-  // sounds/README.txt there). It is very quiet, so it is played about six times louder.
+  // sounds/README.txt there). It is very quiet, so it is played about three times louder (owner: kept under the burst explosion).
   const MISSILE = 'k_missile.wav';
   const PITCH = [1.22, 1, 0.82];                             // light, medium, heavy
   const rnd = (a, b) => a + Math.random() * (b - a);
@@ -74,12 +74,12 @@ window.createSfx = function (base, demoBase) {
       const z = PITCH[o.size];
       // one launch sound for every rocket: the missile recording, a little faster, started past its quiet beginning, 1.1 s long,
       // plus a small pop as the rocket leaves the tube. The synthesised version below is only the stand-in if the file is missing.
-      if (sample(d, t, 'missile', { rate: 1.3 * z, g: 6, cut: 1.1, off: 0.25 })) { noise(d, t, 0.05, { type: 'highpass', f0: 1800, g: 0.3 }); return; }
+      if (sample(d, t, 'missile', { rate: 1.3 * z, g: 3.2, cut: 1.0, off: 0.25 })) { noise(d, t, 0.05, { type: 'highpass', f0: 1800, g: 0.25 }); return; }
       noise(d, t, 0.06, { type: 'highpass', f0: 1800, g: 0.45 }); noise(d, t, 0.6, { type: 'bandpass', q: 1.2, f0: 500 * z, f1: 2600 * z, g: 0.5, att: 0.06 });
       noise(d, t, 0.5, { f0: 300, f1: 120, g: 0.4, att: 0.03 });
     },
     flak(d, t) {                                             // a rocket bursts in the air: a short, higher explosion from the game's recordings, with a crack
-      if (sample(d, t, 'boom', { rate: 1.9, g: 0.5, cut: 0.45 })) { noise(d, t, 0.03, { type: 'highpass', f0: 2200, g: 0.4, att: 0.001 }); tone(d, t, 0.18, { f0: 140, f1: 50, g: 0.4 }); return; }
+      if (sample(d, t, 'boom', { rate: 1.9, g: 1, cut: 0.5 })) { noise(d, t, 0.03, { type: 'highpass', f0: 2200, g: 0.7, att: 0.001 }); tone(d, t, 0.2, { f0: 140, f1: 50, g: 0.7 }); return; }
       noise(d, t, 0.14, { type: 'bandpass', q: 0.8, f0: 1900, f1: 500, g: 0.7 }); tone(d, t, 0.2, { f0: 150, f1: 55, g: 0.5 }); noise(d, t + 0.02, 0.5, { f0: 500, f1: 100, g: 0.25, att: 0.03 }); },
     hit(d, t) { noise(d, t, 0.07, { type: 'bandpass', q: 2, f0: 2600, g: 0.5 }); tone(d, t, 0.1, { type: 'triangle', f0: 950, f1: 280, g: 0.3 }); noise(d, t, 0.25, { f0: 700, f1: 120, g: 0.5 }); },
     boom(d, t, o) {                                          // artillery shell lands
