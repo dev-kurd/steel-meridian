@@ -7,10 +7,11 @@
  * - Every sound gets a stereo position and a loudness from where it happens on the screen. */
 window.createSfx = function (base, demoBase) {
   const FILES = { shell: ['shell_1.wav', 'shell_2.wav', 'shell_3.wav'], arty: ['arty_1.wav', 'arty_2.wav'], boom: ['boom_1.wav', 'boom_2.wav', 'boom_3.wav'],
-    bigboom: ['bigboom_1.wav', 'bigboom_2.wav'], laser: ['laser_1.wav'] };
+    bigboom: ['bigboom_1.wav', 'bigboom_2.wav'], laser: ['laser_1.wav'], flak: ['flak_1.wav', 'flak_2.wav'] };
   // Candidate recordings for the Anti-Air rocket launch, in the demo's own sounds/ folder (see sounds/README.txt there): real
   // rocket, missile and thruster sounds from OpenGameArt, all CC0.
-  const RFILES = { rocket: 'k_rocket.ogg', missile: 'k_missile.wav', thruster: 'k_thruster.ogg', engine: 'k_engine.wav', launch: 'k_launch.wav' };
+  const RFILES = { rocket: 'k_rocket.ogg', missile: 'k_missile.wav', thruster: 'k_thruster.ogg', engine: 'k_engine.wav', launch: 'k_launch.wav',
+    heavyshot: 'r_heavyshot.wav', shoot: 'r_shoot.wav', fire_a: 'r_fire_a.wav', fire_b: 'r_fire_b.wav', wind: 'r_wind.wav', swoosh: 'r_swoosh.wav' };   // second line: the first set (shot and whoosh recordings)
   // Each option is a list of [recording, { g: loudness, rate: speed, cut: length in seconds, off: start this far into the file }].
   // Some recordings are very quiet, so their loudness is well above 1.
   const ROCKET = {
@@ -19,7 +20,13 @@ window.createSfx = function (base, demoBase) {
     thruster: [['thruster', { g: 1.3, cut: 0.9, off: 0.5 }], ['engine', { g: 0.45, rate: 2, cut: 0.7 }]],
     roar:     [['rocket', { g: 1.8, rate: 1.15, cut: 1.0, off: 0.2 }], ['engine', { g: 0.5, rate: 2.2, cut: 0.8 }]],
     hiss:     [['launch', { g: 0.22, rate: 0.55, cut: 0.9, off: 2.2 }], ['missile', { g: 5, rate: 1.3, cut: 1.1, off: 0.25 }]],
+    // the first set, brought back to compare: a shot recording plus a fire or wind whoosh (these have no extra pop)
+    fire:     [['heavyshot', { g: 0.7 }], ['fire_a', { g: 0.6, rate: 1.2, cut: 0.9, off: 0.08 }]],
+    rush:     [['shoot', { g: 0.8 }], ['fire_b', { g: 0.55, rate: 1.3, cut: 0.8, off: 0.08 }]],
+    wind:     [['heavyshot', { g: 0.35 }], ['wind', { g: 0.6, rate: 1.3, cut: 0.8, off: 0.08 }]],
+    swoosh:   [['swoosh', { g: 0.7, rate: 1.2, cut: 0.8 }]],
   };
+  const NOPOP = { fire: 1, rush: 1, wind: 1, swoosh: 1 };
   const PITCH = [1.22, 1, 0.82];                             // light, medium, heavy
   const rnd = (a, b) => a + Math.random() * (b - a);
   let ctx = null, master = null, noiseBuf = null, on = true, vol = 0.7, ends = [], rocketMode = 'rocket';
@@ -84,7 +91,11 @@ window.createSfx = function (base, demoBase) {
       if (ROCKET[rocketMode]) {                              // one of the library recordings
         let ok = false;
         for (const [n, q] of ROCKET[rocketMode]) ok = sample(d, t, 'r_' + n, { rate: (q.rate || 1) * z, g: q.g, cut: q.cut, off: q.off }) || ok;
-        if (ok) { noise(d, t, 0.05, { type: 'highpass', f0: 1800, g: 0.3 }); return; }   // plus a small pop as it leaves the tube
+        if (ok) { if (!NOPOP[rocketMode]) noise(d, t, 0.05, { type: 'highpass', f0: 1800, g: 0.3 }); return; }   // plus a small pop as it leaves the tube
+      }
+      if (rocketMode === 'mix' && smp.flak && smp.flak.length && smp.arty && smp.arty.length) {   // the game's own recordings: a gun pop, then a synthesised rush
+        sample(d, t, 'flak', { rate: 0.7 * z, g: 0.5, cut: 0.3 }); sample(d, t, 'arty', { rate: 2.2 * z, g: 0.3, cut: 0.3 });
+        noise(d, t, 0.7, { type: 'bandpass', q: 0.9, f0: 400 * z, f1: 2200 * z, g: 0.45, att: 0.08 }); noise(d, t, 0.6, { f0: 260, f1: 110, g: 0.35, att: 0.04 }); return;
       }
       noise(d, t, 0.06, { type: 'highpass', f0: 1800, g: 0.45 }); noise(d, t, 0.6, { type: 'bandpass', q: 1.2, f0: 500 * z, f1: 2600 * z, g: 0.5, att: 0.06 });
       noise(d, t, 0.5, { f0: 300, f1: 120, g: 0.4, att: 0.03 });

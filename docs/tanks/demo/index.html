@@ -43,7 +43,8 @@
   <div class="row" id="fire"><span class="l">Firing (effects mockup)</span></div>
   <div class="row"><button id="kill">Destroy one tank</button></div>
   <div class="row" id="ashell"><span class="l">Artillery shell (compare)</span></div>
-  <div class="row" id="rsnd"><span class="l">Anti-Air rocket sound (pick one)</span></div>
+  <div class="row" id="rsnd"><span class="l">Anti-Air rocket sound: second set</span></div>
+  <div class="row" id="rsnd1"><span class="l">Anti-Air rocket sound: first set</span></div>
   <div class="row">
     <label><input id="snd" type="checkbox" checked> Sound</label>
     <input id="vol" type="range" min="0" max="1" step="0.05" value="0.7" style="flex:1" title="Volume">
@@ -636,7 +637,12 @@ class Batcher {
   });
   document.getElementById('kill').onclick = () => { const live = tanks.filter((t) => stateOf(t) < 3 && onScreen(t.x, t.y)); if (live.length) kill(live[(Math.random() * live.length) | 0]); };
   // click a name to hear it: three rockets one after another
-  group('rsnd', [['rocket', 'Rocket'], ['missile', 'Missile'], ['thruster', 'Thruster'], ['roar', 'Rocket + roar'], ['hiss', 'Missile + hiss'], ['orig', 'Original']], () => sfx.rocket(), (v) => { sfx.setRocket(v); sfx.unlock(); for (let i = 0; i < 3; i++) setTimeout(() => sfx.play('rocket', { size: 1, gain: 0.8 }), 60 + i * 140); });
+  group('rsnd', [['rocket', 'Rocket'], ['missile', 'Missile'], ['thruster', 'Thruster'], ['roar', 'Rocket + roar'], ['hiss', 'Missile + hiss']], () => sfx.rocket(), (v) => { pickRocket(v); });
+  group('rsnd1', [['fire', 'Shot + fire rush'], ['rush', 'Deep fire rush'], ['wind', 'Wind whoosh'], ['swoosh', 'Swoosh'], ['mix', 'Recorded mix'], ['orig', 'Original']], () => sfx.rocket(), (v) => { pickRocket(v); });
+  function pickRocket(v) {                                   // the two rows are one choice: clear both, the clicked row then marks its button
+    document.querySelectorAll('#rsnd button, #rsnd1 button').forEach((b) => b.classList.remove('on'));
+    sfx.setRocket(v); sfx.unlock(); for (let i = 0; i < 3; i++) setTimeout(() => sfx.play('rocket', { size: 1, gain: 0.8 }), 60 + i * 140);
+  }
   group('ashell', [['bullet', 'Bullet'], ['sphere', 'Sphere']], () => shellMode, (v) => { shellMode = v; });
   document.getElementById('snd').onchange = (e) => sfx.setOn(e.target.checked);
   document.getElementById('vol').oninput = (e) => sfx.setVolume(+e.target.value);
