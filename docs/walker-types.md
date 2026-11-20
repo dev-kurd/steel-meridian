@@ -1,7 +1,7 @@
 # Walker Types (robots) — State of War: Warmonger reference
 
 Status: **roster from the manual (2026-11-18); look and sprites done in 3D (approved and baked 2026-11-19).**
-The built design is described in the project doc `walkers-3d-model.md` (claude.ai project "State of War Game"). This file keeps the
+The built design, models and sprite format are in [`walkers/`](walkers/README.md). This file keeps the
 game facts (weapons, ranges, roles) from the manual.
 
 Source: *State of War: Warmonger* Windows manual (Cypron Studios): "Description of Units → Buildings → Walker Factory",

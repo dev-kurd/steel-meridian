@@ -38,7 +38,7 @@ That is too slow. The game is moving to this plan:
   It is switched off (`HF_USE = false`). When a 2:1 factory replaces it, remove that stretch or it is squashed twice.
 
 ## Units
-Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and **`docs/walker-types.md`** (5 walkers).
+Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and **`docs/walker-types.md`** (5 walkers). Walker models, renders, bake and sheet format: **`docs/walkers/`**.
 - **Tanks:** 15 models, 5 weapon types (Panzer, Artillery, Anti-Air, Flamer, Special) × Light / Medium / Heavy. One shared chassis per
   size, one weapon module per type on the same turret pivot.
 - **Hull and turret are separate sprites**, 32 directions each; the turret aims on its own and always draws above the hull
@@ -84,6 +84,8 @@ the new tank damage style · Flamer flame jet and Special beam effects · Gatlin
 In this repo:
 - `docs/tank-types.md`: the 15 tanks (sizes, the 5 weapon types, what each looks like).
 - `docs/walker-types.md`: the 5 walkers (weapons, ranges, roles, modules as built).
+- `docs/walkers/`: the walker 3D models (`source/walker_lib.py`, `.blend` scenes, pack tools), renders, and how they are baked
+  into sheets and described in `walkers.json`. The sheets themselves are not in the repo yet.
 - `assets/README.md`: the current asset and config format.
 
 In the claude.ai project "State of War Game":
