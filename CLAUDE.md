@@ -89,17 +89,19 @@ Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and 
 
 ## Not decided yet (ask first)
 Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Flamer flame jet and Special
-beam effects · Gatling spin, Achilles strike, spinning radar · where the packed unit sheets live (repo or not) · the other improvements the owner wants inside the walker models (not listed yet) · how mockups
+beam effects · Gatling spin, Achilles strike, spinning radar · the tank effects and sounds as a whole (proposal and mockup: `docs/tanks/tank-fx-design.md`, not approved yet) · the other improvements the owner wants inside the walker models (not listed yet) · how mockups
 are shown when a session cannot publish to a design canvas (pictures or a page in the session, or do the mockup in claude.ai).
 
 ## Current order of work (owner, 2026-11-20)
-1. **Finish the Panzer tanks first:** baked, packed and checked on the PC on 2026-11-20 (`docs/tanks/README.md`). Still open:
-   where the sheets live.
+1. **Finish the Panzer tanks first:** baked, packed and checked on the PC on 2026-11-20 (`docs/tanks/README.md`). The packed
+   sheets live in the repo (owner, 2026-11-21): `docs/tanks/source/sheets/`.
 2. **Tank round 2 (Artillery, Anti-Air, Flamer, Special), chosen by the owner:** mockup approved and the 12 models built on
    2026-11-20, models approved by the owner the same day (`docs/tanks/README.md`, "Round 2"). The full bake of the new turrets, turret shadows
    and wrecks ran on 2026-11-20 (2,880 renders), then the pack (all 15 tanks, 46 sheets, 97 MB) and the pack check passed.
-   Still open: where the sheets live; the Flamer and Special firing effects.
-3. Then the walker changes (re-bake with the new mask method, new damaged look, other improvements).
+   Still open: the Flamer and Special firing effects (part of step 3).
+3. **Tank effects and sounds before the walkers (owner, 2026-11-21):** design note `docs/tanks/tank-fx-design.md` and a working
+   mockup in the tank demo page (firing, hits, damage smoke and flames, explosions, sounds). Waiting for the owner's review.
+4. Then the walker changes (re-bake with the new mask method, new damaged look, other improvements).
 
 ## References
 In this repo:
@@ -108,7 +110,8 @@ In this repo:
 - `docs/walkers/`: the walker 3D models (`source/walker_lib.py`, `.blend` scenes, pack tools), renders, and how they are baked
   into sheets and described in `walkers.json`. The sheets themselves are not in the repo yet.
 - `docs/tanks/`: the 3D tanks (`README.md` with status and next steps, the design note `tanks-3d-model.md`, `source/` with the
-  model, bake, pack, check and mockup tools, `.blend` scenes). The bake frames and sheets are not in the repo.
+  model, bake, pack, check and mockup tools, `.blend` scenes), the packed sheets (`source/sheets/`), the demo page (`demo/`) and
+  the effects and sounds proposal (`tank-fx-design.md`). The bake frames are not in the repo.
 - `docs/tanks/vector-viewer/`: the tanks viewer page (all 15 approved vector tanks, 2:1 view): the design reference for the 3D tanks.
 - `tools/sprite-pipeline/`: the sprite pipeline prototype (bake, team-colour shader, fx, PixiJS test map, encrypted packs,
   Tauri app). Its models still use the old isometric view; the pack key `pak/secret.txt` is not in the repo.
