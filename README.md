@@ -28,9 +28,14 @@ Opening `index.html` directly by double-click does not work: a page opened from 
 | `assets/` | All art, one folder per asset. Start with `assets/README.md` |
 | `sounds/` | Sound effects and announcer voice. See `sounds/README.txt` for sources and licences |
 | `music/` | Put `theme.mp3` here to replace the built-in score |
+| `CLAUDE.md` | The approved art and technology decisions and the working rules. Read it first when working with Claude |
 | `docs/art/` | Art style guide and the Heavy Factory demo |
+| `docs/tank-types.md`, `docs/walker-types.md` | The unit roster: 15 tanks and 5 walkers, weapons, ranges and roles |
+| `docs/tanks/` | The 3D tank models: status and next steps, design note, Blender source, bake and pack tools |
+| `docs/walkers/` | The 3D walker models: renders, Blender source, bake and pack tools, sheet format |
 | `docs/report/` | Asset inventory report (PDF) and the page it is printed from |
 | `tools/` | Build scripts: the Windows exe, the PDF report, the announcer voice |
+| `tools/sprite-pipeline/` | The sprite pipeline prototype: bake, team-colour shader, PixiJS test map, encrypted packs, Tauri app |
 
 ## For artists
 
