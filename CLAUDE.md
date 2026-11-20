@@ -17,7 +17,7 @@ technology. Follow it; anything not listed here is not decided yet, so ask. The 
 The current code draws every unit and building live each frame in Canvas 2D from plan-view SVG models (`assets/**/model.svg`).
 That is too slow. The game is moving to this plan:
 - **Models are the source, baked to sprite sheets**, drawn with **PixiJS (WebGL)**. Units are 3D models in Blender rendered to
-  sprites (walkers done; tanks: the Panzer set is modelled and ready to bake, see `docs/tanks/`); buildings are 2.5D vector models (VectorEngine) baked the same way.
+  sprites (walkers done; tanks: the Panzer set is modelled, baked and packed, see `docs/tanks/`); buildings are 2.5D vector models (VectorEngine) baked the same way.
 - **Resolutions @1x / @2x / @4x**, switched automatically by zoom × screen density. Zoom is limited (about 0.5×–2×). The game
   starts at a larger zoom and does not zoom out as far as today.
 - **WebP lossless only** (one file type, no PNG copies). Sheets at most 4096 px; sprites trimmed.
@@ -47,6 +47,8 @@ Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and 
   size, one weapon module per type on the same turret pivot.
 - **Hull and turret are separate sprites**, 32 directions each; the turret aims on its own and always draws above the hull
   (split by a flat plane at the turret pivot height). Tracks animate with frames chosen by distance driven (4 frames per link).
+- **Track frames are stored as overlays (approved 2026-11-20):** the sheet holds the whole hull once (frame 0) and, for frames 1–3,
+  only the pixels that change. The game draws hull frame 0, then the overlay on top.
 - **Tank bake rules (approved 2026-11-20):** the turret sprite carries no shadow; the hull sprite carries the turret's shade, rendered
   with a plain round stand-in for the turret so it is right for every turret direction; the barrels' shadow on the hull is not baked.
   Ground shadows are separate sprites (hull and turret). Details: `docs/tanks/README.md`.
@@ -87,12 +89,12 @@ Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and 
 
 ## Not decided yet (ask first)
 Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Flamer flame jet and Special
-beam effects · Gatling spin, Achilles strike, spinning radar · where the packed unit sheets live (repo or not) · tank track frames
-stored as overlays or whole hulls · the other improvements the owner wants inside the walker models (not listed yet) · how mockups
+beam effects · Gatling spin, Achilles strike, spinning radar · where the packed unit sheets live (repo or not) · the other improvements the owner wants inside the walker models (not listed yet) · how mockups
 are shown when a session cannot publish to a design canvas (pictures or a page in the session, or do the mockup in claude.ai).
 
 ## Current order of work (owner, 2026-11-20)
-1. **Finish the Panzer tanks first:** bake on the PC, pack, check (`docs/tanks/README.md`, "Next steps").
+1. **Finish the Panzer tanks first:** baked, packed and checked on the PC on 2026-11-20 (`docs/tanks/README.md`). Still open:
+   where the sheets live.
 2. Then ask which comes first: tank mockup round 2 (Artillery, Anti-Air, Flamer, Special) or the walker changes (re-bake with the new
    mask method, new damaged look, other improvements).
 

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "tank-demo",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["docs/tanks/demo/serve.cjs", "8765"],
+      "port": 8765
+    }
+  ]
+}
