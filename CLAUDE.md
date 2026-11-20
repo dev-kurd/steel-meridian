@@ -33,6 +33,8 @@ That is too slow. The game is moving to this plan:
   re-baked the new way**. The shader formula above is the same for both.
 - **Tank effects and sounds (approved 2026-11-21):** how each of the 15 tanks shoots, what its shot, hit, damage and destruction
   look and sound like: `docs/tanks/tank-fx-design.md`, shown working in the tank demo (`docs/tanks/demo/`).
+  The tank sounds stay in code for now (owner, 2026-11-21): mixed from the recordings in `sounds/` plus synthesised layers when
+  they play, no WAV file per tank sound.
 - **Effects** come from an `fx` sheet: flipbook flames, explosions and muzzle flash (additive), plus particle smoke and embers,
   muzzle smoke and a small recoil kick when a tank fires.
 
@@ -90,7 +92,7 @@ Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and 
   missing. Pack extension (`.pak` or `.cab`) is **not decided yet**.
 
 ## Not decided yet (ask first)
-Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Gatling spin, Achilles strike, spinning radar · for the tank effects (approved, see `docs/tanks/tank-fx-design.md`): whether Anti-Air may hit ground targets, synthesised sounds or WAV files, whether effects are sorted with the tanks, and the real ranges, reload times and damage · the other improvements the owner wants inside the walker models (not listed yet) · how mockups
+Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Gatling spin, Achilles strike, spinning radar · for the tank effects (approved, see `docs/tanks/tank-fx-design.md`): whether Anti-Air may hit ground targets, whether effects are sorted with the tanks, and the real ranges, reload times and damage · the other improvements the owner wants inside the walker models (not listed yet) · how mockups
 are shown when a session cannot publish to a design canvas (pictures or a page in the session, or do the mockup in claude.ai).
 
 ## Current order of work (owner, 2026-11-20)
