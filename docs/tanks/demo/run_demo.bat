@@ -1,5 +1,5 @@
 @echo off
-title Steel Meridian - Panzer tank demo
+title Steel Meridian - tank demo
 cd /d "%~dp0"
 where node >nul 2>nul || (echo Node.js was not found on this PC. & pause & exit /b 1)
 if not exist "..\source\sheets\tanks.json" (echo The packed sheets are missing: docs\tanks\source\sheets. Pack them first. & pause & exit /b 1)

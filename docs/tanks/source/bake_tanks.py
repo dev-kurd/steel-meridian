@@ -157,7 +157,9 @@ class Bake:
                 for dd in self.dirs:                             # the turret at its real height, the point under its pivot on the anchor
                     T.set_dirs(0, dd); self.shoot('shadow/turret/%s/%s/d%02d.png' % (size, wp, dd), fr['shadow_turret'], 'shadow_turret', at=(d.pvx, 0, 0))
             self.note('(%s done)' % size)
-        full = self.dirs == list(range(32)) and set(self.only) == {'hull', 'turret', 'shadow', 'wreck'} and list(self.states) == list(STATES)
+        # the other weapons use the Panzer's hull sprites, so their bake is complete without 'hull' (--only turret,shadow,wreck)
+        need = {'hull', 'turret', 'shadow', 'wreck'} if self.weapon == 'panzer' else {'turret', 'shadow', 'wreck'}
+        full = self.dirs == list(range(32)) and need <= set(self.only) and list(self.states) == list(STATES)
         if full:
             with open(os.path.join(self.out, 'BAKE_DONE_' + '_'.join(self.sizes) + '_' + self.weapon), 'w') as f: f.write(time.ctime())
             if list(self.sizes) == list(TL.SIZES):

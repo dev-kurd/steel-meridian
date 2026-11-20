@@ -17,7 +17,7 @@ def main(argv):
     p = argparse.ArgumentParser()
     p.add_argument('--out', default=os.path.join(HERE, 'check_refs')); p.add_argument('--sizes', default='light,medium,heavy'); p.add_argument('--weapon', default='panzer')
     p.add_argument('--cases', default='5:0:2:0:green,12:27:1:0:blue,21:9:3:2:red'); p.add_argument('--samples', type=int, default=BT.SAMPLES); p.add_argument('--cpu', action='store_true')
-    a = p.parse_args(argv); os.makedirs(a.out, exist_ok=True); refs = []
+    a = p.parse_args(argv); a.out = os.path.abspath(a.out); os.makedirs(a.out, exist_ok=True); refs = []   # absolute: Blender resolves a relative path differently
     cases = [c.split(':') for c in a.cases.split(',') if c]
     for size in [s for s in a.sizes.split(',') if s]:
         for team in sorted(set(c[4] for c in cases)):

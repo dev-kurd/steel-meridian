@@ -160,6 +160,7 @@ def tank_materials(team_hex='#33d17a'):
     m['glow'] = W.make_glow('glow', lin(S.glow_srgb), 1.0, 'light')
     m['lamp'] = W.make_glow('lamp', lin(hex2rgb('#fff0c4')), 1.5)
     m['tail'] = W.make_glow('tail', lin(hex2rgb('#ff3626')), 1.8)
+    weapon_materials()
     return m
 
 # ------------------------------------------------------------------ small helpers (everything goes to the current collection S.cur)
@@ -736,6 +737,385 @@ def build_panzer(T):
     turret_proxies(T, R * 1.9, R * 1.0, zt)
     return muzzles
 
+# ------------------------------------------------------------------ round 2 weapons: Artillery, Anti-Air, Flamer, Special
+# Mockup round 2 approved by the owner on 2026-11-20 (Flamer barrel and nozzle redone to the owner's notes). Shapes and sizes follow the vector modules in docs/tanks/vector-viewer (same formulas);
+# numbers without L or R in the vector code are model units (x K here). Turret-local axes, pivot at the origin, z = 0 is the deck.
+# Every weapon sits on the same hull as the Panzer of its size: only the turret differs.
+ARTY = {'light': NS(n=1, len=0.92, r=0.047, elev=30, tR=0.23, tH=0.40, cw=1.55, ch=1.5, ribs=0),
+        'medium': NS(n=1, len=0.96, r=0.058, elev=33, tR=0.24, tH=0.40, cw=1.5, ch=1.45, ribs=4),
+        'heavy': NS(n=2, len=0.96, r=0.051, elev=36, tR=0.25, tH=0.38, cw=0.7, ch=1.4, ribs=5)}
+ANTIAIR = {'light': NS(rows=1, cols=3, r=0.034, blen=0.36, elev=38, tR=0.23, tH=0.40, ribs=3),
+           'medium': NS(rows=2, cols=2, r=0.045, blen=0.40, elev=40, tR=0.24, tH=0.40, ribs=4),
+           'heavy': NS(rows=2, cols=3, r=0.037, blen=0.44, elev=42, tR=0.25, tH=0.38, ribs=5)}
+FLAMER = {'light': NS(r=0.048, len=0.74, tR=0.23, tH=0.40, n=1, cr=0.32, barrels=1),
+          'medium': NS(r=0.054, len=0.76, tR=0.24, tH=0.40, n=2, cr=0.27, barrels=1),
+          'heavy': NS(r=0.048, len=0.78, tR=0.25, tH=0.38, n=2, cr=0.30, barrels=2)}
+SPECIAL = {'light': NS(tR=0.23, tH=0.40), 'medium': NS(tR=0.24, tH=0.40), 'heavy': NS(tR=0.25, tH=0.38)}
+
+def weapon_materials():
+    """Fixed (non-team) glows and colours of the round 2 weapons. The glows go dark on a wreck like every other glow."""
+    m = S.mats; MM = make_metal_t
+    m['fire'] = W.make_glow('fire', lin(hex2rgb('#ff6a14')), 2.2); m['fire2'] = W.make_glow('fire2', lin(hex2rgb('#ffc44a')), 3.0)
+    m['energy'] = W.make_glow('energy', lin(hex2rgb('#3fc8f0')), 2.2); m['energy2'] = W.make_glow('energy2', lin(hex2rgb('#e8fbff')), 3.0)
+    m['violet'] = W.make_glow('violet', lin(hex2rgb('#b48cff')), 2.2)
+    for n, hx in (('heat', '#9a4a1e'), ('heat1', '#6f6a7a'), ('heat2', '#7a5a3e'), ('heat3', '#8a4a22')):
+        m[n] = MM(n, lin(hex2rgb(hx)), 0.75, 0.42, 'steel', 0.4, cracks=0.2, embers=0.0)
+    m['warn'] = MM('warn', lin(hex2rgb('#e8a33a')), 0.1, 0.5, 'steel', 0.8, cracks=0.3, embers=0.0)
+    m['redmark'] = MM('redmark', lin(hex2rgb('#c0392b')), 0.1, 0.5, 'steel', 0.6, cracks=0.0, embers=0.0)
+
+def disc(name, r, c, mat, par, lost=0):
+    return C(name, r, 0.006, 'X', c, mat, par, 24, 0.0, wn=False, lost=lost)
+
+def turret_base(T, tR, tHf):
+    """The low armoured turret box shared by the four round 2 weapons (as wide as the Panzer's, so it covers the hull's turret collar)."""
+    d = T.d; tur = T.tur; R = d.L * tR; tH = d.H * tHf; z0 = 1.0 * K; zt = z0 + tH
+    T.R = R; T.tH = zt
+    plan = [(1.0, 0.5), (0.42, 0.8), (-0.78, 0.8), (-1.0, 0.6), (-1.0, -0.6), (-0.78, -0.8), (0.42, -0.8), (1.0, -0.5)]
+    bot = [(x * R, y * R) for x, y in plan]; top = [(x * R * 0.84 - R * 0.04, y * R * 0.84) for x, y in plan]
+    C('ring', R * 0.72, z0, 'Z', (0, 0, z0 / 2), 'dark', tur, 44, 0.004)
+    add('turret_body', m_loft('tbody', bot, z0, top, zt, 0.03, 3), 'paint', tur)
+    tilt = math.atan2(0.128 * R, tH)
+    for s in (-1, 1):
+        strip(f'tstrip{s}', (-0.19 * R, s * ((0.8 - 0.064) * R + 0.003), z0 + tH * 0.5), R * 0.74, 0, tH * 0.2, tur, (s * tilt, 0, 0))
+        studs(f'tbolt{s}', [(-0.7 * R + 1.04 * R * j / 7, s * ((0.8 - 0.0154) * R + 0.002), z0 + tH * 0.12) for j in range(8)], (-s * (math.pi / 2 - tilt), 0, 0), tur, 0.009, 0.012)
+    return NS(R=R, tH=tH, z0=z0, zt=zt)
+
+def antenna(T, ax, ay, zt):
+    tur = T.tur; H = T.d.H
+    C('antenna_base', 1.2 * K, 1.4 * K, 'Z', (ax, ay, zt + 0.7 * K), 'dark', tur, 14, 0.005)
+    C('antenna_stub', 0.4 * K, H * 0.22, 'Z', (ax, ay, zt + 1.4 * K + H * 0.11), 'black', tur, 8, 0.0, wn=False)
+    C('antenna', 0.36 * K, H * 0.4, 'Z', (ax, ay, zt + 1.4 * K + H * 0.42), 'black', tur, 8, 0.0, wn=False, lost=2)
+
+def cupola(T, hx, hy, hr, zt):
+    tur = T.tur
+    C('cupola_base', hr * 1.12, 0.6 * K, 'Z', (hx, hy, zt + 0.3 * K), 'dark', tur, 32, 0.004)
+    C('cupola', hr, 1.6 * K, 'Z', (hx, hy, zt + 0.8 * K), 'paint', tur, 32, 0.012)
+    C('cupola_lid', hr * 0.74, 0.45 * K, 'Z', (hx, hy, zt + 1.75 * K), 'paint2', tur, 28, 0.005)
+    BC('cupola_handle', (hx, hy, zt + 2.1 * K), hr * 0.7, 0.35 * K, 0.35 * K, 'bright', tur, 0.003, 1, wn=False)
+    BC('cupola_hinge', (hx - hr * 0.8, hy, zt + 1.7 * K), 0.7 * K, hr * 0.8, 0.6 * K, 'dark', tur, 0.003, 1, wn=False)
+
+def elevated(T, xp, zp, a):
+    """An empty on the trunnion, tilted up by a. Parts parented to it are built along +x ("barrel space"). Returns it and barrel space -> turret space."""
+    e = empty('elev', T.tur, (xp, 0, zp)); e.rotation_euler = (0, -a, 0); ca, sa = math.cos(a), math.sin(a)
+    return e, (lambda p: (xp + p[0] * ca - p[2] * sa, p[1], zp + p[0] * sa + p[2] * ca))
+
+def ram(name, p0, p1, r, par):
+    """Hydraulic ram: a dark sleeve and a bright rod."""
+    a = Vector(p0); b = Vector(p1); m = a + (b - a) * 0.55
+    add(name + '_s', m_pipe(name, [a, m], r * 1.4), 'dark', par, wn=False); add(name + '_r', m_pipe(name, [m, b], r * 0.85), 'bright', par, wn=False)
+
+def gun_mount(T, b, up, xp, zp, cb, cf, cw, chh, ct, pinR, cheek_mat, ka, kb):
+    """Solid mount from the roof to the underside of the elevating mass, and a cheek plate each side carrying the trunnion."""
+    tur = T.tur; zt = b.zt
+    A = up((-cb * 0.9, 0, -chh)); F = up((cf * 0.6, 0, -chh))
+    P('mount', [(A[0], zt - 0.004), (F[0], zt - 0.004), (F[0], F[2]), (A[0], A[2])], -cw, cw, 'paint', tur, 0.012, 2)
+    for s in (-1, 1):
+        y0 = cw if s > 0 else -cw - ct
+        prof = [(xp - cb * ka, zt - 0.004), (xp + cf * kb, zt - 0.004), (xp + pinR * 0.9, zp + pinR * 0.5), (xp - pinR * 0.9, zp + pinR * 0.5)]
+        P(f'cheek{s}', prof, y0, y0 + ct, cheek_mat, tur, 0.01, 2)
+        yo = s * (cw + ct); zc = zp - pinR * 0.2
+        C(f'pin{s}', pinR * 0.3, 0.024, 'Y', (xp, yo, zc), 'steel', tur, 20, 0.004)
+        studs(f'pinb{s}', [(xp + math.cos(i * math.tau / 6) * pinR * 0.56, yo, zc + math.sin(i * math.tau / 6) * pinR * 0.56) for i in range(6)], 'Y', tur, 0.011, 0.014)
+
+def build_artillery(T):
+    d = T.d; size = d.size; tur = T.tur; L = d.L; c = ARTY[size]
+    b = turret_base(T, c.tR, c.tH); R, zt, z0, tH = b.R, b.zt, b.z0, b.tH
+    br = L * c.r; ln = L * c.len; a = math.radians(c.elev); ca, sa = math.cos(a), math.sin(a)
+    gap = br * 1.3 if c.n == 1 else br * 1.25
+    bys = [0.0] if c.n == 1 else [-gap - br * 0.2, gap + br * 0.2]
+    cw = br * c.cw if c.n == 1 else gap + br * 1.2 + br * c.cw * 0.5
+    chh = br * c.ch; cf, cb = R * 0.42, R * 0.5; xp = R * 0.18; zp = zt + cb * sa + chh * ca + 0.6 * K
+    e, up = elevated(T, xp, zp, a)
+    # cradle round the breeches (ribbed on Medium and Heavy), breech blocks behind it
+    B('cradle', -cb, cf, -cw, cw, -chh, chh, 'dark', e, 0.014, 2)
+    for i in range(c.ribs):
+        x = -cb + (cf + cb) * (i + 1) / (c.ribs + 1); w = max(0.9 * K, (cf + cb) * 0.03)
+        B(f'rib{i}', x - w, x + w, -cw - 0.014, cw + 0.014, -chh - 0.014, chh + 0.014, 'steel', e, 0.004, 1)
+    studs('cradle_b', [(cf, sy * cw * 0.8, sz * chh * 0.72) for sy in (-1, 1) for sz in (-1, 1)], 'X', e, 0.011, 0.014)
+    muzzles = []
+    for i, y in enumerate(bys):
+        C(f'breech{i}', br * 1.3, R * 0.2, 'X', (-cb - R * 0.08, y, 0), 'steel', e, 24, 0.01)
+        B(f'breech_lock{i}', -cb - R * 0.2, -cb - R * 0.16, y - br * 0.9, y + br * 0.9, -br * 0.35, br * 0.35, 'dark', e, 0.004, 1)
+        x0 = cf; x1 = cf + ln; lb = ln * 0.13; xm = x1 - lb; mr = br * 1.3
+        # barrel: one collar and a plain, slightly tapered tube (the round 1 rule: simple barrel, smaller and more detailed brake)
+        C(f'collar{i}', br * 1.45, ln * 0.07, 'X', (x0 + ln * 0.035, y, 0), 'steel', e, 28, 0.01)
+        xa = x0 + ln * 0.07 - 0.01
+        C(f'tube{i}', br * 1.04, xm - xa + 0.01, 'X', ((xa + xm + 0.01) / 2, y, 0), 'steel', e, 28, 0.0, r2=br * 0.94)
+        # round muzzle brake: neck ring, body, two dark vent rings, bolted face ring, bore
+        C(f'brake_neck{i}', br * 1.16, lb * 0.12, 'X', (xm, y, 0), 'steel', e, 24, 0.004)
+        C(f'brake{i}', mr, lb * 0.92, 'X', (xm + lb * 0.54, y, 0), 'dark', e, 28, 0.014)
+        for j, f in enumerate((0.3, 0.62)):
+            C(f'brake_v{i}{j}', mr * 1.015, lb * 0.15, 'X', (xm + lb * f, y, 0), 'black', e, 28, 0.0, wn=False)
+        C(f'brake_lip{i}', mr * 1.06, lb * 0.07, 'X', (xm + lb * 0.46, y, 0), 'steel', e, 28, 0.003)
+        C(f'brake_face{i}', mr * 0.86, 0.012, 'X', (x1 + 0.003, y, 0), 'steel', e, 24, 0.003)
+        disc(f'bore{i}', br * 0.72, (x1 + 0.008, y, 0), 'black', e)
+        studs(f'brake_b{i}', [(x1, y + math.cos(t) * mr * 0.74, math.sin(t) * mr * 0.74) for t in (0.785, 2.356, 3.927, 5.498)], 'X', e, 0.007, 0.008)
+        muzzles.append(up((x1 + 0.5 * K, y, 0)))
+    ct = max(2.0 * K, br * 0.4); pinR = chh * 1.05
+    gun_mount(T, b, up, xp, zp, cb, cf, cw, chh, ct, pinR, 'paint', 0.95, 0.75)
+    # elevation rams from the roof front to the cradle (added detail; thick enough to read)
+    for j, y in enumerate([0.0] if size == 'light' else [-cw * 0.55, cw * 0.55]):
+        ram(f'ram{j}', (R * 0.66, y, zt - 0.005), up((cf * 0.86, y, -chh + 0.004)), 1.2 * K, tur)
+    if size != 'light':
+        cupola(T, -R * 0.55, R * 0.42, R * 0.2, zt)
+        bx0, bx1, by, bz0, bz1 = -R * 1.24, -R * 0.99, R * 0.5, z0 + tH * 0.2, z0 + tH * 0.88
+        B('ammo', bx0, bx1, -by, by, bz0, bz1, 'olive', tur, 0.01, 2)
+        B('ammo_lid', bx0 - 0.004, bx1, -by - 0.004, by + 0.004, bz1 - 0.9 * K, bz1 - 0.6 * K, 'black', tur, 0.0, wn=False)
+        for s in (-1, 1): B(f'ammo_latch{s}', bx0 - 0.008, bx0 + 0.004, s * by * 0.5 - 0.7 * K, s * by * 0.5 + 0.7 * K, bz1 - 2.2 * K, bz1 - 0.3 * K, 'warn', tur, 0.002, 1, wn=False)
+        # rangefinder on the roof beside the mount, with a team-light lens
+        sy0, sy1 = -R * 0.66, -(cw + ct + 0.6 * K)
+        if sy1 - sy0 > 1.6 * K:
+            B('range', -R * 0.2, R * 0.3, sy0, sy1, zt, zt + 2.6 * K, 'steel', tur, 0.01, 2)
+            B('range_lens', R * 0.3, R * 0.3 + 0.008, sy0 + 0.4 * K, sy1 - 0.4 * K, zt + 0.7 * K, zt + 2.0 * K, 'glow', tur, 0.002, wn=False)
+    antenna(T, -R * 0.885, R * 0.605 if size == 'light' else -R * 0.6, zt)
+    turret_proxies(T, R * 1.9, R * 1.0, zt)
+    return muzzles
+
+def build_antiair(T):
+    d = T.d; size = d.size; tur = T.tur; L = d.L; c = ANTIAIR[size]
+    b = turret_base(T, c.tR, c.tH); R, zt, z0, tH = b.R, b.zt, b.z0, b.tH
+    tr = L * c.r; a = math.radians(c.elev); ca, sa = math.cos(a), math.sin(a)
+    pitch = tr * 2.3; cw = c.cols * pitch / 2 + tr * 0.35; chh = c.rows * pitch / 2 + tr * 0.35
+    bl = L * c.blen; cb, cf = bl * 0.45, bl * 0.55; xp = R * 0.12; zp = zt + cb * sa + chh * ca + 0.6 * K
+    e, up = elevated(T, xp, zp, a)
+    # the launcher block: team paint with raised dark ribs right round it
+    B('launcher', -cb, cf, -cw, cw, -chh, chh, 'paint', e, 0.016, 2)
+    for i in range(c.ribs):
+        x = -cb + bl * (i + 1) / (c.ribs + 1); w = max(1.0 * K, bl * 0.03)
+        B(f'rib{i}', x - w, x + w, -cw - 0.016, cw + 0.016, -chh - 0.016, chh + 0.016, 'dark', e, 0.005, 1)
+    studs('launcher_b', [(-cb, sy * cw * 0.84, sz * chh * 0.8) for sy in (-1, 1) for sz in (-1, 1)], 'X', e, 0.011, 0.014)
+    stub = tr * 0.8; muzzles = []
+    for r in range(c.rows):
+        for k in range(c.cols):
+            y = (k - (c.cols - 1) / 2) * pitch; z = (r - (c.rows - 1) / 2) * pitch; n = f'{r}{k}'
+            C('tube' + n, tr, stub, 'X', (cf + stub / 2, y, z), 'dark', e, 24, 0.008)
+            C('tube_band' + n, tr * 1.03, stub * 0.25, 'X', (cf + stub * 0.5, y, z), 'black', e, 24, 0.0, wn=False)
+            disc('tube_bore' + n, tr * 0.8, (cf + stub + 0.002, y, z), 'black', e)
+            C('rocket' + n, tr * 0.56, tr * 0.5, 'X', (cf + stub + tr * 0.22, y, z), 'emblem', e, 20, 0.0, r2=tr * 0.14, lost=2 if (r + k) % 3 == 1 else 0)
+            C('vent_ring' + n, tr * 0.86, 0.012, 'X', (-cb - 0.004, y, z), 'dark', e, 20, 0.003)       # blast vent on the back of each tube
+            disc('vent' + n, tr * 0.66, (-cb - 0.011, y, z), 'black', e)
+            muzzles.append(up((cf + stub + 0.5 * K, y, z)))
+    ct = max(2.0 * K, tr * 0.45); pinR = min(chh * 0.9, tr * 2.2)
+    gun_mount(T, b, up, xp, zp, cb, cf, cw, chh, ct, pinR, 'steel', 0.85, 0.6)
+    if size != 'light':
+        # added detail on the big cheek plates (owner, 2026-11-20): a team light strip, a bolt row along the foot, an inset plate
+        xa, xb = xp - cb * 0.85, xp + cf * 0.6; xm = (xa + xb) / 2; hz = zp - zt
+        for s in (-1, 1):
+            yo = s * (cw + ct)
+            strip(f'cheek_strip{s}', (xm, yo + s * 0.002, zt + hz * 0.3), (xb - xa) * 0.46, 0, hz * 0.09, tur)
+            studs(f'cheek_foot{s}', [(xa + (xb - xa) * (0.12 + 0.19 * j), yo, zt + hz * 0.1) for j in range(5)], 'Y', tur, 0.011, 0.014)
+            BC(f'cheek_plate{s}', (xp, yo, zt + hz * 0.56), pinR * 1.5, 0.012, hz * 0.16, 'dark', tur, 0.003, 1, wn=False)
+            studs(f'cheek_pb{s}', [(xp + sx * pinR * 0.55, yo + s * 0.006, zt + hz * 0.56) for sx in (-1, 1)], 'Y', tur, 0.009, 0.01)
+            # a slatted vent each side of the ram on the mount's plain front face
+            fx = up((cf * 0.6, 0, -chh)); fh = fx[2] - zt; vy = s * cw * 0.56; vw = cw * 0.26; va, vb = zt + fh * 0.22, zt + fh * 0.74
+            B(f'mvent{s}', fx[0] - 0.004, fx[0] + 0.008, vy - vw, vy + vw, va, vb, 'black', tur, 0.002, 1, wn=False)
+            for j in range(4):
+                zs = va + (vb - va) * (j + 0.5) / 4
+                B(f'mvent_s{s}{j}', fx[0] + 0.004, fx[0] + 0.016, vy - vw * 0.86, vy + vw * 0.86, zs - (vb - va) * 0.05, zs + (vb - va) * 0.05, 'steel', tur, 0.002, 1, wn=False)
+    ram('ram', (R * 0.66, 0, zt - 0.005), up((cf * 0.84, 0, -chh + 0.004)), 1.2 * K, tur)
+    if size != 'light':
+        # tracking sensor on the back of the roof, team-light lens on top
+        sx0, sx1 = -R * 0.84, xp - cb * 0.85 - 0.6 * K
+        if sx1 - sx0 > 2.0 * K:
+            B('sensor', sx0, sx1, -R * 0.36, R * 0.36, zt, zt + 2.4 * K, 'steel', tur, 0.01, 2)
+            B('sensor_f', sx0 + 0.5 * K, sx1 - 0.5 * K, -R * 0.28, R * 0.28, zt + 2.4 * K - 0.002, zt + 2.4 * K + 0.004, 'black', tur, 0.0, wn=False)
+            B('sensor_lens', sx0 + 0.8 * K, sx1 - 0.8 * K, -R * 0.22, R * 0.22, zt + 2.4 * K, zt + 2.4 * K + 0.009, 'glow', tur, 0.002, wn=False)
+    antenna(T, -R * 0.885, -R * 0.605, zt)
+    turret_proxies(T, R * 1.9, R * 1.0, zt)
+    return muzzles
+
+def m_cut_tube(name, R, ri, length, hr, holes):
+    """A tube along X (outer radius R, bore ri) with round holes cut right through it, like a drilled sleeve.
+    holes = (x, angle) pairs; each one drills through both walls, so it gives two opposite holes."""
+    sc = bpy.context.scene.collection; tmp = []
+    ob = bpy.data.objects.new('cut_src', m_cyl(name, R, length, 'X', 40, 0.006)); sc.objects.link(ob); tmp.append(ob)
+    def cut(me, loc=(0, 0, 0), rot=(0, 0, 0)):
+        c = bpy.data.objects.new('cutter', me); c.location = loc; c.rotation_euler = rot; sc.objects.link(c); tmp.append(c)
+        md = ob.modifiers.new('cut', 'BOOLEAN'); md.operation = 'DIFFERENCE'; md.object = c; md.solver = 'EXACT'
+    cut(m_cyl('bore', ri, length + 0.1, 'X', 32, 0.0))
+    for x, t in holes: cut(m_cyl('drill', hr, R * 2.6, 'Z', 20, 0.0), (x, 0, 0), (-t, 0, 0))
+    bpy.context.view_layer.update()
+    me = bpy.data.meshes.new_from_object(ob.evaluated_get(bpy.context.evaluated_depsgraph_get())); me.name = name
+    for o in tmp:
+        m = o.data; bpy.data.objects.remove(o); bpy.data.meshes.remove(m)
+    me.materials.clear()
+    for f in me.polygons: f.use_smooth = True; f.material_index = 0
+    return me
+
+def build_flamer(T):
+    d = T.d; size = d.size; tur = T.tur; L = d.L; c = FLAMER[size]
+    b = turret_base(T, c.tR, c.tH); R, zt, z0, tH = b.R, b.zt, b.z0, b.tH
+    br = L * c.r; bl = L * c.len; y0 = br * 1.8; bys = [-y0, y0] if c.barrels == 2 else [0.0]
+    hw = y0 + br * 1.45 + 0.6 * K if c.barrels == 2 else br * 2.2
+    hh = br * 3.4; hx0, hx1 = -R * 0.05, R * 0.72; nz = zt + hh * 0.5
+    pr = br * 0.42; ys = [0.0] if c.n == 1 else [-R * 0.46, R * 0.46]
+    hwR = hw if c.n == 1 else max(hw, R * 0.46 + pr * 1.1 + 1.2 * K)
+    # nozzle housing on the front half of the roof, a flame warning sign each side
+    plan = [(hx1, hw), (hx0, hwR), (hx0, -hwR), (hx1, -hw)]
+    add('housing', m_loft('housing', plan, zt - 0.004, plan, zt + hh, 0.016, 2), 'paint', tur)
+    ang = math.atan2(hwR - hw, hx0 - hx1)                         # direction of the +y side wall in plan
+    for s in (-1, 1):
+        cx, cy = (hx0 + hx1) / 2 + (hx1 - hx0) * 0.12, s * ((hw + hwR) / 2 - (hwR - hw) * 0.12 + 0.004)
+        rot = (0, math.pi / 4, s * ang)
+        BC(f'warn{s}', (cx, cy, nz), hh * 0.46, 0.012, hh * 0.46, 'warn', tur, 0.003, 1, rot, wn=False)
+        BC(f'warn_f{s}', (cx, cy + s * 0.005, nz - hh * 0.03), hh * 0.2, 0.012, hh * 0.2, 'black', tur, 0.0, 1, rot, wn=False)
+    studs('housing_b', [(hx1, (j - 1) * hw * 0.6, zt + hh * 0.86) for j in range(3)], 'X', tur, 0.01, 0.012)
+    x0 = hx1; xc = x0 + bl * 0.07; xs = x0 + bl * 0.76; x1 = x0 + bl
+    Rs = br * 1.55; ls = x1 - xs; hr = Rs * 0.27
+    muzzles = []
+    for k, by in enumerate(bys):
+        # barrel: collar and a long plain tube (the round 1 rule: simple barrel, the detail is in the nozzle)
+        C(f'collar{k}', br * 1.45, xc - x0, 'X', ((x0 + xc) / 2, by, nz), 'dark', tur, 28, 0.01)
+        C(f'barrel{k}', br, xs - xc + ls * 0.5, 'X', ((xc + xs + ls * 0.5) / 2, by, nz), 'steel', tur, 28, 0.0)
+        C(f'barrel_ring{k}', br * 1.12, br * 0.5, 'X', (xc + br * 0.9, by, nz), 'steel', tur, 28, 0.004)
+        # nozzle: a hollow sleeve with round holes cut right through it; the burner tip glows inside
+        C(f'nozzle_back{k}', br * 1.1, br * 0.6, 'X', (xs - br * 0.25, by, nz), 'dark', tur, 28, 0.004, r2=Rs * 0.98)
+        holes = [(ls * (-0.2 + 0.36 * j), (i + 0.5 * (j % 2)) * math.pi / 4) for j in range(2) for i in range(4)]
+        add(f'nozzle{k}', m_cut_tube('nozzle', Rs, Rs * 0.8, ls, hr, holes), 'heat', tur, ((xs + x1) / 2, by, nz))
+        C(f'nozzle_rim{k}', Rs * 1.06, ls * 0.09, 'X', (xs + ls * 0.045, by, nz), 'dark', tur, 32, 0.004)
+        xt = xs + ls * 0.5
+        C(f'burner{k}', br * 1.12, br * 0.4, 'X', (xt, by, nz), 'dark', tur, 24, 0.004)
+        disc(f'flame{k}', br * 0.9, (xt + br * 0.2 + 0.003, by, nz), 'fire', tur)
+        disc(f'flame_c{k}', br * 0.48, (xt + br * 0.2 + 0.006, by, nz - br * 0.08), 'fire2', tur)
+        muzzles.append((x1 + 0.5 * K, by, nz))
+    # large gas containers on the back of the roof: domed ends, straps, fill-level light, gauge, valve and feed pipe
+    cr = R * c.cr; tx0, tx1 = -R * 1.12, -R * 0.3; cz = zt + cr; tl = tx1 - tx0
+    for i, y in enumerate(ys):
+        C(f'gas{i}', cr, tl, 'X', ((tx0 + tx1) / 2, y, cz), 'paint', tur, 32, 0.012)
+        for j, (xe, sg) in enumerate(((tx1, 1), (tx0, -1))):
+            ra, rb = (cr, cr * 0.72) if sg > 0 else (cr * 0.72, cr)
+            C(f'dome{i}{j}', ra, cr * 0.32, 'X', (xe + sg * cr * 0.16, y, cz), 'paint', tur, 32, 0.006, r2=rb)
+            rc, rd = (cr * 0.72, cr * 0.4) if sg > 0 else (cr * 0.4, cr * 0.72)
+            C(f'dome_b{i}{j}', rc, cr * 0.14, 'X', (xe + sg * cr * 0.39, y, cz), 'paint2', tur, 32, 0.004, r2=rd)
+        for j, f in enumerate((0.2, 0.72)):
+            C(f'strap{i}{j}', cr * 1.035, cr * 0.22, 'X', (tx0 + tl * f, y, cz), 'dark', tur, 32, 0.004)
+        C(f'fill{i}', cr * 1.02, cr * 0.12, 'X', (tx0 + tl * 0.46, y, cz), 'glow', tur, 32, 0.0, wn=False)
+        gx = tx1 + cr * 0.46; gl = 2 if i == 0 else 0
+        disc(f'gauge_r{i}', cr * 0.36, (gx + 0.001, y, cz), 'black', tur, lost=gl)
+        disc(f'gauge{i}', cr * 0.29, (gx + 0.004, y, cz), 'emblem', tur, lost=gl)
+        BC(f'gauge_n{i}', (gx + 0.008, y - cr * 0.07, cz + cr * 0.07), 0.006, cr * 0.26, cr * 0.06, 'redmark', tur, 0.0, 1, (math.radians(-40), 0, 0), wn=False, lost=gl)
+        vw = max(cr * 0.22, pr * 1.3); vz0 = cz + cr - 0.004; vz1 = vz0 + pr * 2.4; fz = (vz0 + vz1) / 2; fr = pr * 0.9
+        vx0, vx1 = tx1 - cr * 0.6, tx1 - cr * 0.15
+        B(f'valve{i}', vx0, vx1, y - vw, y + vw, vz0, vz1, 'dark', tur, 0.006, 2)
+        C(f'wheel{i}', vw * 0.95, 0.5 * K, 'Z', ((vx0 + vx1) / 2, y, vz1 + 0.5 * K), 'redmark', tur, 16, 0.003)
+        hxp = hx0 + pr * 1.4; ztop = zt + hh
+        pts = [(vx1 - 0.004, y, fz), (hxp, y, fz), (hxp, y, ztop - 0.01)] if fz > ztop + fr else [(vx1 - 0.004, y, fz), (hx0 + 0.01, y, fz)]
+        pipe(f'feed{i}', pts, fr, tur, 'bright', (True, True))
+    ax, ay = (R * 0.515, R * 0.625) if c.n == 1 else (-R * 0.88, 0.0)
+    antenna(T, ax, ay, zt)
+    turret_proxies(T, R * 1.9, R * 1.0, zt)
+    return muzzles
+
+def _lens(name, r, c, par):
+    disc(name + '_w', r, c, 'black', par); disc(name + '_g', r * 0.78, (c[0] + 0.003, c[1], c[2]), 'energy', par)
+    disc(name + '_c', r * 0.34, (c[0] + 0.006, c[1], c[2]), 'energy2', par)
+
+def _cell(T, name, y, cr, x0, x1, zt):
+    """Power cell on the roof: team-paint cylinder, dark end caps and rings, a cyan charge band, a small lens on its front cap."""
+    tur = T.tur; cz = zt + cr; dl = x1 - x0
+    C(name + '_a', cr * 0.86, dl * 0.12, 'X', (x0 + dl * 0.06, y, cz), 'dark', tur, 28, 0.006)
+    C(name, cr, dl * 0.76 + 0.004, 'X', ((x0 + x1) / 2, y, cz), 'paint', tur, 28, 0.008)
+    C(name + '_b', cr * 0.86, dl * 0.12, 'X', (x1 - dl * 0.06, y, cz), 'dark', tur, 28, 0.006)
+    for j, (f, w, mat) in enumerate(((0.3, 0.08, 'black'), (0.47, 0.07, 'energy'), (0.62, 0.08, 'black'))):
+        C(f'{name}_r{j}', cr * 1.025, dl * w, 'X', (x0 + dl * f + dl * w / 2, y, cz), mat, tur, 28, 0.0, wn=False)
+    _lens(name + '_l', cr * 0.5, (x1 + 0.002, y, cz), tur)
+    return cz
+
+def _side_ribs(name, xs, hw, z0, z1, par, w):
+    for i, x in enumerate(xs):
+        B(f'{name}{i}', x - w, x + w, -hw - 0.014, hw + 0.014, z0, z1, 'dark', par, 0.004, 1)
+
+def build_special(T):
+    d = T.d; size = d.size; tur = T.tur; L = d.L; c = SPECIAL[size]
+    b = turret_base(T, c.tR, c.tH); R, zt, z0, tH = b.R, b.zt, b.z0, b.tH
+    if size == 'light':
+        # Laser cannon: finned, ribbed emitter block, short focusing barrel, glowing lens
+        hw, bh, bx0, bx1 = R * 0.36, R * 0.64, -R * 0.55, R * 0.62; bz1 = zt + bh
+        B('emitter', bx0, bx1, -hw, hw, zt - 0.004, bz1, 'paint', tur, 0.016, 2)
+        _side_ribs('erib', [bx0 + (bx1 - bx0) * (i + 1) / 5 for i in range(4)], hw, zt + bh * 0.08, zt + bh * 0.92, tur, max(1.0 * K, (bx1 - bx0) * 0.035))
+        studs('emitter_b', [(bx0, (j - 1) * hw * 0.6, zt + bh * 0.5) for j in range(3)], 'X', tur, 0.01, 0.012)
+        fw, fh = R * 0.07, R * 0.2
+        for i in range(4):
+            x = bx0 + (bx1 - bx0) * (0.14 + i * 0.17)
+            B(f'fin{i}', x, x + fw, -hw * 0.82, hw * 0.82, bz1 - 0.004, bz1 + fh, 'dark', tur, 0.005, 1, lost=2 if i == 3 else 0)
+        br = L * 0.05; z = zt + bh * 0.5; x1 = bx1 + L * 0.26; xa, xb = bx1 + L * 0.04, x1 - L * 0.06
+        C('collar', br * 1.35, L * 0.04, 'X', (bx1 + L * 0.02, 0, z), 'dark', tur, 28, 0.008)
+        C('barrel', br, xb - xa + 0.01, 'X', ((xa + xb) / 2, 0, z), 'steel', tur, 28, 0.0)
+        for j, (off, w, mat) in enumerate(((0.07, 0.5, 'black'), (0.11, 0.6, 'energy'), (0.15, 0.5, 'black'))):
+            C(f'coil{j}', br * 1.05, br * w, 'X', (bx1 + L * off + br * w / 2, 0, z), mat, tur, 28, 0.0, wn=False)
+        C('lens_housing', br * 1.4, L * 0.06, 'X', (x1 - L * 0.03, 0, z), 'dark', tur, 28, 0.008)
+        C('lens_band', br * 1.43, br * 0.35, 'X', (x1 - L * 0.04, 0, z), 'black', tur, 28, 0.0, wn=False)
+        _lens('lens', br * 1.4 * 0.86, (x1 + 0.002, 0, z), tur)
+        pipe('power', [(bx0 - 0.004, hw * 0.45, zt + bh * 0.3), (bx0 - R * 0.2, hw * 0.45, zt + bh * 0.3), (bx0 - R * 0.2, hw * 0.45, zt - 0.005)], 1.1 * K, tur, 'bright', (True, False))
+        muzzle = (x1 + 0.5 * K, 0, z)
+    elif size == 'medium':
+        # Fusion-Lambda particle cannon: housing, radiator-fin stack, ribbed accelerator with glowing coils, emitter tip; a power cell feeds it
+        br = L * 0.064; hw, hh, hx0, hx1 = br * 2.1, br * 2.9, -R * 0.3, R * 0.85; z = zt + br * 1.45
+        B('housing', hx0, hx1, -hw, hw, zt - 0.004, zt + hh, 'paint', tur, 0.016, 2)
+        _side_ribs('hrib', [hx0 + (hx1 - hx0) * (i + 1) / 4 for i in range(3)], hw, zt + hh * 0.08, zt + hh * 0.92, tur, max(1.0 * K, (hx1 - hx0) * 0.035))
+        studs('housing_b', [(hx1, (j - 1) * hw * 0.6, zt + hh * 0.85) for j in range(3)], 'X', tur, 0.01, 0.012)
+        # added detail on the plain roof (owner, 2026-11-20): a cooling grille at the back, a bolted access panel with a team light in front
+        hl = hx1 - hx0; zr = zt + hh
+        grille('hgrille', hx0 + hl * 0.08, hx0 + hl * 0.46, -hw * 0.72, hw * 0.72, zr - 0.004, 4, tur, 0.022)
+        B('hpanel', hx0 + hl * 0.56, hx0 + hl * 0.92, -hw * 0.72, hw * 0.72, zr - 0.004, zr + 0.012, 'paint2', tur, 0.006, 1)
+        studs('hpanel_b', [(hx0 + hl * (0.74 + sx * 0.14), sy * hw * 0.58, zr + 0.012) for sx in (-1, 1) for sy in (-1, 1)], 'Z', tur, 0.01, 0.012)
+        strip('hpanel_s', (hx0 + hl * 0.74, 0, zr + 0.014), hl * 0.1, hw * 0.8, 0, tur, None, 'Z')
+        x = hx1 + L * 0.04
+        C('collar', br * 1.4, L * 0.04, 'X', (hx1 + L * 0.02, 0, z), 'dark', tur, 28, 0.008)
+        fins, fw, gap = 4, br * 0.36, br * 0.5; xf = x
+        for i in range(fins):
+            xf += gap
+            C(f'fin{i}', br * 1.7, fw, 'X', (xf + fw / 2, 0, z), 'dark', tur, 28, 0.004, lost=2 if i == 1 else 0); xf += fw
+        xa = xf; xb = xa + L * 0.14
+        C('core', br, xb - x + 0.01, 'X', ((x + xb) / 2, 0, z), 'steel', tur, 28, 0.0)
+        for j, (f, mat) in enumerate(((0.15, 'black'), (0.45, 'energy'), (0.75, 'black'))):
+            C(f'coil{j}', br * 1.05, br * 0.45, 'X', (xa + (xb - xa) * f + br * 0.22, 0, z), mat, tur, 28, 0.0, wn=False)
+        x1 = xb + L * 0.05
+        C('tip', br * 1.3, L * 0.05, 'X', (xb + L * 0.025, 0, z), 'dark', tur, 28, 0.008)
+        C('tip_band', br * 1.33, br * 0.25, 'X', (xb + L * 0.017, 0, z), 'black', tur, 28, 0.0, wn=False)
+        _lens('lens', br * 1.3 * 0.86, (x1 + 0.002, 0, z), tur)
+        cr = R * 0.24; cz = _cell(T, 'cell', 0.0, cr, -R * 1.08, -R * 0.42, zt)
+        C('conduit', cr * 0.42, hx0 + R * 0.42 + 0.02, 'X', ((hx0 - R * 0.42) / 2, 0, cz), 'bright', tur, 20, 0.0)
+        for s in (-1, 1):                                          # coolant lines from the housing down to the roof (added detail)
+            px = hx0 + (hx1 - hx0) * 0.3
+            pipe(f'coolant{s}', [(px, s * (hw - 0.004), zt + hh * 0.55), (px, s * (hw + 1.6 * K), zt + hh * 0.55), (px, s * (hw + 1.6 * K), zt - 0.005)], 1.1 * K, tur, 'bright', (True, False))
+        muzzle = (x1 + 0.5 * K, 0, z)
+    else:
+        # Graviton particle launcher: heavy cradle, big ribbed tube, wide gravity-lens ring at the muzzle, two capacitor cells
+        tr = L * 0.082; mh = tr * 0.35; z = zt + mh + tr * 1.14; x0 = -R * 0.62; x1 = x0 + L * 0.66
+        B('cradle', -R * 0.5, R * 0.6, -tr * 0.75, tr * 0.75, zt - 0.004, zt + mh + tr * 0.3, 'dark', tur, 0.012, 2)
+        cw = R * 0.13; cy0 = tr * 1.13 + 0.4 * K; chz = z + tr * 0.25
+        for s in (-1, 1):
+            ya, yb = (cy0, cy0 + cw) if s > 0 else (-cy0 - cw, -cy0)
+            B(f'cheek{s}', -R * 0.42, R * 0.5, ya, yb, zt - 0.004, chz, 'paint', tur, 0.012, 2)
+            for i in range(3):
+                x = -R * 0.42 + R * 0.92 * (i + 1) / 4; yo = s * (cy0 + cw)
+                B(f'crib{s}{i}', x - 1.1 * K, x + 1.1 * K, min(yo - s * 0.008, yo + s * 0.014), max(yo - s * 0.008, yo + s * 0.014), zt + (chz - zt) * 0.1, zt + (chz - zt) * 0.9, 'dark', tur, 0.004, 1)
+            studs(f'cheek_b{s}', [(-R * 0.36 + R * 0.8 * j / 3, s * (cy0 + cw / 2), chz) for j in range(4)], 'Z', tur, 0.011, 0.012)
+        C('breech', tr * 0.82, L * 0.05, 'X', (x0 + L * 0.025, 0, z), 'dark', tur, 32, 0.01)
+        xs = x0 + L * 0.05; xl = x1 - L * 0.1; ribsN = 5; rw = tr * 0.3; span = (xl - xs - ribsN * rw) / (ribsN + 1)
+        C('tube', tr, xl - xs + 0.01, 'X', ((xs + xl) / 2, 0, z), 'paint', tur, 36, 0.0)
+        for i in range(ribsN):
+            xr = xs + span * (i + 1) + rw * i
+            C(f'trib{i}', tr * 1.13, rw, 'X', (xr + rw / 2, 0, z), 'dark', tur, 36, 0.006)
+        xg = xs + 2 * (span + rw) + span * 0.35
+        C('charge', tr * 1.02, span * 0.3, 'X', (xg + span * 0.15, 0, z), 'energy', tur, 36, 0.0, wn=False)
+        rl = tr * 1.38
+        C('lens_ring', rl, x1 - xl, 'X', ((xl + x1) / 2, 0, z), 'dark', tur, 40, 0.012)
+        C('lens_band', rl * 1.015, (x1 - xl) * 0.2, 'X', (xl + (x1 - xl) * 0.45, 0, z), 'black', tur, 40, 0.0, wn=False)
+        # gravity lens: a dark well, two cyan halo rings, a violet singularity with a white-hot centre
+        for j, (f, mat) in enumerate(((0.88, 'black'), (0.8, 'energy'), (0.68, 'black'), (0.56, 'energy'), (0.47, 'black'), (0.3, 'violet'), (0.13, 'energy2'))):
+            disc(f'well{j}', rl * f, (x1 + 0.002 + 0.0025 * j, 0, z), mat, tur)
+        cr = R * 0.17; cyy = max(cy0 + cw * 0.5 + 0.2 * K, tr * 0.82 + cr + 0.8 * K)
+        for s in (-1, 1):
+            cz = _cell(T, f'cap{s}', s * cyy, cr, -R * 1.06, -R * 0.66, zt)
+            C(f'cap_feed{s}', cr * 0.42, R * 0.26, 'X', (-R * 0.54, s * cyy, cz), 'bright', tur, 20, 0.0)
+        muzzle = (x1 + 0.5 * K, 0, z)
+    turret_proxies(T, R * 1.9, R * 1.0, zt)
+    return [muzzle]
+
+WEAPONS = {'panzer': build_panzer, 'artillery': build_artillery, 'antiair': build_antiair, 'flamer': build_flamer, 'special': build_special}
+
 # ------------------------------------------------------------------ tank assembly, directions, layers, damage
 class Tank:
     def __init__(self, size, weapon='panzer', name=None, loc=(0, 0, 0)):
@@ -751,7 +1131,7 @@ class Tank:
         S.cur = self.turc
         self.tdir = empty('turret_dir', self.root, (self.d.pvx, 0, self.d.pz))
         self.tur = empty('turret', self.tdir)
-        self.muzzles = build_panzer(self)
+        self.muzzles = WEAPONS[weapon](self)
         self.hdir = 0; self.tdirn = 0
         S.tanks.append(self)
 
@@ -842,7 +1222,9 @@ def save_blend(T, path, samples=64):
     W.setup_render(samples, gpu=True, outline=True); fix_outline()
     sc = bpy.context.scene
     sc.cycles.device = 'GPU'                                         # used where the PC has a GPU set up; Blender falls back to CPU otherwise
-    W.setup_camera(960, 720, VIEW_A[T.size], 0.5); set_layer('all+shadow'); T.set_dirs(0, 0); apply_damage(0)
+    if T.weapon == 'panzer': W.setup_camera(960, 720, VIEW_A[T.size], 0.5)
+    else: W.setup_camera(1200, 960, VIEW_A[T.size] * 0.9, 1.15)   # taller, wider frame: raised barrels and launchers stay in the picture
+    set_layer('all+shadow'); T.set_dirs(0, 0); apply_damage(0)
     sc['sow_tank'] = json.dumps(tank_data(T))
     os.makedirs(os.path.dirname(path), exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=path, compress=True)

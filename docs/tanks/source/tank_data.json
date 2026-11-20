@@ -100,5 +100,413 @@
    -0.0
   ],
   "objects": 740
+ },
+ "light_artillery": {
+  "size": "light",
+  "weapon": "artillery",
+  "model_units_per_metre": 28.0,
+  "hull_length": 2.2857,
+  "hull_width": 1.6,
+  "hull_height": 0.8,
+  "turret_pivot": [
+   -0.1371,
+   0.0,
+   0.8571
+  ],
+  "turret_radius": 0.5257,
+  "muzzles": [
+   [
+    2.1224,
+    0.0,
+    1.8189
+   ]
+  ],
+  "track_pitch": 0.0893,
+  "track_frames": 4,
+  "directions": 32,
+  "split_plane_check_mm": [
+   0.0,
+   0.0
+  ],
+  "objects": 464
+ },
+ "medium_artillery": {
+  "size": "medium",
+  "weapon": "artillery",
+  "model_units_per_metre": 28.0,
+  "hull_length": 2.9714,
+  "hull_width": 2.0571,
+  "hull_height": 1.0286,
+  "turret_pivot": [
+   -0.1783,
+   0.0,
+   1.0889
+  ],
+  "turret_radius": 0.7131,
+  "muzzles": [
+   [
+    2.7869,
+    0.0,
+    2.5988
+   ]
+  ],
+  "track_pitch": 0.0893,
+  "track_frames": 4,
+  "directions": 32,
+  "split_plane_check_mm": [
+   0.0,
+   0.0
+  ],
+  "objects": 554
+ },
+ "heavy_artillery": {
+  "size": "heavy",
+  "weapon": "artillery",
+  "model_units_per_metre": 28.0,
+  "hull_length": 3.6571,
+  "hull_width": 2.6286,
+  "hull_height": 1.2571,
+  "turret_pivot": [
+   -0.2194,
+   0.0,
+   1.3574
+  ],
+  "turret_radius": 0.9143,
+  "muzzles": [
+   [
+    3.33,
+    -0.2704,
+    3.3146
+   ],
+   [
+    3.33,
+    0.2704,
+    3.3146
+   ]
+  ],
+  "track_pitch": 0.0893,
+  "track_frames": 4,
+  "directions": 32,
+  "split_plane_check_mm": [
+   -0.0,
+   -0.0
+  ],
+  "objects": 667
+ },
+ "light_antiair": {
+  "size": "light",
+  "weapon": "antiair",
+  "model_units_per_metre": 28.0,
+  "hull_length": 2.2857,
+  "hull_width": 1.6,
+  "hull_height": 0.8,
+  "turret_pivot": [
+   -0.1371,
+   0.0,
+   0.8571
+  ],
+  "turret_radius": 0.5257,
+  "muzzles": [
+   [
+    0.4828,
+    -0.1787,
+    1.0249
+   ],
+   [
+    0.4828,
+    0.0,
+    1.0249
+   ],
+   [
+    0.4828,
+    0.1787,
+    1.0249
+   ]
+  ],
+  "track_pitch": 0.0893,
+  "track_frames": 4,
+  "directions": 32,
+  "split_plane_check_mm": [
+   0.0,
+   0.0
+  ],
+  "objects": 470
+ },
+ "medium_antiair": {
+  "size": "medium",
+  "weapon": "antiair",
+  "model_units_per_metre": 28.0,
+  "hull_length": 2.9714,
+  "hull_width": 2.0571,
+  "hull_height": 1.0286,
+  "turret_pivot": [
+   -0.1783,
+   0.0,
+   1.0889
+  ],
+  "turret_radius": 0.7131,
+  "muzzles": [
+   [
+    0.7808,
+    -0.1538,
+    1.4665
+   ],
+   [
+    0.7808,
+    0.1538,
+    1.4665
+   ],
+   [
+    0.5831,
+    -0.1538,
+    1.702
+   ],
+   [
+    0.5831,
+    0.1538,
+    1.702
+   ]
+  ],
+  "track_pitch": 0.0893,
+  "track_frames": 4,
+  "directions": 32,
+  "split_plane_check_mm": [
+   0.0,
+   0.0
+  ],
+  "objects": 583
+ },
+ "heavy_antiair": {
+  "size": "heavy",
+  "weapon": "antiair",
+  "model_units_per_metre": 28.0,
+  "hull_length": 3.6571,
+  "hull_width": 2.6286,
+  "hull_height": 1.2571,
+  "turret_pivot": [
+   -0.2194,
+   0.0,
+   1.3574
+  ],
+  "turret_radius": 0.9143,
+  "muzzles": [
+   [
+    0.9653,
+    -0.3112,
+    1.8468
+   ],
+   [
+    0.9653,
+    0.0,
+    1.8468
+   ],
+   [
+    0.9653,
+    0.3112,
+    1.8468
+   ],
+   [
+    0.757,
+    -0.3112,
+    2.0781
+   ],
+   [
+    0.757,
+    0.0,
+    2.0781
+   ],
+   [
+    0.757,
+    0.3112,
+    2.0781
+   ]
+  ],
+  "track_pitch": 0.0893,
+  "track_frames": 4,
+  "directions": 32,
+  "split_plane_check_mm": [
+   -0.0,
+   -0.0
+  ],
+  "objects": 695
+ },
+ "light_flamer": {
+  "size": "light",
+  "weapon": "flamer",
+  "model_units_per_metre": 28.0,
+  "hull_length": 2.2857,
+  "hull_width": 1.6,
+  "hull_height": 0.8,
+  "turret_pivot": [
+   -0.1371,
+   0.0,
+   0.8571
+  ],
+  "turret_radius": 0.5257,
+  "muzzles": [
+   [
+    2.0878,
+    0.0,
+    0.5422
+   ]
+  ],
+  "track_pitch": 0.0893,
+  "track_frames": 4,
+  "directions": 32,
+  "split_plane_check_mm": [
+   0.0,
+   0.0
+  ],
+  "objects": 457
+ },
+ "medium_flamer": {
+  "size": "medium",
+  "weapon": "flamer",
+  "model_units_per_metre": 28.0,
+  "hull_length": 2.9714,
+  "hull_width": 2.0571,
+  "hull_height": 1.0286,
+  "turret_pivot": [
+   -0.1783,
+   0.0,
+   1.0889
+  ],
+  "turret_radius": 0.7131,
+  "muzzles": [
+   [
+    2.7896,
+    0.0,
+    0.7199
+   ]
+  ],
+  "track_pitch": 0.0893,
+  "track_frames": 4,
+  "directions": 32,
+  "split_plane_check_mm": [
+   0.0,
+   0.0
+  ],
+  "objects": 546
+ },
+ "heavy_flamer": {
+  "size": "heavy",
+  "weapon": "flamer",
+  "model_units_per_metre": 28.0,
+  "hull_length": 3.6571,
+  "hull_width": 2.6286,
+  "hull_height": 1.2571,
+  "turret_pivot": [
+   -0.2194,
+   0.0,
+   1.3574
+  ],
+  "turret_radius": 0.9143,
+  "muzzles": [
+   [
+    3.5287,
+    -0.316,
+    0.8119
+   ],
+   [
+    3.5287,
+    0.316,
+    0.8119
+   ]
+  ],
+  "track_pitch": 0.0893,
+  "track_frames": 4,
+  "directions": 32,
+  "split_plane_check_mm": [
+   -0.0,
+   -0.0
+  ],
+  "objects": 654
+ },
+ "light_special": {
+  "size": "light",
+  "weapon": "special",
+  "model_units_per_metre": 28.0,
+  "hull_length": 2.2857,
+  "hull_width": 1.6,
+  "hull_height": 0.8,
+  "turret_pivot": [
+   -0.1371,
+   0.0,
+   0.8571
+  ],
+  "turret_radius": 0.5257,
+  "muzzles": [
+   [
+    0.9381,
+    0,
+    0.5239
+   ]
+  ],
+  "track_pitch": 0.0893,
+  "track_frames": 4,
+  "directions": 32,
+  "split_plane_check_mm": [
+   0.0,
+   0.0
+  ],
+  "objects": 445
+ },
+ "medium_special": {
+  "size": "medium",
+  "weapon": "special",
+  "model_units_per_metre": 28.0,
+  "hull_length": 2.9714,
+  "hull_width": 2.0571,
+  "hull_height": 1.0286,
+  "turret_pivot": [
+   -0.1783,
+   0.0,
+   1.0889
+  ],
+  "turret_radius": 0.7131,
+  "muzzles": [
+   [
+    1.9616,
+    0,
+    0.7229
+   ]
+  ],
+  "track_pitch": 0.0893,
+  "track_frames": 4,
+  "directions": 32,
+  "split_plane_check_mm": [
+   0.0,
+   0.0
+  ],
+  "objects": 546
+ },
+ "heavy_special": {
+  "size": "heavy",
+  "weapon": "special",
+  "model_units_per_metre": 28.0,
+  "hull_length": 3.6571,
+  "hull_width": 2.6286,
+  "hull_height": 1.2571,
+  "turret_pivot": [
+   -0.2194,
+   0.0,
+   1.3574
+  ],
+  "turret_radius": 0.9143,
+  "muzzles": [
+   [
+    1.8647,
+    0,
+    0.9603
+   ]
+  ],
+  "track_pitch": 0.0893,
+  "track_frames": 4,
+  "directions": 32,
+  "split_plane_check_mm": [
+   -0.0,
+   -0.0
+  ],
+  "objects": 647
  }
 }
