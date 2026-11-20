@@ -3,7 +3,7 @@
 // usage: node serve.cjs [port]
 const http = require('http'), fs = require('fs'), path = require('path');
 const ROOT = path.resolve(__dirname, '..'), PORT = +(process.argv[2] || process.env.PORT || 8765);
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.json': 'application/json', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.css': 'text/css', '.wav': 'audio/wav' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.json': 'application/json', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.css': 'text/css', '.wav': 'audio/wav', '.ogg': 'audio/ogg' };
 http.createServer((req, res) => {
   let rel = decodeURIComponent(req.url.split('?')[0]);
   if (rel === '/') { res.writeHead(302, { Location: '/demo/' }); return res.end(); }
