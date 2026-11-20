@@ -39,7 +39,7 @@
   </div>
   <div class="row" id="fire"><span class="l">Firing (effects mockup)</span></div>
   <div class="row"><button id="kill">Destroy one tank</button></div>
-  <div class="row" id="psnd"><span class="l">Panzer gun sound (pick one)</span></div>
+  <div class="row" id="psnd"><span class="l">Panzer gun sound (compare)</span></div>
   <div class="row"><button id="ptest">Play it: light, medium, heavy</button></div>
   <div class="row">
     <label><input id="snd" type="checkbox" checked> Sound</label>
@@ -628,7 +628,7 @@ class Batcher {
   });
   document.getElementById('kill').onclick = () => { const live = tanks.filter((t) => stateOf(t) < 3 && onScreen(t.x, t.y)); if (live.length) kill(live[(Math.random() * live.length) | 0]); };
   const playCannon = () => { sfx.unlock(); [0, 1, 2].forEach((size, i) => setTimeout(() => sfx.play('cannon', { size }), 60 + i * 900)); };   // hear the chosen gun without a battle
-  group('psnd', [['boom', 'Deep boom'], ['crack', 'Sharp crack'], ['thud', 'Punchy thud'], ['ring', 'Metal ring'], ['mix', 'Recorded mix']], () => sfx.cannon(), (v) => { sfx.setCannon(v); playCannon(); });
+  group('psnd', [['mix', 'Recorded mix'], ['orig', 'Original']], () => sfx.cannon(), (v) => { sfx.setCannon(v); playCannon(); });
   document.getElementById('ptest').onclick = playCannon;
   document.getElementById('snd').onchange = (e) => sfx.setOn(e.target.checked);
   document.getElementById('vol').oninput = (e) => sfx.setVolume(+e.target.value);

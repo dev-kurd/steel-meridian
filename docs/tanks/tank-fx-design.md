@@ -100,7 +100,7 @@ synthesises the rest in the browser, so it adds no sound files. Size changes the
 
 | Sound | Source in the mockup |
 |---|---|
-| Panzer gun | **Not settled.** The owner turned down the first three tries (the slowed rifle recording `shell_1..3.wav`, a synthesised cannon, the two mixed). The demo now offers five different characters to pick from, with a button that plays the chosen one for the three sizes: **Deep boom** (long and low), **Sharp crack** (short and bright), **Punchy thud** (round, almost no hiss), **Metal ring** (a thump with the barrel ringing), **Recorded mix** (the game's artillery and explosion recordings, played faster and cut short) |
+| Panzer gun | Two versions to compare in the demo, with a button that plays the chosen one for the three sizes. **Recorded mix** (default; owner, 2026-11-21: the better one so far): the game's artillery and explosion recordings (`arty`, `boom`), played faster and cut short, with a sharp crack on top. **Original**: the first version, the tank gun recording `shell_1..3.wav` with a low thump. Four fully synthesised tries were turned down and removed |
 | Artillery gun | `arty_1..2.wav` + a deeper thump and a rumbling tail |
 | Artillery shell coming down | synthesised falling whistle |
 | Artillery shell lands | `boom_1..3.wav` + low thump |
@@ -125,8 +125,7 @@ about 28 sounds play at once, and the same sound is not started twice within 35 
    aircraft). Should it also be able to hit tanks or buildings, weakly?
 3. **Synthesised sounds:** keep them synthesised in the game (no files, easy to tune) or turn the approved ones into WAV files
    in `sounds/` like the others (anyone can then replace a file)?
-4. **Panzer gun sound:** which of the five characters in the demo is closest, and what is still wrong with it (too long, too
-   thin, too soft, too much hiss)? If none works, the next step is a real recorded cannon with a proper licence.
+4. **Panzer gun sound:** Recorded mix or Original? Is the Recorded mix good enough to keep, or only the better of the two?
 5. **Screen shake:** keep it (it can be switched off in the demo), and how strong?
 6. **Drawing effects in front of and behind tanks:** worth sorting flames and smoke with the tanks in the game, or is "above
    everything" good enough?

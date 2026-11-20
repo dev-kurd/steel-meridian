@@ -10,7 +10,7 @@ window.createSfx = function (base) {
     bigboom: ['bigboom_1.wav', 'bigboom_2.wav'], laser: ['laser_1.wav'] };
   const PITCH = [1.22, 1, 0.82];                             // light, medium, heavy
   const rnd = (a, b) => a + Math.random() * (b - a);
-  let ctx = null, master = null, noiseBuf = null, on = true, vol = 0.7, ends = [], cannonMode = 'boom';
+  let ctx = null, master = null, noiseBuf = null, on = true, vol = 0.7, ends = [], cannonMode = 'mix';
   const smp = {}, last = {}, loops = {};
 
   function unlock() {                                        // browsers allow sound only after a click or a key
@@ -52,27 +52,18 @@ window.createSfx = function (base) {
 
   // ---- one-shot sounds: (output, start time, options) with o.size 0..2
   const S = {
-    // Panzer gun. The owner turned down the first three tries (2026-11-21: the slowed rifle recording, a synthesised cannon,
-    // and the two mixed), so here are five clearly different characters to pick from in the demo:
+    // Panzer gun: two versions to compare in the demo (owner, 2026-11-21: "Recorded mix" is the better one so far).
+    // 'mix' = the game's artillery and explosion recordings, played faster and cut short, with a sharp crack on top;
+    // 'orig' = the first version: the game's tank gun recording (shell_1..3.wav, a slowed rifle) with a low thump.
     cannon(d, t, o) {
-      const z = PITCH[o.size], m = cannonMode;
-      if (m === 'mix' && smp.arty && smp.arty.length && smp.boom && smp.boom.length) {     // the game's artillery and explosion recordings, played faster and cut short
+      const z = PITCH[o.size];
+      if (cannonMode === 'mix' && smp.arty && smp.arty.length && smp.boom && smp.boom.length) {
         sample(d, t, 'arty', { rate: 1.5 * z, g: 0.8, cut: 0.7 }); sample(d, t, 'boom', { rate: 1.6 * z, g: 0.5, cut: 0.45 });
         noise(d, t, 0.025, { type: 'highpass', f0: 2000, g: 0.5, att: 0.001 });
-      } else if (m === 'crack') {                                                         // sharp and bright, like a high-velocity gun: short, little bass
-        noise(d, t, 0.05, { type: 'highpass', f0: 1200, g: 1, att: 0.001 }); noise(d, t, 0.12, { type: 'bandpass', q: 1, f0: 2400 * z, f1: 600, g: 0.9, att: 0.001 });
-        tone(d, t, 0.12, { f0: 220 * z, f1: 60 * z, g: 0.7, att: 0.002 }); noise(d, t + 0.03, 0.5, { type: 'bandpass', q: 0.5, f0: 900, f1: 300, g: 0.18, att: 0.03 });
-      } else if (m === 'thud') {                                                          // short, round and punchy, almost no hiss: a stylised game sound
-        tone(d, t, 0.22 / z, { f0: 160 * z, f1: 45 * z, g: 1.1, att: 0.002 }); tone(d, t, 0.09, { type: 'triangle', f0: 320 * z, f1: 90 * z, g: 0.5, att: 0.002 });
-        noise(d, t, 0.14, { f0: 1500 * z, f1: 200, g: 0.6, att: 0.002 });
-      } else if (m === 'ring') {                                                          // a thump with the barrel ringing after it
-        tone(d, t, 0.25 / z, { f0: 140 * z, f1: 40 * z, g: 1, att: 0.002 }); noise(d, t, 0.2, { f0: 2500 * z, f1: 200, g: 0.8, att: 0.002 }); noise(d, t, 0.02, { type: 'highpass', f0: 2200, g: 0.5, att: 0.001 });
-        for (const f of [780, 1170, 1930]) tone(d, t + 0.01, 0.4, { f0: f * z, f1: f * z * 0.985, g: 0.07 });
-        noise(d, t + 0.01, 0.3, { type: 'bandpass', q: 12, f0: 1500 * z, g: 0.2 });
-      } else {                                                                            // 'boom': deep and long, a heavy gun heard from near
-        noise(d, t, 0.9 / z, { f0: 900 * z, f1: 60, g: 1, att: 0.003 }); tone(d, t, 0.8 / z, { f0: 95 * z, f1: 28 * z, g: 1, att: 0.003 });
-        noise(d, t, 0.02, { type: 'highpass', f0: 2000, g: 0.4, att: 0.001 }); noise(d, t + 0.05, 1.4, { f0: 300, f1: 80, g: 0.25, att: 0.15 });
+        return;
       }
+      if (!sample(d, t, 'shell', { rate: z, g: 0.75 })) noise(d, t, 0.38 / z, { f0: 1400 * z, f1: 110, g: 0.9 });
+      tone(d, t, 0.26 / z, { f0: 150 * z, f1: 40 * z, g: 0.75 }); noise(d, t, 0.05, { type: 'highpass', f0: 2500, g: 0.3 });
     },
     arty(d, t, o) {                                          // Artillery gun: deeper, longer
       const z = PITCH[o.size];
