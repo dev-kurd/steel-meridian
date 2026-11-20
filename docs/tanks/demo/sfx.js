@@ -7,21 +7,22 @@
  * - Every sound gets a stereo position and a loudness from where it happens on the screen. */
 window.createSfx = function (base, demoBase) {
   const FILES = { shell: ['shell_1.wav', 'shell_2.wav', 'shell_3.wav'], arty: ['arty_1.wav', 'arty_2.wav'], boom: ['boom_1.wav', 'boom_2.wav', 'boom_3.wav'],
-    bigboom: ['bigboom_1.wav', 'bigboom_2.wav'], laser: ['laser_1.wav'], flak: ['flak_1.wav', 'flak_2.wav'] };
-  // Candidate recordings for the Anti-Air rocket launch, in the demo's own sounds/ folder (see sounds/README.txt there): a rocket
-  // and a thruster sound from OpenGameArt, both CC0. The three options are shaped (length, attack, pitch) after the three short
-  // weapon sounds of the original game, which were measured as a reference only; none of the original audio is used.
-  const RFILES = { r_rocket: 'k_rocket.ogg', r_thruster: 'k_thruster.ogg' };
-  // Each option is a list of [recording, { g: loudness, rate: speed, off: start this far into the file, att: fade-in, cut: length }]
-  // (times in seconds). Names without r_ are the game's own recordings.
+    bigboom: ['bigboom_1.wav', 'bigboom_2.wav'], laser: ['laser_1.wav'] };
+  // Candidate recordings for the Anti-Air rocket launch, in the demo's own sounds/ folder (see sounds/README.txt there): real
+  // rocket, missile and thruster sounds from OpenGameArt, all CC0.
+  const RFILES = { rocket: 'k_rocket.ogg', missile: 'k_missile.wav', thruster: 'k_thruster.ogg', engine: 'k_engine.wav', launch: 'k_launch.wav' };
+  // Each option is a list of [recording, { g: loudness, rate: speed, cut: length in seconds, off: start this far into the file }].
+  // Some recordings are very quiet, so their loudness is well above 1.
   const ROCKET = {
-    bang:   [['shell', { g: 0.75, rate: 1.6, cut: 0.55 }], ['boom', { g: 0.35, rate: 1.4, cut: 0.45 }]],                                  // a hard low bang, gone in half a second
-    whoosh: [['r_thruster', { g: 1.5, rate: 0.4, off: 0.6, att: 0.25, cut: 0.7 }], ['r_rocket', { g: 1.3, rate: 2.2, off: 0.1, att: 0.2, cut: 0.65 }]],   // swells for a quarter of a second, then fades
-    burst:  [['r_thruster', { g: 2.2, rate: 0.6, off: 1, att: 0.004, cut: 0.16 }], ['flak', { g: 0.3, cut: 0.12 }]],                         // one short sharp puff per rocket: a volley is a quick row of them
+    rocket:   [['rocket', { g: 2.4, rate: 1.15, cut: 1.0, off: 0.2 }]],
+    missile:  [['missile', { g: 6, rate: 1.3, cut: 1.1, off: 0.25 }]],
+    thruster: [['thruster', { g: 1.3, cut: 0.9, off: 0.5 }], ['engine', { g: 0.45, rate: 2, cut: 0.7 }]],
+    roar:     [['rocket', { g: 1.8, rate: 1.15, cut: 1.0, off: 0.2 }], ['engine', { g: 0.5, rate: 2.2, cut: 0.8 }]],
+    hiss:     [['launch', { g: 0.22, rate: 0.55, cut: 0.9, off: 2.2 }], ['missile', { g: 5, rate: 1.3, cut: 1.1, off: 0.25 }]],
   };
   const PITCH = [1.22, 1, 0.82];                             // light, medium, heavy
   const rnd = (a, b) => a + Math.random() * (b - a);
-  let ctx = null, master = null, noiseBuf = null, on = true, vol = 0.7, ends = [], rocketMode = 'whoosh';
+  let ctx = null, master = null, noiseBuf = null, on = true, vol = 0.7, ends = [], rocketMode = 'rocket';
   const smp = {}, last = {}, loops = {};
 
   function unlock() {                                        // browsers allow sound only after a click or a key
@@ -36,7 +37,7 @@ window.createSfx = function (base, demoBase) {
       smp[name] = [];
       for (const f of files) fetch(base + f).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject())).then((b) => ctx.decodeAudioData(b)).then((buf) => smp[name].push(buf)).catch(() => {});
     }
-    for (const [n, file] of Object.entries(RFILES)) { smp[n] = []; fetch(demoBase + file).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject())).then((b) => ctx.decodeAudioData(b)).then((buf) => smp[n].push(buf)).catch(() => {}); }
+    for (const [n, file] of Object.entries(RFILES)) { smp['r_' + n] = []; fetch(demoBase + file).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject())).then((b) => ctx.decodeAudioData(b)).then((buf) => smp['r_' + n].push(buf)).catch(() => {}); }
     makeLoops();
   }
   const shape = (param, t, dur, g, att = 0.004) => { param.setValueAtTime(0.0001, t); param.linearRampToValueAtTime(g, t + att); param.exponentialRampToValueAtTime(0.0001, t + Math.max(dur, att + 0.01)); };
@@ -56,10 +57,9 @@ window.createSfx = function (base, demoBase) {
   function sample(dst, t, name, o) {                         // a recording from sounds/; false when it is not loaded
     const list = smp[name]; if (!list || !list.length) return false;
     const s = ctx.createBufferSource(); s.buffer = list[(Math.random() * list.length) | 0]; s.playbackRate.value = (o.rate || 1) * rnd(0.96, 1.04);
-    const g = ctx.createGain();
-    if (o.att) { g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(o.g, t + o.att); } else g.gain.setValueAtTime(o.g, t);
+    const g = ctx.createGain(); g.gain.setValueAtTime(o.g, t);
     s.connect(g); g.connect(dst); s.start(t, o.off || 0);
-    if (o.cut) { g.gain.setValueAtTime(o.g, t + Math.max(o.att || 0, o.cut * (o.att ? 0.45 : 0.6))); g.gain.linearRampToValueAtTime(0.0001, t + o.cut); s.stop(t + o.cut + 0.02); }
+    if (o.cut) { g.gain.setValueAtTime(o.g, t + o.cut * 0.6); g.gain.linearRampToValueAtTime(0.0001, t + o.cut); s.stop(t + o.cut + 0.02); }
     return true;
   }
 
@@ -83,8 +83,8 @@ window.createSfx = function (base, demoBase) {
       const z = PITCH[o.size];
       if (ROCKET[rocketMode]) {                              // one of the library recordings
         let ok = false;
-        for (const [n, q] of ROCKET[rocketMode]) ok = sample(d, t, n, { rate: (q.rate || 1) * z, g: q.g, cut: q.cut, off: q.off, att: q.att }) || ok;
-        if (ok) return;
+        for (const [n, q] of ROCKET[rocketMode]) ok = sample(d, t, 'r_' + n, { rate: (q.rate || 1) * z, g: q.g, cut: q.cut, off: q.off }) || ok;
+        if (ok) { noise(d, t, 0.05, { type: 'highpass', f0: 1800, g: 0.3 }); return; }   // plus a small pop as it leaves the tube
       }
       noise(d, t, 0.06, { type: 'highpass', f0: 1800, g: 0.45 }); noise(d, t, 0.6, { type: 'bandpass', q: 1.2, f0: 500 * z, f1: 2600 * z, g: 0.5, att: 0.06 });
       noise(d, t, 0.5, { f0: 300, f1: 120, g: 0.4, att: 0.03 });

@@ -636,7 +636,7 @@ class Batcher {
   });
   document.getElementById('kill').onclick = () => { const live = tanks.filter((t) => stateOf(t) < 3 && onScreen(t.x, t.y)); if (live.length) kill(live[(Math.random() * live.length) | 0]); };
   // click a name to hear it: three rockets one after another
-  group('rsnd', [['whoosh', 'Whoosh'], ['bang', 'Bang'], ['burst', 'Short burst'], ['orig', 'Original']], () => sfx.rocket(), (v) => { sfx.setRocket(v); sfx.unlock(); for (let i = 0; i < 3; i++) setTimeout(() => sfx.play('rocket', { size: 1, gain: 0.8 }), 60 + i * 140); });
+  group('rsnd', [['rocket', 'Rocket'], ['missile', 'Missile'], ['thruster', 'Thruster'], ['roar', 'Rocket + roar'], ['hiss', 'Missile + hiss'], ['orig', 'Original']], () => sfx.rocket(), (v) => { sfx.setRocket(v); sfx.unlock(); for (let i = 0; i < 3; i++) setTimeout(() => sfx.play('rocket', { size: 1, gain: 0.8 }), 60 + i * 140); });
   group('ashell', [['bullet', 'Bullet'], ['sphere', 'Sphere']], () => shellMode, (v) => { shellMode = v; });
   document.getElementById('snd').onchange = (e) => sfx.setOn(e.target.checked);
   document.getElementById('vol').oninput = (e) => sfx.setVolume(+e.target.value);
