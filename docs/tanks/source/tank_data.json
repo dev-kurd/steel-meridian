@@ -1,0 +1,104 @@
+{
+ "light_panzer": {
+  "size": "light",
+  "weapon": "panzer",
+  "model_units_per_metre": 28.0,
+  "hull_length": 2.2857,
+  "hull_width": 1.6,
+  "hull_height": 0.8,
+  "turret_pivot": [
+   -0.1371,
+   0.0,
+   0.8571
+  ],
+  "turret_radius": 0.5486,
+  "muzzles": [
+   [
+    1.8263,
+    0.0,
+    0.2645
+   ]
+  ],
+  "track_pitch": 0.0893,
+  "track_frames": 4,
+  "directions": 32,
+  "split_plane_check_mm": [
+   0.0,
+   0.0
+  ],
+  "objects": 491
+ },
+ "medium_panzer": {
+  "size": "medium",
+  "weapon": "panzer",
+  "model_units_per_metre": 28.0,
+  "hull_length": 2.9714,
+  "hull_width": 2.0571,
+  "hull_height": 1.0286,
+  "turret_pivot": [
+   -0.1783,
+   0.0,
+   1.0889
+  ],
+  "turret_radius": 0.7429,
+  "muzzles": [
+   [
+    2.4619,
+    -0.2781,
+    0.3299
+   ],
+   [
+    2.4619,
+    0.2781,
+    0.3299
+   ]
+  ],
+  "track_pitch": 0.0893,
+  "track_frames": 4,
+  "directions": 32,
+  "split_plane_check_mm": [
+   0.0,
+   0.0
+  ],
+  "objects": 622
+ },
+ "heavy_panzer": {
+  "size": "heavy",
+  "weapon": "panzer",
+  "model_units_per_metre": 28.0,
+  "hull_length": 3.6571,
+  "hull_width": 2.6286,
+  "hull_height": 1.2571,
+  "turret_pivot": [
+   -0.2194,
+   0.0,
+   1.3574
+  ],
+  "turret_radius": 0.9509,
+  "muzzles": [
+   [
+    3.3598,
+    -0.4655,
+    0.3626
+   ],
+   [
+    3.3598,
+    0.0,
+    0.3626
+   ],
+   [
+    3.3598,
+    0.4655,
+    0.3626
+   ]
+  ],
+  "track_pitch": 0.0893,
+  "track_frames": 4,
+  "directions": 32,
+  "split_plane_check_mm": [
+   -0.0,
+   -0.0
+  ],
+  "objects": 740
+ }
+}
