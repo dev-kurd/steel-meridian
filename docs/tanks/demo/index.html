@@ -81,7 +81,7 @@ const TURRET_TURN = 2.6;
 const SI = { light: 0, medium: 1, heavy: 2 };
 const WPN = {
   panzer:    { range: [15, 17, 19], min: [0, 0, 0], reload: [1.3, 0.8, 2.8], burst: [1, 1, 3], gap: 0.13, dmg: [9, 10, 13], kick: [0.1, 0.12, 0.16], elev: 0, tol: 0.07 },
-  artillery: { range: [30, 34, 38], min: [9, 9, 9], reload: [3.6, 4.6, 5.6], burst: [1, 1, 2], gap: 0.28, dmg: [30, 46, 42], splash: [2.2, 2.8, 3.2], kick: [0.2, 0.28, 0.34], elev: [0.524, 0.576, 0.628], tol: 0.06 },
+  artillery: { range: [30, 34, 38], min: [13, 15, 17], reload: [3.6, 4.6, 5.6], burst: [1, 1, 2], gap: 0.28, dmg: [30, 46, 42], splash: [2.2, 2.8, 3.2], kick: [0.2, 0.28, 0.34], elev: [0.524, 0.576, 0.628], tol: 0.06 },
   antiair:   { range: [26, 28, 30], min: [4, 4, 4], reload: [3, 3.4, 4], burst: [3, 4, 6], gap: 0.14, dmg: [10, 12, 12], kick: [0.03, 0.04, 0.05], elev: [0.663, 0.698, 0.733], tol: 0.2 },
   flamer:    { range: [7, 8.5, 10], min: [0, 0, 0], dps: [14, 20, 28], elev: 0, tol: 0.2 },
   special:   { range: [16, 21, 22], min: [0, 0, 5], reload: [1.1, 3.6, 6.5], burst: [1, 1, 1], gap: 0, dmg: [12, 55, 110], kick: [0.03, 0.3, 0.36], elev: 0, tol: 0.05 },
@@ -354,10 +354,10 @@ class Batcher {
     const w = weaponOf(t);
     if (fireMode === 'mouse') return mouse.on ? (w === 'antiair' ? mouseAir : mouseGround) : null;
     if (fireMode !== 'battle') return null;
-    let best = null, bd = WPN[w].range[SI[t.size]] ** 2;
+    let best = null, bd = WPN[w].range[SI[t.size]] ** 2; const near = WPN[w].min[SI[t.size]] ** 2;   // a target closer than the minimum range is ignored
     for (const o of (w === 'antiair' ? drones : tanks)) {
       if (o === t || o.team === t.team || o.deadT > 0) continue;
-      const d2 = (o.x - t.x) ** 2 + (o.y - t.y) ** 2; if (d2 < bd) { bd = d2; best = o; }
+      const d2 = (o.x - t.x) ** 2 + (o.y - t.y) ** 2; if (d2 >= near && d2 < bd) { bd = d2; best = o; }
     }
     return best;
   }
@@ -397,11 +397,11 @@ class Batcher {
       snd('arty', t.x, t.y, { size: si }); addShake(0.12 + si * 0.06, t.x, t.y);
       shots.push({ type: 'arty', p0: m, c, p1: [px, py, 0], x: m[0], y: m[1], z: m[2], u: 0, tr: 0, T: 0.7 + dist / 38, si, ball: shellMode === 'sphere', team: t.team, dmg: W.dmg[si], splash: W.splash[si], k,
         // motion blur: a soft dark streak drawn behind the shell, about two shell lengths long and faint (owner: less blur); the shell itself is a little see-through
-        bl: fx.spawn('smoke', { tex: fx.T.spark, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: (shellMode === 'sphere' ? [0.8, 0.95, 1.1][si] * 2.4 : [1.3, 1.55, 1.8][si] * 1.8), ax: 0.8, c0: 0x4c5058, a0: 0.28 }),
-        // two shapes to compare: a pointed bullet (1.3 / 1.55 / 1.8 m long) or a round ball (0.8 / 0.95 / 1.1 m across); bigger on a bigger tank
-        h: shellMode === 'sphere' ? fx.spawn('smoke', { tex: fx.T.ball, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: [0.8, 0.95, 1.1][si], a0: 0.95 })
-          : fx.spawn('smoke', { tex: fx.T.shell, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: [1.3, 1.55, 1.8][si], a0: 0.95 }),
-        sh: fx.spawn('decal', { tex: fx.T.dot, held: true, flat: true, life: Infinity, must: true, x: m[0], y: m[1], z: 0, s0: [0.9, 1.15, 1.4][si], c0: 0x000000, a0: 0.3 }) });
+        bl: fx.spawn('smoke', { tex: fx.T.spark, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: (shellMode === 'sphere' ? [0.7, 0.83, 0.97][si] * 2.4 : [1.1, 1.3, 1.55][si] * 1.8), ax: 0.8, c0: 0x4c5058, a0: 0.28 }),
+        // two shapes to compare: a pointed bullet (1.1 / 1.3 / 1.55 m long) or a round ball (0.7 / 0.83 / 0.97 m across); bigger on a bigger tank
+        h: shellMode === 'sphere' ? fx.spawn('smoke', { tex: fx.T.ball, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: [0.7, 0.83, 0.97][si], a0: 0.95 })
+          : fx.spawn('smoke', { tex: fx.T.shell, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: [1.1, 1.3, 1.55][si], a0: 0.95 }),
+        sh: fx.spawn('decal', { tex: fx.T.dot, held: true, flat: true, life: Infinity, must: true, x: m[0], y: m[1], z: 0, s0: [0.8, 1.0, 1.2][si], c0: 0x000000, a0: 0.3 }) });
     } else if (w === 'antiair') {
       // a rocket with a body: it leaves its own tube along the tube's angle, burns a flame behind it, then turns to the target
       const el = W.elev[si], d = [Math.cos(ta) * Math.cos(el), Math.sin(ta) * Math.cos(el), Math.sin(el)], len = [0.85, 1.05, 0.95][si];
