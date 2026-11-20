@@ -30,7 +30,9 @@
   <div class="row" id="teams"><span class="l">Team colour</span></div>
   <div class="row" id="states"><span class="l">Damage state</span></div>
   <div class="row" id="counts"><span class="l">Tanks</span></div>
-  <div class="row"><input id="custom" type="number" min="1" max="1000" value="50" style="width:64px" title="Any number of tanks, 1 to 1000"> <button id="customGo">Set this number</button></div>
+  <div class="row"><input id="custom" type="number" min="1" max="1000" value="50" style="width:64px" title="Any number of tanks, 1 to 1000">
+    <select id="ttype" title="Which tank: all 15 mixed, or one type" style="font:inherit;color:#e6e9ee;background:#232831;border:1px solid #39414d;border-radius:5px;padding:2px 4px;flex:1;min-width:0"></select>
+    <button id="customGo">Set</button></div>
   <div class="row"><span class="l">Zoom</span>
     <input id="zoom" type="range" min="0.5" max="4" step="0.05" value="2" style="flex:1">
   </div>
@@ -281,15 +283,15 @@ class Batcher {
 
   // ---- tanks
   const tanksMesh = new Batcher(top, false), shadowMesh = new Batcher(shadowWorld, true);
-  let tanks = [], teamMode = 'mixed', stateMode = 0, weaponMode = 'mixed';
+  let tanks = [], teamMode = 'mixed', stateMode = 0, weaponMode = 'mixed', tankType = null;   // tankType: null = all 15 mixed, or [size, weapon]
   const rnd = (a, b) => a + Math.random() * (b - a);
   function setCount(n) {
     clearCombat(); tanks = []; FIELD = Math.max(26, Math.round(Math.sqrt(n) * 3.2)); drawGround();
     const side = Math.ceil(Math.sqrt(n)), gap = Math.min(5.2, (FIELD * 2 - 6) / side);
     for (let i = 0; i < n; i++) {
-      const size = M.sizes[i % M.sizes.length], d = M.models[size + '_panzer'].data, h = rnd(0, TAU);   // the hull is the same for every weapon
+      const size = tankType ? tankType[0] : M.sizes[i % M.sizes.length], d = M.models[size + '_panzer'].data, h = rnd(0, TAU);   // the hull is the same for every weapon
       const x = ((i % side) - (side - 1) / 2) * gap + rnd(-0.4, 0.4), y = (Math.floor(i / side) - (side - 1) / 2) * gap + rnd(-0.4, 0.4);
-      tanks.push({ size, d, weapon: WEAPONS[i % WEAPONS.length], team: TEAM_NAMES[Math.floor(i / M.sizes.length) % 6], x, y, h, tur: h, tx: x, ty: y,
+      tanks.push({ size, d, weapon: tankType ? tankType[1] : WEAPONS[i % WEAPONS.length], team: TEAM_NAMES[Math.floor(i / M.sizes.length) % 6], x, y, h, tur: h, tx: x, ty: y,
         phase: 0, state: 0, wait: rnd(0, 2.5), r: d.hull_length * 0.5,
         hp: HP[SI[size]], max: HP[SI[size]], aimZ: d.hull_height * 0.7, cool: rnd(0, 1.5), q: [], kick: 0, charge: 0, barrel: 0, flames: [], deadT: 0, tgt: null, scan: rnd(0, 0.3), fireT: 0, dustD: 0 });
     }
@@ -641,6 +643,13 @@ class Batcher {
   const customEl = document.getElementById('custom');                  // any number of tanks, 1 to 1000
   const customGo = () => { const n = Math.max(1, Math.min(1000, Math.round(+customEl.value) || 1)); customEl.value = n; applyCount(n);
     for (const b of document.querySelectorAll('#counts button')) b.classList.toggle('on', +b.title === n); };
+  const typeEl = document.getElementById('ttype');                     // which tank the field is filled with: all 15 mixed, or one of them
+  typeEl.add(new Option('Mixed (all 15)', ''));
+  for (const size of M.sizes) for (const w of WEAPONS) typeEl.add(new Option(size[0].toUpperCase() + size.slice(1) + ' ' + WEAPON_LABELS[w], size + '/' + w));
+  typeEl.onchange = () => {
+    tankType = typeEl.value ? typeEl.value.split('/') : null; applyCount(tanks.length);
+    if (tankType && weaponMode !== 'mixed') document.querySelector('#weapons button').click();     // the Weapon row would hide the chosen type: back to Mixed
+  };
   document.getElementById('customGo').onclick = customGo; customEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') customGo(); });
   const zoomEl = document.getElementById('zoom');
   function setZoom(z, sx, sy) {
