@@ -125,6 +125,10 @@ owner's PC. When the game switches to sprites, the sheets go under `assets/`; on
 2. Not made yet: firing effects, Gatling spin frames, the Achilles strike, a spinning radar.
 3. Known rough spots: at game size "damaged" is hard to tell from intact (needs the fx smoke); the upper body casts no shadow on the legs;
    damage dings are noisy; the 8-frame walk was found not smooth enough in the game (balance quality against file size).
-4. Whether the walkers' burning look should match the new tank damage style (more black soot and cracked plates, fewer glowing spots):
-   owner's decision.
-5. Later: the Walker Factory building.
+4. **Decided by the owner, 2026-11-20:** the walkers' damaged and burning look changes to the tank damage style (smoky tint, more black
+   soot and cracked plates, less orange / fire colour; the tank shader is `make_metal_t` in `../tanks/source/tank_lib.py`). The owner
+   does not like the current damaged look. Not done yet: it needs a new bake.
+5. **Decided by the owner, 2026-11-20:** re-bake the walkers with the new team-mask method (B render at 20% brightness, highlights kept;
+   see `CLAUDE.md` and `../tanks/README.md`). Not done yet.
+6. The owner wants other improvements inside the walker models (not listed yet: ask). The tanks' Panzer set is finished first.
+7. Later: the Walker Factory building.

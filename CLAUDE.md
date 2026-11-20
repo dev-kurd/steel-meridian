@@ -17,7 +17,7 @@ technology. Follow it; anything not listed here is not decided yet, so ask. The 
 The current code draws every unit and building live each frame in Canvas 2D from plan-view SVG models (`assets/**/model.svg`).
 That is too slow. The game is moving to this plan:
 - **Models are the source, baked to sprite sheets**, drawn with **PixiJS (WebGL)**. Units are 3D models in Blender rendered to
-  sprites (walkers done, tanks in progress); buildings are 2.5D vector models (VectorEngine) baked the same way.
+  sprites (walkers done; tanks: the Panzer set is modelled and ready to bake, see `docs/tanks/`); buildings are 2.5D vector models (VectorEngine) baked the same way.
 - **Resolutions @1x / @2x / @4x**, switched automatically by zoom × screen density. Zoom is limited (about 0.5×–2×). The game
   starts at a larger zoom and does not zoom out as far as today.
 - **WebP lossless only** (one file type, no PNG copies). Sheets at most 4096 px; sprites trimmed.
@@ -27,6 +27,10 @@ That is too slow. The game is moving to this plan:
   (R = paint, G = team lights), coloured by a batched PixiJS sprite shader (`TeamSprite`; team colours in the vertex data, so all
   teams draw in a few batches). For the 3D-rendered units the colour is added **in linear light**:
   `out = toSRGB(toLinear(base) + toLinear(mask.r)·toLinear(paint) + toLinear(mask.g)·toLinear(light))`.
+- **How the mask is baked (approved 2026-11-20):** two renders per frame, A (paint black, team lights off) and B (paint red, lights
+  green, at 20% brightness). Mask = (B − A) / 0.2 in linear light; the part above 1.0 (paint highlights) goes into the base sprite.
+  The tanks are baked this way. The walker sheets were baked the old way (B at full brightness, highlights cut off) and **will be
+  re-baked the new way**. The shader formula above is the same for both.
 - **Effects** come from an `fx` sheet: flipbook flames, explosions and muzzle flash (additive), plus particle smoke and embers,
   muzzle smoke and a small recoil kick when a tank fires.
 
@@ -38,11 +42,14 @@ That is too slow. The game is moving to this plan:
   It is switched off (`HF_USE = false`). When a 2:1 factory replaces it, remove that stretch or it is squashed twice.
 
 ## Units
-Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and **`docs/walker-types.md`** (5 walkers). Walker models, renders, bake and sheet format: **`docs/walkers/`**.
+Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and **`docs/walker-types.md`** (5 walkers). Walker models, renders, bake and sheet format: **`docs/walkers/`**. Tank models, bake, pack tools and next steps: **`docs/tanks/`**.
 - **Tanks:** 15 models, 5 weapon types (Panzer, Artillery, Anti-Air, Flamer, Special) × Light / Medium / Heavy. One shared chassis per
   size, one weapon module per type on the same turret pivot.
 - **Hull and turret are separate sprites**, 32 directions each; the turret aims on its own and always draws above the hull
-  (split by a flat plane at the turret pivot height). Tracks animate with frames chosen by distance driven.
+  (split by a flat plane at the turret pivot height). Tracks animate with frames chosen by distance driven (4 frames per link).
+- **Tank bake rules (approved 2026-11-20):** the turret sprite carries no shadow; the hull sprite carries the turret's shade, rendered
+  with a plain round stand-in for the turret so it is right for every turret direction; the barrels' shadow on the hull is not baked.
+  Ground shadows are separate sprites (hull and turret). Details: `docs/tanks/README.md`.
 - **Walkers** (Kodiak, Cougar, Gatling, A.A. Avenger, Achilles): legs + upper body as separate sprites, split at the waist; 32
   directions; 8-frame walk tied to distance travelled, feet planted. They must appear at their true design scale and walk smoothly.
   Draw order: shadows → legs → upper body (+ per-frame offset from `walkers.json`). Blend a unit's shadows with "max".
@@ -50,6 +57,8 @@ Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and 
 - **Damage states:** intact; damaged (≤ 60% HP: soot, dings, cracks, grey smoke); burning (≤ 30%: large black soot areas, cracked
   plates, a few embers, some parts lost, flames, black smoke, speed × 0.65); destroyed → explosion → charred wreck with every glow off
   and no team colour. Burning style: **few orange spots, more black and smoky areas, cracked plates.**
+  **This style applies to the walkers too (owner, 2026-11-20):** their current damaged look is not liked; change it to the tank style
+  (smoky tint, less orange / fire colour) when they are re-baked.
 - **Detail must read at game size:** added detail (pipes and similar) must be big enough to see in an RTS; simple barrels with a
   smaller but more detailed muzzle brake; less detail on Light units.
 - Movement: a local path planner (picks a side and holds its lane instead of sliding or zigzagging) plus circle collisions.
@@ -77,8 +86,14 @@ Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and 
   missing. Pack extension (`.pak` or `.cab`) is **not decided yet**.
 
 ## Not decided yet (ask first)
-Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Walkers' damage look matching
-the new tank damage style · Flamer flame jet and Special beam effects · Gatling spin, Achilles strike, spinning radar.
+Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Flamer flame jet and Special
+beam effects · Gatling spin, Achilles strike, spinning radar · where the packed unit sheets live (repo or not) · tank track frames
+stored as overlays or whole hulls · the other improvements the owner wants inside the walker models (not listed yet).
+
+## Current order of work (owner, 2026-11-20)
+1. **Finish the Panzer tanks first:** bake on the PC, pack, check (`docs/tanks/README.md`, "Next steps").
+2. Then ask which comes first: tank mockup round 2 (Artillery, Anti-Air, Flamer, Special) or the walker changes (re-bake with the new
+   mask method, new damaged look, other improvements).
 
 ## References
 In this repo:
@@ -86,6 +101,8 @@ In this repo:
 - `docs/walker-types.md`: the 5 walkers (weapons, ranges, roles, modules as built).
 - `docs/walkers/`: the walker 3D models (`source/walker_lib.py`, `.blend` scenes, pack tools), renders, and how they are baked
   into sheets and described in `walkers.json`. The sheets themselves are not in the repo yet.
+- `docs/tanks/`: the 3D tanks (`README.md` with status and next steps, the design note `tanks-3d-model.md`, `source/` with the
+  model, bake, pack, check and mockup tools, `.blend` scenes). The bake frames and sheets are not in the repo.
 - `docs/tanks/vector-viewer/`: the tanks viewer page (all 15 approved vector tanks, 2:1 view): the design reference for the 3D tanks.
 - `tools/sprite-pipeline/`: the sprite pipeline prototype (bake, team-colour shader, fx, PixiJS test map, encrypted packs,
   Tauri app). Its models still use the old isometric view; the pack key `pak/secret.txt` is not in the repo.
@@ -98,5 +115,5 @@ In the claude.ai project "State of War Game":
 - Factories viewer (2:1 view): https://claude.ai/artifact/J5TJ35L7R6Y3gGvo1JQqKE
 - Project docs: `art-style-guide.md`, `rendering-design-note.md`, `tanks-3d-model.md`, `walkers-3d-model.md`, `tank-types.md`,
   `robot-types.md`, `tank-units-vector-model.md`
-- Work folders on the owner's PC: `StateOfWar-Walkers` (walker model, bake, sheets) and `StateOfWar-Tanks` (tank models), under
+- Work folders on the owner's PC: `StateOfWar-Walkers` (walker model, bake, sheets) and `StateOfWar-Tanks` (work copy of `docs/tanks/source/`, bake output), under
   `C:\Users\khala\Desktop\temp\Game Dev\`.

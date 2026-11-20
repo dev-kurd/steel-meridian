@@ -18,3 +18,9 @@ Thumbs.db
 desktop.ini
 .DS_Store
 node_modules/
+
+# Sprite bake frames and check renders (thousands of PNG): made locally with the bake scripts in docs/*/source
+bake/
+bake_*/
+check_refs/
+__pycache__/
