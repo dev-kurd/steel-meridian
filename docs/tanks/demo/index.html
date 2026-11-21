@@ -282,8 +282,7 @@ class Batcher {
   catch (e) { return fail('The effects sheet is missing: ' + SHEETS + 'fx.json\nMake it with: node source/tools/bake_fx.cjs\n' + e); }
   const fx = createFx(PIXI, { proj: P3, ppm: PPM, layers: { decal: decalC, smoke: smokeC, add: addC }, manifest: FXM, base: SHEETS });
   await fx.useRes(wantRes());
-  const sfx = createSfx('../../../sounds/');                                      // the game's recordings, at the repo root
-
+  const sfx = createSfx('../snd/');                                               // the game's recordings (repo root sounds/), served by serve.cjs as /snd/<name>
   // ---- tanks
   const tanksMesh = new Batcher(top, false), shadowMesh = new Batcher(shadowWorld, true);
   let tanks = [], teamMode = 'mixed', stateMode = 0, weaponMode = 'mixed', tankType = null;   // tankType: null = all 15 mixed, or [size, weapon]
@@ -486,7 +485,6 @@ class Batcher {
         s.h.rot = s.bl.rot; s.h.sx = s.bl.sx;                           // the shell flies nose first
         s.sh.x = s.x; s.sh.y = s.y; s.bl.x = s.x; s.bl.y = s.y; s.bl.z = s.z;
         s.tr -= Math.hypot(s.x - ox, s.y - oy, s.z - oz); if (s.tr <= 0) { s.tr = 0.9; fx.trail([ox, oy, oz], 0.6 + s.si * 0.2, 0x8f8a80); }      // smoke behind the shell
-        if (!s.wh && (1 - u) * s.T < 0.85) { s.wh = true; snd('whistle', s.p1[0], s.p1[1], { dur: (1 - u) * s.T }); }
         if (u >= 1) { done = true; fx.explosion(s.p1, s.k); snd('boom', s.x, s.y, { size: s.si }); addShake(0.35 + s.si * 0.12, s.x, s.y); hurtAt(s.x, s.y, s.splash, s.dmg, s.team); }
       } else if (s.type === 'rocket') {                                  // a rocket that speeds up and turns towards its target, leaving white smoke
         s.age += dt; s.v = Math.min(38, s.v + 55 * dt);

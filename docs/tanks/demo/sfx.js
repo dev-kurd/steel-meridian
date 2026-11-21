@@ -24,7 +24,8 @@ window.createSfx = function (base) {
     const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     for (const [name, files] of Object.entries(FILES)) {
       smp[name] = [];
-      for (const f of files) fetch(base + f).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject())).then((b) => ctx.decodeAudioData(b)).then((buf) => smp[name].push(buf)).catch(() => {});
+      // asked for without ".wav" (serve.cjs: /snd/<name>), so a download manager does not take the file away from the page
+      for (const f of files) fetch(base + f.replace(/\.wav$/, '')).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject())).then((b) => ctx.decodeAudioData(b)).then((buf) => smp[name].push(buf)).catch(() => {});
     }
     makeLoops();
   }
@@ -66,7 +67,6 @@ window.createSfx = function (base) {
       if (!sample(d, t, 'arty', { rate: z, g: 0.85 })) noise(d, t, 0.7 / z, { f0: 900 * z, f1: 70, g: 1 });
       tone(d, t, 0.6 / z, { f0: 90 * z, f1: 28 * z, g: 0.9 }); noise(d, t + 0.05, 1.3, { f0: 420, f1: 90, g: 0.3, att: 0.1 });
     },
-    whistle(d, t, o) { tone(d, t, o.dur || 0.8, { f0: 1500, f1: 520, g: 0.12, att: (o.dur || 0.8) * 0.7 }); },          // a shell coming down
     rocket(d, t, o) {                                        // Anti-Air launch
       const z = PITCH[o.size];
       // one launch sound for every rocket: the missile recording, a little faster, started past its quiet beginning, 1.1 s long,

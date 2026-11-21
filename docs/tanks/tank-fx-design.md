@@ -106,7 +106,7 @@ synthesises the rest in the browser. The only sound file it adds is the rocket l
 |---|---|
 | Panzer gun | **Decided (owner, 2026-11-21): the "recorded mix"**: the game's artillery and explosion recordings (`arty`, `boom`), played faster and cut short, with a sharp crack on top. The first version (`shell_1..3.wav` with a thump) and four synthesised tries were turned down |
 | Artillery gun | `arty_1..2.wav` + a deeper thump and a rumbling tail |
-| Artillery shell coming down | synthesised falling whistle |
+| Artillery shell coming down | **No sound (owner, 2026-11-22):** the synthesised falling whistle was removed |
 | Artillery shell lands | `boom_1..3.wav` + low thump |
 | Rocket launch | **Decided (owner, 2026-11-21): the "Missile"**: a CC0 missile launch recording from OpenGameArt, in the game's sound folder as `sounds/rocket_1.wav` (author and page in `sounds/README.txt`; not named `missile_1.wav`, which the current game would start playing for its missile turret), played a little faster and louder but kept under the burst explosion (owner: the whoosh was hiding the explosion), with a small synthesised pop as the rocket leaves the tube. **Every rocket has its own launch sound**, so a volley of 3, 4 or 6 is heard as a quick row. Turned down: the first synthesised version, a set built from shot and whoosh recordings, the other real rocket and thruster recordings, and a set shaped after the original game's weapon sounds; their files were removed |
 | Rocket bursts in the air | **An explosion for every rocket** (owner, 2026-11-21): the game's `boom_1..3.wav` played almost twice as fast and cut short, with a sharp crack and a thump, louder than the launch. When many rockets burst at the same moment, the sound limit below drops the extra ones so it does not turn into noise |
@@ -131,6 +131,10 @@ answered by the approval; the Panzer, Graviton and rocket sounds are decided, se
 2. ~~Anti-Air against ground targets~~: decided 2026-11-21, **no**. Anti-Air fires at air targets only, as in the mockup.
 3. ~~Synthesised sounds~~: decided 2026-11-21, **keep them in code for now**: the sounds are mixed from the recordings in
    `sounds/` and synthesised when they play; there is no WAV file per tank sound. This can change later.
+   **Download managers (2026-11-22):** Internet Download Manager and similar tools take over every `.wav` request, so the page gets
+   no recording and plays only its synthesised layers (it sounds as if the sounds were reset). The demo server therefore hands the
+   recordings out as `/snd/<name>`: no `.wav` in the address, sent as plain data (`demo/serve.cjs`, `demo/sfx.js`). **The web game
+   needs the same** when the sounds move into it. The demo must be opened through `serve.cjs` (`run_demo.bat`).
 4. ~~Artillery shell shape~~: decided 2026-11-21, the **Bullet**.
 5. **Screen shake:** decided 2026-11-21, **keep it**; the game gets an option to switch it off. How strong is decided inside the game.
 6. ~~Drawing effects in front of and behind tanks~~: decided 2026-11-21, **sort them with the tanks**. Effects that sit on a tank
