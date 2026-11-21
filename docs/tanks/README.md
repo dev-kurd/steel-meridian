@@ -117,9 +117,11 @@ yet (they will be re-baked first). Work copy of `source/` on the owner's PC:
    effects are not decided.
 3. **Tank effects and sounds (owner, 2026-11-21: before the walkers):** design in `tank-fx-design.md`, mockup in the demo
    page. **Approved on 2026-11-21.** The real `fx` sheet is baked (2026-11-21, `source/tools/bake_fx.cjs`) and the demo draws from
-   it. Next, when the owner says so: move the effects and sounds into the game.
-4. Then the **Walkers:** re-bake with the new mask method, change their damaged look to the tank style (smoky tint, less orange / fire
-     colour), plus other improvements the owner wants inside the walker models (not listed yet: ask). See `../walkers/README.md`.
+   it. Moving the effects and sounds into the game comes last (owner, 2026-11-21), after steps 4 to 6.
+4. The **Walkers** (no new models): re-bake with the new mask method, change their damaged look to the tank style (smoky tint, less
+     orange / fire colour), and a smoother walk with 12 or 16 frames instead of 8. See `../walkers/README.md`.
+5. The **structures:** Factory, Command Center, Advancer (Vanguard), turrets and the others.
+6. The **map:** a detailed map.
 
 ## The owner's notes so far (keep to them)
 - Added detail must be big enough to read at game size (thick pipes, for example). Less detail on the Light.
