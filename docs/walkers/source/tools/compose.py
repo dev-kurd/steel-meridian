@@ -6,9 +6,20 @@ from PIL import Image
 def s2l(c): return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
 def l2s(c): c = np.clip(c, 0, 1); return np.where(c <= 0.0031308, c * 12.92, 1.055 * c ** (1 / 2.4) - 0.055)
 def hexrgb(h): h = h.lstrip('#'); return np.array([int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)])
-def unit_paint(team):            # same rule as the vector units: saturation x0.5, lightness x0.9
-    r, g, b = hexrgb(team); h, l, s = colorsys.rgb_to_hls(r, g, b)
-    return np.array(colorsys.hls_to_rgb(h, l * 0.9, s * 0.5))
+def _lum(rgb): r, g, b = [float(s2l(np.array(c))) for c in rgb]; return 0.2126 * r + 0.7152 * g + 0.0722 * b
+def paint_of(T):                 # the team paint rule of the style guide (VectorEngine.paintOf), as in walker_lib.paint_of
+    h, l0, s0 = colorsys.rgb_to_hls(*T); hd = h * 360
+    purple = 255 <= hd <= 320; red = hd >= 335 or hd <= 15
+    s = max(0.42, min(0.5, s0)) if purple else max(0.46, min(0.52, s0)) if red else max(0.6, min(0.82, s0))
+    target = _lum(colorsys.hls_to_rgb(146 / 360, 0.4, 0.65)) * (1.25 if purple else 0.9 if red else 1)
+    lo, hi = 0.3, (0.64 if purple else 0.5 if red else 0.56)
+    for _ in range(18):
+        m = (lo + hi) / 2
+        if _lum(colorsys.hls_to_rgb(h, m, s)) < target: lo = m
+        else: hi = m
+    return colorsys.hls_to_rgb(h, (lo + hi) / 2, s)
+def unit_paint(team):            # units: the team paint with saturation x0.5 and lightness x0.9 (2026-11-21: paint_of was missing here)
+    h, l, s = colorsys.rgb_to_hls(*paint_of(tuple(hexrgb(team)))); return np.array(colorsys.hls_to_rgb(h, l * 0.9, s * 0.5))
 def light_col(team): return unit_paint(team) * 0.5 + 0.5
 TEAMS = {'green': '#33d17a', 'blue': '#3b82f6', 'red': '#e5484d', 'orange': '#f5a524', 'purple': '#a855f7', 'cyan': '#22d3ee'}
 

@@ -29,8 +29,7 @@ That is too slow. The game is moving to this plan:
   `out = toSRGB(toLinear(base) + toLinear(mask.r)·toLinear(paint) + toLinear(mask.g)·toLinear(light))`.
 - **How the mask is baked (approved 2026-11-20):** two renders per frame, A (paint black, team lights off) and B (paint red, lights
   green, at 20% brightness). Mask = (B − A) / 0.2 in linear light; the part above 1.0 (paint highlights) goes into the base sprite.
-  The tanks are baked this way. The walker sheets were baked the old way (B at full brightness, highlights cut off) and **will be
-  re-baked the new way**. The shader formula above is the same for both.
+  The tanks and the walkers are both baked this way (the walkers were re-baked on 2026-11-22; `maskGain` 0.2 in `walkers.json`).
 - **Tank effects and sounds (approved 2026-11-21):** how each of the 15 tanks shoots, what its shot, hit, damage and destruction
   look and sound like: `docs/tanks/tank-fx-design.md`, shown working in the tank demo (`docs/tanks/demo/`).
   The tank sounds stay in code for now (owner, 2026-11-21): mixed from the recordings in `sounds/` plus synthesised layers when
@@ -60,14 +59,14 @@ Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and 
   with a plain round stand-in for the turret so it is right for every turret direction; the barrels' shadow on the hull is not baked.
   Ground shadows are separate sprites (hull and turret). Details: `docs/tanks/README.md`.
 - **Walkers** (Kodiak, Cougar, Gatling, A.A. Avenger, Achilles): legs + upper body as separate sprites, split at the waist; 32
-  directions; 8-frame walk tied to distance travelled, feet planted. They must appear at their true design scale and walk smoothly.
+  directions; 12-frame walk tied to distance travelled, feet planted. They must appear at their true design scale and walk smoothly.
   Draw order: shadows → legs → upper body (+ per-frame offset from `walkers.json`). Blend a unit's shadows with "max".
 - **Scale:** tanks and walkers share one scale (28 model units per metre) so their sizes stay true to each other.
 - **Damage states:** intact; damaged (≤ 60% HP: soot, dings, cracks, grey smoke); burning (≤ 30%: large black soot areas, cracked
   plates, a few embers, some parts lost, flames, black smoke, speed × 0.65); destroyed → explosion → charred wreck with every glow off
   and no team colour. Burning style: **few orange spots, more black and smoky areas, cracked plates.**
-  **This style applies to the walkers too (owner, 2026-11-20):** their current damaged look is not liked; change it to the tank style
-  (smoky tint, less orange / fire colour) when they are re-baked.
+  **This style applies to the walkers too (owner, 2026-11-20):** done in the re-bake of 2026-11-22 (the walkers use the tank
+  damage shader; the look was chosen from the mockup on 2026-11-21).
 - **Detail must read at game size:** added detail (pipes and similar) must be big enough to see in an RTS; simple barrels with a
   smaller but more detailed muzzle brake; less detail on Light units.
 - Movement: a local path planner (picks a side and holds its lane instead of sliding or zigzagging) plus circle collisions.
@@ -95,27 +94,28 @@ Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and 
   missing. Pack extension (`.pak` or `.cab`) is **not decided yet**.
 
 ## Not decided yet (ask first)
-Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Gatling spin, Achilles strike, spinning radar · for the tank effects (approved, see `docs/tanks/tank-fx-design.md`): the real ranges, reload times and damage, how strong the screen shake is, and which effects need a second look (all decided inside the game, once everything is in it) · the walker walk cycle: 12 or 16 frames · the full list of structures to model · how mockups
+Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Gatling spin, Achilles strike, spinning radar · for the tank effects (approved, see `docs/tanks/tank-fx-design.md`): the real ranges, reload times and damage, how strong the screen shake is, and which effects need a second look (all decided inside the game, once everything is in it) · the full list of structures to model · how mockups
 are shown when a session cannot publish to a design canvas (pictures or a page in the session, or do the mockup in claude.ai).
 
 ## Current order of work (owner, 2026-11-21)
 Done: the 15 tanks (modelled, baked, packed, checked; sheets in `docs/tanks/source/sheets/`) and the tank effects and sounds
 (approved 2026-11-21, `fx` sheet baked, shown in the tank demo). See `docs/tanks/README.md`.
+Done too: **the walker re-bake** (2026-11-22, no new models): new mask method, the tank damage style, a 12-frame walk instead
+of 8 (owner, 2026-11-21, chosen from the mockup https://claude.ai/artifact/Xc7WQ415pYMC6XLZi4YRDD); sheets in
+`docs/walkers/source/sheets/`. See `docs/walkers/README.md`.
 
 Next, in this order (each step: mockup first, then model, then bake, then docs):
-1. **Walkers: re-bake and fix, no new models** (the models are done and approved). Re-bake with the new mask method; change the
-   damaged and burning look to the tank style; make the walk smoother with more frames (12 or 16 instead of 8, not chosen yet).
-   See `docs/walkers/README.md`.
-2. **Structures:** model the Factory, Command Center, Advancer (Vanguard), turrets and the others (the full list is not set yet: ask).
-3. **The map:** a detailed map with professional map detail.
-4. **Only then** move the tank effects and sounds, and the rest, into the game (`game.js`).
+1. **Structures:** model the Factory, Command Center, Advancer (Vanguard), turrets and the others (the full list is not set yet: ask).
+2. **The map:** a detailed map with professional map detail.
+3. **Only then** move the tank effects and sounds, and the rest, into the game (`game.js`).
 
 ## References
 In this repo:
 - `docs/tank-types.md`: the 15 tanks (sizes, the 5 weapon types, what each looks like).
 - `docs/walker-types.md`: the 5 walkers (weapons, ranges, roles, modules as built).
-- `docs/walkers/`: the walker 3D models (`source/walker_lib.py`, `.blend` scenes, pack tools), renders, and how they are baked
-  into sheets and described in `walkers.json`. The sheets themselves are not in the repo yet.
+- `docs/walkers/`: the walker 3D models (`source/walker_lib.py`, `.blend` scenes, build, bake, pack and check tools), renders, the
+  packed sheets (`source/sheets/`, described in `walkers.json`) and the re-bake mockup (`source/mockup/`). The bake frames are not
+  in the repo.
 - `docs/tanks/`: the 3D tanks (`README.md` with status and next steps, the design note `tanks-3d-model.md`, `source/` with the
   model, bake, pack, check and mockup tools, `.blend` scenes), the packed sheets (`source/sheets/`), the demo page (`demo/`) and
   the approved effects and sounds design (`tank-fx-design.md`). The bake frames are not in the repo.
@@ -131,5 +131,5 @@ In the claude.ai project "State of War Game":
 - Factories viewer (2:1 view): https://claude.ai/artifact/J5TJ35L7R6Y3gGvo1JQqKE
 - Project docs: `art-style-guide.md`, `rendering-design-note.md`, `tanks-3d-model.md`, `walkers-3d-model.md`, `tank-types.md`,
   `robot-types.md`, `tank-units-vector-model.md`
-- Work folders on the owner's PC: `StateOfWar-Walkers` (walker model, bake, sheets) and `StateOfWar-Tanks` (work copy of `docs/tanks/source/`, bake output), under
-  `C:\Users\khala\Desktop\temp\Game Dev\`.
+- All work, including render and bake output, is done inside this repo folder (owner, 2026-11-21): walkers in
+  `docs/walkers/source/`, tanks in `docs/tanks/source/`. The old Desktop work folders are no longer used.

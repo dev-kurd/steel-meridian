@@ -1,7 +1,7 @@
 # walker_lib.py - State of War Game walkers: procedural Blender model + sprite renderer (Blender 5.3)
 # One shared body (legs layer + upper layer) and five weapon modules. Game view: 2:1 dimetric.
 # Axes: +X forward, Z up. The game's y axis is Blender's -Y (the game uses a left-handed ground plane).
-import bpy, bmesh, math, os, colorsys
+import bpy, bmesh, math, os, sys, colorsys
 from mathutils import Vector, Matrix
 
 M2U = 28.0                 # model units (tank svg units) per metre
@@ -83,7 +83,9 @@ def _noise(nt, vec, scale, detail=3.0, rough=0.55):
 CHAR = (0.014, 0.011, 0.009)
 
 def make_metal(name, color, metallic, rough, role='steel', wear=1.0, coat=0.0, round_edges=0.0):
-    """Armour / metal material with edge wear, cavity grime, soot and damage driven by the DMG value (0..3).
+    """The walkers' first damage look (orange burn patches), replaced on 2026-11-21 by the tank damage style: see _metal().
+    Kept for the mockup's comparison (DAMAGE_LOOK = 'old').
+    Armour / metal material with edge wear, cavity grime, soot and damage driven by the DMG value (0..3).
     role: 'paint' (team mask R), 'steel' (not in the mask). color is linear rgb."""
     mat = bpy.data.materials.new(name); nt = _nt(mat)
     out = nt.nodes.new('ShaderNodeOutputMaterial'); bsdf = nt.nodes.new('ShaderNodeBsdfPrincipled')
@@ -176,10 +178,25 @@ def make_glow(name, color, strength, role='fixed'):
     mat['role'] = role; mat['strength'] = strength
     return mat
 
+# Damage look (owner, 2026-11-21): the tank damage style, the same shader as the tanks (tank_lib.make_metal_t): large black soot
+# with a smoky tint round it, cracked plates, only a few embers. Per material: (cracks, embers); paint keeps (1, 1), plain metal
+# cracks less and hardly glows. Intact walkers look exactly as before.
+DAMAGE_LOOK = 'tank'      # 'old' = the first look (make_metal above), only for comparisons
+DAMAGE_STYLE = {'steel': (0.3, 0.2), 'dark': (0.3, 0.2), 'black': (0.0, 0.0), 'bright': (0.0, 0.0), 'copper': (0.3, 0.2),
+                'white': (0.3, 0.0), 'emblem': (1.0, 0.0), 'red': (0.3, 0.0)}
+
+def _metal(name, color, metallic, rough, role='steel', wear=1.0, coat=0.0, round_edges=0.0):
+    if DAMAGE_LOOK == 'old': return make_metal(name, color, metallic, rough, role, wear, coat, round_edges)
+    try: import tank_lib
+    except ImportError:
+        sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'tanks', 'source')); import tank_lib
+    c, e = DAMAGE_STYLE.get(name, (1.0, 1.0))
+    return tank_lib.make_metal_t(name, color, metallic, rough, role, wear, coat, round_edges, cracks=c, embers=e)
+
 def make_materials(team_hex='#33d17a', scheme='paint'):
     T = hex2rgb(team_hex); up = unit_paint(T); S.team = team_hex; S.scheme = scheme
     S.paint_srgb = up; S.glow_srgb = mixc(up, (1, 1, 1), 0.5)
-    m = S.mats
+    m = S.mats; make_metal = _metal
     m['paint'] = make_metal('paint', lin(up), 0.5, 0.42, 'paint', 1.0, round_edges=0.085)
     m['paint2'] = make_metal('paint2', lin(tuple(c * 0.8 for c in up)), 0.5, 0.46, 'paint', 0.9); m['paint2']['shade'] = 0.8
     if scheme == 'steel':
@@ -205,18 +222,22 @@ def set_damage(d):
         n = mat.node_tree.nodes.get('DMG')
         if n: n.outputs[0].default_value = float(d)
 
-def set_mask_mode(mode):
+MASK_GAIN = 0.2           # brightness of the red paint and green lights in the B renders (owner, 2026-11-20: same as the tanks)
+
+def set_mask_mode(mode, gain=1.0):
     """'beauty': real colours. 'A': paint black, team lights off. 'B': paint pure red albedo, team lights pure green.
-    B - A = the team mask (R = paint shading, G = light glow); A = everything that is not team coloured."""
+    B - A = the team mask (R = paint shading, G = light glow); A = everything that is not team coloured.
+    gain < 1 renders B darker (red = gain, green = gain) so highlights brighter than 1.0 are not cut off in an 8-bit file;
+    the packer divides the mask by the same gain."""
     up = S.paint_srgb
     for mat in S.mats.values():
         role = mat.get('role'); nt = mat.node_tree; base = nt.nodes.get('BASE')
         if role == 'paint':
             sh = mat.get('shade', 1.0)
-            c = lin(tuple(x * sh for x in up)) if mode == 'beauty' else (0, 0, 0) if mode == 'A' else (sh, 0, 0)
+            c = lin(tuple(x * sh for x in up)) if mode == 'beauty' else (0, 0, 0) if mode == 'A' else (sh * gain, 0, 0)
             base.outputs[0].default_value = (*c, 1)
         elif role == 'light':
-            c = lin(S.glow_srgb) if mode == 'beauty' else (0, 0, 0) if mode == 'A' else (0, 1, 0)
+            c = lin(S.glow_srgb) if mode == 'beauty' else (0, 0, 0) if mode == 'A' else (0, gain, 0)
             base.outputs[0].default_value = (*c, 1)
 
 # ------------------------------------------------------------------ mesh helpers
@@ -321,7 +342,7 @@ HIP_Y, HIP_Z = 0.54, 1.62
 ANKLE_Y, ANKLE_Z = 0.74, 0.32
 L1, L2 = 0.74, 0.76
 STRIDE = 0.32          # half step length (m)
-WALK_FRAMES = 8
+WALK_FRAMES = 12       # owner, 2026-11-21: 12 instead of 8, for a smoother walk
 WAIST_Z = 1.95
 U_LIFT = WAIST_Z - 1.72   # the upper body is authored with its waist at z = 1.72 and lifted to WAIST_Z
 
@@ -807,7 +828,7 @@ def shoot(path, W, H, a, legs=0, torso=None, layer='all+shadow', phase=None, dmg
     offset in px (x right, y down) for this walk frame: the upper sprite is baked once per direction and moved by this."""
     anchor = setup_camera(W, H, a, zc)
     bob = pose_legs(phase); apply_damage(dmg)
-    set_dirs(legs, torso, bob, wreck=dmg >= 3); set_mask_mode(mode); set_layer(layer)
+    set_dirs(legs, torso, bob, wreck=dmg >= 3); set_mask_mode(mode, MASK_GAIN); set_layer(layer)
     sway = getattr(S, 'sway', 0.0); th = -legs * math.tau / 32
     wx, wy = -math.sin(th) * sway, math.cos(th) * sway           # sway is along the body's local Y; game y = -Blender y
     off = (a * (wx + wy), a * ((wx - wy) / 2 - bob * 4 / 3))
@@ -847,14 +868,18 @@ def bake_upper(out, kind, dirs, states=(0, 1, 2)):
                 n += _bk(os.path.join(out, kind, 's%d' % dmg, 'd%02d_%s.png' % (d, mode)), legs=d, torso=d, layer='upper', dmg=dmg, mode=mode)
     return n
 
-def bake_extras(out, kind):
+def bake_extras(out, kind, dirs=range(32)):
     """Per walker: the whole-walker ground shadow and the upper-body-only ground shadow for 32 directions, and the wreck in 8 directions."""
     n = 0
-    for d in range(32):
+    for d in dirs:
         n += _bk(os.path.join(out, kind, 'shadow', 'd%02d.png' % d), legs=d, torso=d, layer='shadow')
-    for d in range(32):
+    for d in dirs:
         n += _bk(os.path.join(out, kind, 'shadow_upper', 'd%02d.png' % d), legs=d, torso=d, layer='shadow_upper')
-    for d in range(0, 32, 4):
+    return n
+
+def bake_wrecks(out, kind, dirs=range(0, 32, 4)):
+    n = 0
+    for d in dirs:
         n += _bk(os.path.join(out, kind, 'wreck', 'd%02d.png' % d), legs=d, torso=d, layer='all+shadow', dmg=3, mode='A')
     return n
 
@@ -876,4 +901,4 @@ def bake_tables():
             row.append([round(a * (wx + wy), 3), round(a * ((wx - wy) / 2 - bob * 4 / 3), 3)])
         t[d] = row
     return {'upper_offset_1x': t, 'travel_m': TRAVEL, 'travel_model_units': TRAVEL * M2U, 'travel_game_units': TRAVEL * M2U * 0.4,
-            'anchor_4x': list(BK_ANCHOR), 'frame_4x': [BK_W, BK_H], 'px_per_metre_4x': BK_A, 'walk_frames': WALK_FRAMES, 'directions': 32}
+            'anchor_4x': list(BK_ANCHOR), 'frame_4x': [BK_W, BK_H], 'px_per_metre_4x': BK_A, 'walk_frames': WALK_FRAMES, 'directions': 32, 'mask_gain': MASK_GAIN}

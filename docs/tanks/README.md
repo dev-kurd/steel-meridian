@@ -46,9 +46,8 @@ The round 2 models (2026-11-20), each rendered from its saved `.blend` scene:
 | `source/sheets/` | The packed sheets: 46 tank WebP files and `tanks.json` (93 MB), plus the effects sheet (3 WebP files and `fx.json`, 1.9 MB, since 2026-11-21). In the repo since 2026-11-21 (owner's decision) |
 | `vector-viewer/` | The approved vector tanks (the design reference the 3D models follow) |
 
-**Not in the repo:** the bake frames (`bake/`, 6,000 PNG with round 2, ignored by git). The walker sheets are not in the repo
-yet (they will be re-baked first). Work copy of `source/` on the owner's PC:
-`C:\Users\khala\Desktop\temp\Game Dev\StateOfWar-Tanks` (identical on 2026-11-20).
+**Not in the repo:** the bake frames (`bake/`, 6,000 PNG with round 2, ignored by git). All work is done inside
+this repo folder (owner, 2026-11-21); the old work copy on the Desktop is no longer used.
 
 ## How the tanks are made
 - Each tank is built by Python in Blender from the same formulas as the vector model, then rendered with Cycles in the game's 2:1 view.
@@ -118,8 +117,8 @@ yet (they will be re-baked first). Work copy of `source/` on the owner's PC:
 3. **Tank effects and sounds (owner, 2026-11-21: before the walkers):** design in `tank-fx-design.md`, mockup in the demo
    page. **Approved on 2026-11-21.** The real `fx` sheet is baked (2026-11-21, `source/tools/bake_fx.cjs`) and the demo draws from
    it. Moving the effects and sounds into the game comes last (owner, 2026-11-21), after steps 4 to 6.
-4. The **Walkers** (no new models): re-bake with the new mask method, change their damaged look to the tank style (smoky tint, less
-     orange / fire colour), and a smoother walk with 12 or 16 frames instead of 8. See `../walkers/README.md`.
+4. The **Walkers** (no new models): **done 2026-11-22.** Re-baked with the new mask method, the tank damage style (smoky tint, less
+     orange / fire colour) and a 12-frame walk instead of 8. See `../walkers/README.md`.
 5. The **structures:** Factory, Command Center, Advancer (Vanguard), turrets and the others.
 6. The **map:** a detailed map.
 

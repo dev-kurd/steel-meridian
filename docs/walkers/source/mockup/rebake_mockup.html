@@ -1,0 +1,191 @@
+<title>Walkers re-bake mockup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: one column of review sections; each section is a short question, the pictures on game ground, and the facts under them. */
+:root {
+  --bg: #f3f4f1; --panel: #ffffff; --fg: #1a1f1c; --muted: #5a645e; --line: #d5dad4; --accent: #1f7a4d; --accent-fg: #ffffff;
+  --ground: #6f6a58; --ground-line: rgba(0, 0, 0, 0.13);
+  --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif; --body: Inter, "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121614; --panel: #1b211e; --fg: #e7ece8; --muted: #9aa69f; --line: #303934; --accent: #46c07f; --accent-fg: #08130d;
+  --ground: #5d594a; --ground-line: rgba(0, 0, 0, 0.18); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121614; --panel: #1b211e; --fg: #e7ece8; --muted: #9aa69f; --line: #303934; --accent: #46c07f; --accent-fg: #08130d;
+  --ground: #5d594a; --ground-line: rgba(0, 0, 0, 0.18); color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+main { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: 30px; line-height: 1.15; }
+h2 { font-size: 22px; line-height: 1.2; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+header, section { display: flex; flex-direction: column; gap: 14px; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+.group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.label { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.seg button { font: 500 13px var(--body); color: var(--fg); background: none; border: 0; padding: 7px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type="range"] { accent-color: var(--accent); width: 160px; }
+.val { font-variant-numeric: tabular-nums; min-width: 6.5ch; }
+.lanes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.lane { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.lane canvas { width: 100%; height: 320px; display: block; background: var(--ground); border-radius: 10px; }
+.lane h3 { font: 600 16px var(--display); margin: 0; }
+.facts { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 12px 8px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.dgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.dhead { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.kind { grid-column: 1 / -1; font: 600 16px var(--display); margin-top: 8px; }
+.cell { background: var(--ground); border-radius: 10px; aspect-ratio: 1; max-width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.cell img { width: 100%; height: 100%; object-fit: contain; }
+.dgrid.game .cell img { width: 192px; height: 192px; }
+ul { margin: 0; padding-left: 20px; max-width: 68ch; }
+@media (max-width: 760px) {
+  .lanes { grid-template-columns: 1fr; } .lane canvas { height: 260px; }
+  .dgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dhead { display: none; }
+}
+</style>
+<main>
+  <header>
+    <h1>Walkers re-bake mockup</h1>
+    <p class="muted">Steel Meridian, 2026-11-21. Two things to decide before the walkers are baked again: how many walk frames, and the new damaged look. The models are unchanged.</p>
+  </header>
+
+  <section>
+    <h2>A. Walk frames: 8, 12 or 16</h2>
+    <p>The same Kodiak walks at the same speed in all three panels. The pose is chosen by the distance walked, as the game will do it. Watch the foot on the ground against the grid: between two poses it slides a little, and that slide is what looks rough.</p>
+    <div class="controls">
+      <div class="group"><span class="label">Direction</span><div class="seg" id="dirs"></div></div>
+      <div class="group"><span class="label">Size</span><div class="seg" id="sizes"></div></div>
+      <div class="group"><label class="label" for="speed">Speed</label><input type="range" id="speed" min="0.5" max="5" step="0.1" value="2.2"><span class="val" id="speedv"></span></div>
+      <div class="seg"><button type="button" id="pause" aria-pressed="false">Pause</button></div>
+    </div>
+    <div class="lanes" id="lanes"></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Walk frames</th><th>Renders</th><th>Bake time</th><th>All three sizes</th><th>@1x + @2x (web)</th></tr></thead>
+      <tbody>
+        <tr><td>8 (today)</td><td>3,336</td><td>2 h 10 min</td><td>71 MB</td><td>21 MB</td></tr>
+        <tr><td>12</td><td>4,232</td><td>about 2 h 50 min</td><td>about 89 MB</td><td>about 26 MB</td></tr>
+        <tr><td>16</td><td>5,128</td><td>about 3 h 25 min</td><td>about 106 MB</td><td>about 31 MB</td></tr>
+      </tbody>
+    </table></div>
+    <p class="muted">The 12 and 16 rows are estimates from the current sheets. Only the legs grow; upper bodies, their shadows and wrecks stay as they are. The walker speed in the game is not decided, so the slider only helps to judge.</p>
+  </section>
+
+  <section>
+    <h2>B. Damaged look: current against the tank style</h2>
+    <p>The new look uses the tank damage shader on the walker models: large black soot with a smoky tint around it, cracked plates, and only a few embers. "New, smokier" goes further: the smoky tint is stronger and reaches wider, the cracks are weaker and there are fewer embers. Flames and smoke are not in these pictures; the game adds them from the effects sheet.</p>
+    <div class="controls">
+      <div class="group"><span class="label">Look</span><div class="seg" id="looks"></div></div>
+      <div class="group"><span class="label">View</span><div class="seg" id="views"></div></div>
+    </div>
+    <div class="dgrid" id="dgrid"></div>
+  </section>
+
+  <section>
+    <h2>What I need from you</h2>
+    <ul>
+      <li>Walk frames: chosen, 12.</li>
+      <li>The damaged and burning look: "New (tank style)" or "New, smokier", or say what to change (more or less soot, cracks, embers).</li>
+      <li>The wreck: keep the current pose and take the new charred look, or change something.</li>
+    </ul>
+  </section>
+</main>
+<script>
+(async function () {
+  const meta = await (await fetch('meta.json')).json();
+  const TAU = Math.PI * 2, [FW, FH] = meta.frame, [AX, AY] = meta.anchor, COLS = 6;
+  const p2 = n => String(n).padStart(2, '0');
+  const loadImg = src => new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = bad; i.src = src; });
+  const seg = (el, items, cur, on) => {
+    items.forEach(([v, text]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = text; b.setAttribute('aria-pressed', String(v === cur));
+      b.onclick = () => { [...el.children].forEach(c => c.setAttribute('aria-pressed', String(c === b))); on(v); };
+      el.appendChild(b);
+    });
+  };
+
+  // ---------------------------------------------------------------- A. walk
+  const DIR_NAMES = { 28: 'Side', 0: 'Diagonal', 4: 'Towards', 20: 'Away' };
+  const atlas = {}; await Promise.all(meta.walkDirs.map(async d => { atlas[d] = await loadImg('walk/d' + p2(d) + '.webp'); }));
+  const st = { dir: meta.walkDirs[0], mul: 2, speed: 2.2, paused: false, dist: 0 };
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) st.paused = true;
+  seg(document.getElementById('dirs'), meta.walkDirs.map(d => [d, DIR_NAMES[d] || 'Dir ' + d]), st.dir, v => { st.dir = v; });
+  seg(document.getElementById('sizes'), [[1, '@1x'], [2, '@2x'], [4, '@4x']], st.mul, v => { st.mul = v; });
+  const speed = document.getElementById('speed'), speedv = document.getElementById('speedv');
+  const showSpeed = () => { speedv.textContent = st.speed.toFixed(1) + ' m/s'; };
+  speed.oninput = () => { st.speed = +speed.value; showSpeed(); }; showSpeed();
+  const pause = document.getElementById('pause');
+  const showPause = () => { pause.textContent = st.paused ? 'Play' : 'Pause'; pause.setAttribute('aria-pressed', String(st.paused)); };
+  pause.onclick = () => { st.paused = !st.paused; showPause(); }; showPause();
+
+  const lanes = meta.counts.map(n => {
+    const el = document.createElement('div'); el.className = 'lane';
+    el.innerHTML = '<h3>' + n + ' frames' + (n === 8 ? ' (today)' : '') + '</h3><canvas></canvas><div class="facts"></div>';
+    document.getElementById('lanes').appendChild(el);
+    return { n, cv: el.querySelector('canvas'), facts: el.querySelector('.facts') };
+  });
+  const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  function draw(L) {
+    const cv = L.cv, dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+    const ppm = meta.pxPerMetre4x * st.mul / 4, cx = w / 2, cy = h / 2 + 40 * st.mul / 2;
+    // ground grid: one map cell (60 model units) in the game's 2:1 view; world (x, y) -> screen ppm * (x - y, (x + y) / 2)
+    const cell = 60 / 28 * ppm, R = Math.ceil((w + 2 * h) / cell) + 2;
+    g.strokeStyle = css('--ground-line'); g.lineWidth = 1; g.beginPath();
+    for (let k = -R; k <= R; k++) {
+      g.moveTo(cx + (k + R) * cell, cy + (k - R) * cell / 2); g.lineTo(cx + (k - R) * cell, cy + (k + R) * cell / 2);
+      g.moveTo(cx + (R - k) * cell, cy + (R + k) * cell / 2); g.lineTo(cx + (-R - k) * cell, cy + (-R + k) * cell / 2);
+    }
+    g.stroke();
+    // the walker moves along its direction and wraps round when it leaves the panel
+    const th = st.dir * TAU / 32, ux = Math.cos(th) - Math.sin(th), uy = (Math.cos(th) + Math.sin(th)) / 2;
+    const half = FW * st.mul / 4 * 0.55, reach = Math.min(Math.abs(ux) > 1e-6 ? (w / 2 + half) / Math.abs(ux) : 1e9, Math.abs(uy) > 1e-6 ? (h / 2 + half) / Math.abs(uy) : 1e9) / ppm;
+    const s = ((st.dist + reach) % (2 * reach)) - reach;
+    const cyc = meta.cycleMetres, f = Math.floor((st.dist % cyc) / cyc * L.n) % L.n, idx = meta.phases.indexOf(f * meta.phaseDen / L.n);
+    const sc = st.mul / 4; g.imageSmoothingQuality = 'high';
+    g.drawImage(atlas[st.dir], (idx % COLS) * FW, Math.floor(idx / COLS) * FH, FW, FH, cx + ppm * s * ux - AX * sc, cy + ppm * s * uy - AY * sc, FW * sc, FH * sc);
+    const step = cyc / L.n;
+    L.facts.textContent = 'Pose changes ' + (st.speed / step).toFixed(0) + ' times a second · slides up to ' + (step * 100).toFixed(1) + ' cm (' + (step * ppm).toFixed(1) + ' px) between poses';
+  }
+  let last = performance.now();
+  function tick(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!st.paused) st.dist += st.speed * dt;
+    lanes.forEach(draw); requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // ---------------------------------------------------------------- B. damage
+  const NAMES = { kodiak: 'Kodiak', cougar: 'Cougar', gatling: 'Gatling', avenger: 'A.A. Avenger', achilles: 'Achilles' };
+  const STATES = ['Intact', 'Damaged', 'Burning', 'Wreck'];
+  const dg = document.getElementById('dgrid'); let look = 'new';
+  STATES.forEach(s => { const d = document.createElement('div'); d.className = 'dhead'; d.textContent = s; dg.appendChild(d); });
+  const imgs = [];
+  meta.kinds.forEach(k => {
+    const t = document.createElement('div'); t.className = 'kind'; t.textContent = NAMES[k] || k; dg.appendChild(t);
+    STATES.forEach((name, s) => {
+      const c = document.createElement('div'); c.className = 'cell'; const im = document.createElement('img');
+      im.alt = (NAMES[k] || k) + ', ' + name.toLowerCase(); im.loading = 'lazy'; c.appendChild(im); dg.appendChild(c); imgs.push({ im, k, s });
+    });
+  });
+  // intact is the same in every look; the wreck of "smoke" is the wreck of "new"
+  const setLook = () => imgs.forEach(o => { o.im.src = 'damage/' + o.k + '_' + (o.s === 0 ? 'old' : o.s === 3 && look === 'smoke' ? 'new' : look) + '_s' + o.s + '.webp'; });
+  seg(document.getElementById('looks'), [['old', 'Current'], ['new', 'New (tank style)'], ['smoke', 'New, smokier']], look, v => { look = v; setLook(); });
+  seg(document.getElementById('views'), [['close', 'Close-up'], ['game', 'Game size (@2x)']], 'close', v => dg.classList.toggle('game', v === 'game'));
+  setLook();
+  meta.kinds.forEach(k => [1, 2, 3].forEach(s => { new Image().src = 'damage/' + k + '_old_s' + s + '.webp'; }));
+})();
+</script>
