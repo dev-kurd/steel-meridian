@@ -63,8 +63,9 @@ Range in steps: Melee 1 · Short 2 · Medium 3 · Long 4. On this scale the Panz
   toward the target, like a turret.
 - **Paint (scheme A, chosen by the owner):** armour in the muted team `unitPaint`; frame, joints and weapons in steel and dark metal.
   Team light strips = mix(unitPaint, white, 0.5). One sprite + a mask gives every team colour.
-- **Walk cycle:** 8 frames, feet planted with no sliding, slight bob and sway of the body.
-- **Damage:** damaged (chips, dings, soot), burning (burn patches with glowing edges, some parts lost), wreck (collapsed on folded legs,
+- **Walk cycle:** 12 frames (8 until 2026-11-21), feet planted with no sliding, slight bob and sway of the body.
+- **Damage (tank style since the re-bake of 2026-11-22):** damaged (soot, dings, cracks), burning (large black soot areas, cracked
+  plates, a few embers, some parts lost), wreck (collapsed on folded legs,
   charred, all glows off). Flames and smoke come from the game's fx.
 - **No hazard stripes.**
 - Walkers are rendered from 3D models in Blender, so the vector-model rules (parts touch and never overlap) do not apply to them.

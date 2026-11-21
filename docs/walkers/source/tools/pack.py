@@ -10,6 +10,10 @@ os.makedirs(OUT, exist_ok=True)
 KINDS = ['kodiak', 'cougar', 'gatling', 'avenger', 'achilles']
 FRAME = 384; ANCHOR = (192.0, 264.0); PAGE_W, PAGE_H, PAD = 4096, 2048, 2
 RES = {'4x': 1, '2x': 2, '1x': 4}                      # divisor from the @4x frame
+TB = json.load(open(os.path.join(SRC, 'tables.json'))) if os.path.exists(os.path.join(SRC, 'tables.json')) else {}
+GAIN = float(TB.get('mask_gain', 1.0))                 # the B renders were made at this brightness (walker_lib.MASK_GAIN)
+WALK = int(TB.get('walk_frames', 8))
+PAINT_Y, LIGHT_Y = 0.165, 0.475                        # average brightness (linear) of the six team paints and of their lights
 def s2l(c): return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
 def l2s(c): c = np.clip(c, 0, 1); return np.where(c <= 0.0031308, c * 12.92, 1.055 * c ** (1 / 2.4) - 0.055)
 def read(p): return np.asarray(Image.open(p).convert('RGBA')).astype(np.float32) / 255
@@ -37,7 +41,9 @@ def variants(kind, pa, pb=None):
     lin = s2l(A[..., :3]) * al[..., None]                                  # premultiplied linear
     if pb:
         B = read(pb); Bl = s2l(B[..., :3]) * al[..., None]
-        m = np.clip(Bl[..., :2] - lin[..., :2], 0, None)                   # R = paint shading, G = team-light glow (premultiplied linear)
+        m = np.clip(Bl[..., :2] - lin[..., :2], 0, None) / GAIN            # R = paint shading, G = team-light glow (premultiplied linear)
+        over = np.clip(m - al[..., None], 0, None); m = m - over          # the part brighter than a mask can hold (paint highlights) goes
+        lin = lin + over[..., 0:1] * PAINT_Y + over[..., 1:2] * LIGHT_Y    # into the base sprite as plain white light (same as pack_tanks.py)
     for r, k in RES.items():
         a = down(al[..., None], k)[..., 0]; c = down(lin, k); safe = np.maximum(a, 1e-6)[..., None]
         base = np.dstack([l2s(c / safe), a]); base[a <= 0] = 0
@@ -57,7 +63,7 @@ def trim(img):
 items = []
 def add(key, group, kind, pa, pb=None):
     if os.path.exists(pa) and (pb is None or os.path.exists(pb)): items.append((key, group, kind, pa, pb))
-POSES = ['s'] + [str(i) for i in range(8)]
+POSES = ['s'] + [str(i) for i in range(WALK)]
 for s in range(3):
     for d in range(32):
         for p in POSES:
@@ -81,7 +87,7 @@ for n, (key, group, kind, pa, pb) in enumerate(items):
         x, y, w, h = trim(base)
         groups.setdefault((group, r), []).append((key, base[y:y + h, x:x + w], None if mask is None else mask[y:y + h, x:x + w], x, y))
     if n % 400 == 0: print(' ', n, flush=True)
-manifest = {'version': 1, 'unit': 'walker', 'kinds': KINDS, 'directions': 32, 'poses': POSES,
+manifest = {'version': 2, 'maskGain': GAIN, 'unit': 'walker', 'kinds': KINDS, 'directions': 32, 'poses': POSES,
             'states': ['intact', 'damaged', 'burning'], 'resolutions': {}, 'sheets': {}, 'frames': {r: {} for r in RES},
             'note': 'frames[res][key] = [sheet index, x, y, w, h, anchorX, anchorY]. Draw so that (x + anchorX, y + anchorY) lands on the unit position. '
                     'Sheets with mask: the mask for a frame is at the same x and y + maskOffsetY. '
