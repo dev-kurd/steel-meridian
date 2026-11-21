@@ -128,18 +128,20 @@ The effects and sounds are approved as they are in the demo. These points were n
 answered by the approval; the Panzer, Graviton and rocket sounds are decided, see section 3):
 
 1. **The five shot types** (section 1): is each one right, above all the three Special weapons?
-2. **Anti-Air against ground targets:** in the mockup it fires at air targets only (the manual says it protects against
-   aircraft). Should it also be able to hit tanks or buildings, weakly?
+2. ~~Anti-Air against ground targets~~: decided 2026-11-21, **no**. Anti-Air fires at air targets only, as in the mockup.
 3. ~~Synthesised sounds~~: decided 2026-11-21, **keep them in code for now**: the sounds are mixed from the recordings in
    `sounds/` and synthesised when they play; there is no WAV file per tank sound. This can change later.
 4. ~~Artillery shell shape~~: decided 2026-11-21, the **Bullet**.
-5. **Screen shake:** keep it (it can be switched off in the demo), and how strong?
-6. **Drawing effects in front of and behind tanks:** worth sorting flames and smoke with the tanks in the game, or is "above
-   everything" good enough?
-7. Which effects need a second look: too big, too small, too bright, too long?
+5. **Screen shake:** decided 2026-11-21, **keep it**; the game gets an option to switch it off. How strong is decided inside the game.
+6. ~~Drawing effects in front of and behind tanks~~: decided 2026-11-21, **sort them with the tanks**. Effects that sit on a tank
+   (hull flames, the source of its damage smoke) are drawn with that tank, so a nearer tank covers them. Effects in the air
+   (rising smoke, explosions, beams, shells) stay above everything. The demo still draws all effects on top.
+7. Which effects need a second look (too big, too small, too bright, too long): decided inside the game.
 
 ## 5. Next steps (approved, not started)
 
 1. ~~Bake the flipbooks and soft shapes into the real `fx` sheet (three resolutions)~~: done 2026-11-21 (`source/tools/bake_fx.cjs`, `source/sheets/fx.json`); the demo draws from it and switches resolution with the tanks. Not done: the encrypted desktop packs, which do not exist for the tank sheets either yet.
 2. Move the effect and sound code from the demo into the game, with the weapon rules from section 1.
 3. Set the real ranges, reload times and damage (game balance), which this note does not decide.
+
+Steps 2 and 3 wait (owner, 2026-11-21): the walkers, the structures and the map come first, see `../../CLAUDE.md`.

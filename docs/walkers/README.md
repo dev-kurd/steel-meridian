@@ -130,5 +130,7 @@ owner's PC. When the game switches to sprites, the sheets go under `assets/`; on
    does not like the current damaged look. Not done yet: it needs a new bake.
 5. **Decided by the owner, 2026-11-20:** re-bake the walkers with the new team-mask method (B render at 20% brightness, highlights kept;
    see `CLAUDE.md` and `../tanks/README.md`). Not done yet.
-6. The owner wants other improvements inside the walker models (not listed yet: ask). The tanks' Panzer set is finished first.
+6. **Decided by the owner, 2026-11-21:** the walkers are next, before the structures, the map and the move into the game. The
+   models are done and approved and are **not remodelled**. The work is points 4 and 5 plus a **smoother walk with more frames:
+   12 or 16 instead of 8** (not chosen yet; balance smoothness against file size). The owner listed no other improvements.
 7. Later: the Walker Factory building.

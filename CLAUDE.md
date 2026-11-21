@@ -35,6 +35,9 @@ That is too slow. The game is moving to this plan:
   look and sound like: `docs/tanks/tank-fx-design.md`, shown working in the tank demo (`docs/tanks/demo/`).
   The tank sounds stay in code for now (owner, 2026-11-21): mixed from the recordings in `sounds/` plus synthesised layers when
   they play, no WAV file per tank sound.
+  Decided by the owner on 2026-11-21: **Anti-Air never hits ground targets**; **screen shake stays**, and the game gets an option
+  to switch it off; **effects that sit on a tank (hull flames, the source of its damage smoke) are sorted with that tank**, so a
+  nearer tank covers them, while effects in the air (rising smoke, explosions, beams, shells) stay on top.
 - **Effects** come from an `fx` sheet: flipbook flames, explosions and muzzle flash (additive), plus particle smoke and embers,
   muzzle smoke and a small recoil kick when a tank fires.
 
@@ -92,22 +95,20 @@ Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and 
   missing. Pack extension (`.pak` or `.cab`) is **not decided yet**.
 
 ## Not decided yet (ask first)
-Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Gatling spin, Achilles strike, spinning radar · for the tank effects (approved, see `docs/tanks/tank-fx-design.md`): whether Anti-Air may hit ground targets, whether effects are sorted with the tanks, and the real ranges, reload times and damage · the other improvements the owner wants inside the walker models (not listed yet) · how mockups
+Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Gatling spin, Achilles strike, spinning radar · for the tank effects (approved, see `docs/tanks/tank-fx-design.md`): the real ranges, reload times and damage, how strong the screen shake is, and which effects need a second look (all decided inside the game, once everything is in it) · the walker walk cycle: 12 or 16 frames · the full list of structures to model · how mockups
 are shown when a session cannot publish to a design canvas (pictures or a page in the session, or do the mockup in claude.ai).
 
-## Current order of work (owner, 2026-11-20)
-1. **Finish the Panzer tanks first:** baked, packed and checked on the PC on 2026-11-20 (`docs/tanks/README.md`). The packed
-   sheets live in the repo (owner, 2026-11-21): `docs/tanks/source/sheets/`.
-2. **Tank round 2 (Artillery, Anti-Air, Flamer, Special), chosen by the owner:** mockup approved and the 12 models built on
-   2026-11-20, models approved by the owner the same day (`docs/tanks/README.md`, "Round 2"). The full bake of the new turrets, turret shadows
-   and wrecks ran on 2026-11-20 (2,880 renders), then the pack (all 15 tanks, 46 sheets, 97 MB) and the pack check passed.
-   The Flamer and Special firing effects are part of step 3.
-3. **Tank effects and sounds before the walkers (owner, 2026-11-21):** design note `docs/tanks/tank-fx-design.md` and a working
-   mockup in the tank demo page (firing, hits, damage smoke and flames, explosions, sounds). **Approved by the owner on
-   2026-11-21** after several review rounds. The real `fx` sheet is baked (`docs/tanks/source/sheets/fx@1x|2x|4x.webp` + `fx.json`,
-   tool `docs/tanks/source/tools/bake_fx.cjs`) and the demo draws from it. Next (only when the owner says so): move the effects
-   and sounds into the game.
-4. Then the walker changes (re-bake with the new mask method, new damaged look, other improvements).
+## Current order of work (owner, 2026-11-21)
+Done: the 15 tanks (modelled, baked, packed, checked; sheets in `docs/tanks/source/sheets/`) and the tank effects and sounds
+(approved 2026-11-21, `fx` sheet baked, shown in the tank demo). See `docs/tanks/README.md`.
+
+Next, in this order (each step: mockup first, then model, then bake, then docs):
+1. **Walkers: re-bake and fix, no new models** (the models are done and approved). Re-bake with the new mask method; change the
+   damaged and burning look to the tank style; make the walk smoother with more frames (12 or 16 instead of 8, not chosen yet).
+   See `docs/walkers/README.md`.
+2. **Structures:** model the Factory, Command Center, Advancer (Vanguard), turrets and the others (the full list is not set yet: ask).
+3. **The map:** a detailed map with professional map detail.
+4. **Only then** move the tank effects and sounds, and the rest, into the game (`game.js`).
 
 ## References
 In this repo:
