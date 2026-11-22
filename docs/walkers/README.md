@@ -152,9 +152,9 @@ from the command line (`blender -b --python ...`), so the bridge is kept only fo
 ## Open
 1. **In the demo since 2026-11-22** (`../demo/`): the walkers walk, turn, take damage and are destroyed on the same battlefield as
    the tanks, drawn with the linear-light team shader. **Game side, still open:** the same shader and a walker unit class (legs +
-   upper + shadows, walk frames tied to distance travelled) in `game.js`. Walkers must appear at their true design scale and walk smoothly. This comes
+   upper + shadows, walk frames tied to distance travelled) in `game.js`. Walkers must appear at their chosen size (`drawScale` 1.5 in `walkers.json`: drawn 1.5× their design size, owner, 2026-11-22) and walk smoothly. This comes
    after the structures and the map (order of work in `CLAUDE.md`).
-2. Not made yet: firing effects and sounds (**next step**, owner 2026-11-22), Gatling spin frames, the Achilles strike, a spinning radar.
+2. Firing effects and sounds: **approved 2026-11-22** as shown in the demo ([`walker-fx-design.md`](walker-fx-design.md)); the shot points are in `walkers.json` (`shotPoints`). Not made and not asked for: Gatling spin frames, the Achilles strike animation, a spinning radar (effects stand in for them).
 3. Known rough spots: at game size "damaged" is hard to tell from intact (needs the fx smoke); **the upper body casts no shade on the
    legs** (the layers are lit one at a time). The tanks solve the same thing with a plain stand-in for the turret; doing that here
    means baking the legs again (2,496 renders). **Owner, 2026-11-22: keep it as it is.**

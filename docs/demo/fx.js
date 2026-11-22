@@ -220,10 +220,76 @@ window.createFx = function (PIXI, cfg) {
     for (let i = 0; i < 7; i++) smoke([p[0] + rnd(-1, 1), p[1] + rnd(-1, 1), 0.2], 1.6, 0x23262b, 0.5, { vz: rnd(1, 2.6), life: rnd(1.4, 2.6), tin: 0.25, must: true });
     scorch(p, R * 1.5);
   }
+  // ---- walker weapons (approved 2026-11-22). Plasma blue and magma orange are the walkers' fixed weapon colours.
+  function plasmaCharge(p, life, k) {                       // Kodiak: the glow that builds at the muzzle before the bolt
+    spawn('add', { tex: T.glow, x: p[0], y: p[1], z: p[2], life, s0: 0.3 * k, s1: 1.9 * k, c0: 0x4a8cff, a0: 0.9, tin: 0.5, tout: 0.9, must: true });
+    spawn('add', { tex: T.glow, x: p[0], y: p[1], z: p[2], life, s0: 0.15 * k, s1: 0.8 * k, c0: 0xffffff, a0: 0.9, tin: 0.6, tout: 0.9 });
+  }
+  function plasmaFlash(p, ang, k) {
+    const d = dir3(ang, 0), [sa, sl] = sdir(...d);
+    spawn('add', { frames: T.cmuz, x: p[0], y: p[1], z: p[2], life: 0.14, s0: 2.6 * k, rot: sa, ax: 0.06, ay: 0.5, sx: Math.max(0.6, Math.min(1.25, sl / 1.1)), c0: 0x8fb0ff, tout: 0.8, must: true });
+    spawn('add', { tex: T.glow, x: p[0], y: p[1], z: p[2], life: 0.14, s0: 3 * k, s1: 3.8 * k, c0: 0x5a8cff, a0: 0.9, tout: 0.2, must: true });
+    sparks(p, 3, 4, 0x8fb4ff);
+  }
+  function plasmaHit(p, k) {                                // a blue burst, a ring on the ground, blue sparks, a scorch mark
+    spawn('add', { frames: T.cpop, x: p[0], y: p[1], z: p[2], life: 0.4, s0: 3 * k, s1: 3.8 * k, ay: 0.55, c0: 0x9ab4ff, tout: 0.85, must: true });
+    spawn('add', { tex: T.glow, x: p[0], y: p[1], z: p[2] + 0.2, life: 0.18, s0: 3.6 * k, s1: 4.6 * k, c0: 0x5a8cff, tout: 0.2, must: true });
+    ring([p[0], p[1], 0], 2.4 * k, 0x7fa8ff, 0.4); sparks(p, 8, 9, 0x9fc0ff);
+    smoke(p, k, 0x3a4050, 0.35); scorch(p, 1.9 * k);
+  }
+  function magmaFlash(p, ang, k) {                          // Cougar: a small flash and a wisp of heat smoke
+    const d = dir3(ang, 0), [sa, sl] = sdir(...d);
+    spawn('add', { frames: T.muz, x: p[0], y: p[1], z: p[2], life: 0.09, s0: 1.5 * k, rot: sa, ax: 0.06, ay: 0.5, sx: Math.max(0.6, Math.min(1.25, sl / 1.1)), c0: 0xffb060, tout: 0.8 });
+    spawn('add', { tex: T.glow, x: p[0], y: p[1], z: p[2], life: 0.09, s0: 1.5 * k, c0: 0xff8a2a, a0: 0.8, tout: 0.2 });
+    if (Math.random() < 0.4) smoke(p, 0.5 * k, 0x6a5a50, 0.25, { vx: d[0] * 1.5, vy: d[1] * 1.5, vz: rnd(0.6, 1.2), life: rnd(0.5, 0.9) });
+  }
+  function magmaHit(p, k) {                                 // a splash of glowing drops that lie on the ground and cool to black
+    spawn('add', { frames: T.pop, x: p[0], y: p[1], z: p[2], life: 0.26, s0: 1.5 * k, ay: 0.6, c0: 0xffb060, tout: 0.85, must: true });
+    spawn('add', { tex: T.glow, flat: true, x: p[0], y: p[1], z: 0, life: rnd(1.2, 1.9), s0: 1.5 * k, s1: 1.1 * k, c0: 0xff6a14, a0: 0.5, tin: 0.05, tout: 0.3 });
+    for (let i = 0; i < 4; i++) {
+      const a = rnd(0, TAU), v = rnd(1.2, 4.2);
+      spawn('add', { tex: T.dot, x: p[0], y: p[1], z: p[2] + 0.1, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: rnd(2, 5.5), grav: 15, life: rnd(1.1, 2.1), s0: rnd(0.14, 0.26), s1: 0.1,
+        c0: 0xffc060, c1: 0x7a1a04, tout: 0.5 });
+    }
+    if (Math.random() < 0.5) smoke(p, 0.6 * k, 0x2a2422, 0.35); if (Math.random() < 0.35) scorch(p, 1.1 * k);
+  }
+  function gunFlash(p, ang, k) {                            // Gatling: a short flickering flash, and an empty case thrown to the side
+    const d = dir3(ang, 0), [sa, sl] = sdir(...d), side = Math.random() < 0.5 ? 1 : -1;
+    spawn('add', { frames: T.muz, x: p[0], y: p[1], z: p[2], life: 0.05, s0: rnd(1.2, 1.9) * k, rot: sa + rnd(-0.12, 0.12), ax: 0.06, ay: 0.5, sx: Math.max(0.6, Math.min(1.25, sl / 1.1)), tout: 0.8 });
+    spawn('add', { tex: T.glow, x: p[0], y: p[1], z: p[2], life: 0.05, s0: 1.6 * k, c0: 0xffd890, a0: 0.7, tout: 0.2 });
+    spawn('smoke', { tex: T.dot, x: p[0] - d[0] * 1.2, y: p[1] - d[1] * 1.2, z: p[2], vx: -d[1] * side * rnd(1.5, 3) - d[0], vy: d[0] * side * rnd(1.5, 3) - d[1], vz: rnd(1.5, 3), grav: 16, bounce: true,
+      life: rnd(0.6, 0.9), s0: 0.1, c0: 0xd2aa4a, tout: 0.8 });
+    if (Math.random() < 0.12) smoke(p, 0.5 * k, 0xb8b2a6, 0.25, { vx: d[0] * 2, vy: d[1] * 2, vz: rnd(0.4, 0.9), life: rnd(0.5, 0.9) });
+  }
+  function bulletHit(p) {                                   // small sparks and a dust puff
+    sparks(p, 2, 6, 0xffe6b0);
+    spawn('add', { tex: T.glow, x: p[0], y: p[1], z: p[2], life: 0.06, s0: 0.9, c0: 0xffe0a0, a0: 0.7, tout: 0.2 });
+    if (Math.random() < 0.35) dust([p[0], p[1], Math.max(0, p[2] - 0.3)], 0.7);
+  }
+  // Achilles: a bright arc where the blade passes. c = the walker's centre, ang = where it faces, side = +1 / -1 (which arm),
+  // r = reach in metres. The arc sweeps from the arm's side across the front.
+  function slash(c, ang, side, r, z) {
+    const n = 9;
+    for (let i = 0; i < n; i++) {
+      const u = i / (n - 1), a = ang + side * (1.05 - 2.0 * u), a2 = a - side * 0.12, h = z + 0.9 - 1.5 * u, rr = r * (0.82 + 0.18 * Math.sin(u * Math.PI));
+      const p = spawn('add', { tex: T.spark, x: c[0] + Math.cos(a) * rr, y: c[1] + Math.sin(a) * rr, z: h, age: -u * 0.07, life: 0.2, s0: r * 0.62, s1: r * 0.5, c0: 0xeaf6ff, a0: 0.95,
+        tin: 0.08, tout: 0.3, must: true });
+      if (p) aim(p, Math.cos(a2) * rr - Math.cos(a) * rr, Math.sin(a2) * rr - Math.sin(a) * rr, -0.19);
+    }
+  }
+  function bladeHit(p) {                                    // the blade lands: sparks, a flash and flying metal bits
+    spawn('add', { tex: T.glow, x: p[0], y: p[1], z: p[2], life: 0.1, s0: 2.6, c0: 0xfff0d0, a0: 0.9, tout: 0.2, must: true });
+    sparks(p, 12, 11, 0xffe9c0); debris(p, 2, 4.5);
+  }
+  function ballHit(p, k, col) {                             // a small laser ball bursts: a flash with a white heart, and sparks
+    spawn('add', { tex: T.glow, x: p[0], y: p[1], z: p[2], life: 0.16, s0: 1.6 * k, s1: 2.6 * k, c0: col, a0: 0.9, tout: 0.3, must: true });
+    spawn('add', { tex: T.glow, x: p[0], y: p[1], z: p[2], life: 0.1, s0: 0.9 * k, c0: 0xffffff, a0: 0.9, tout: 0.3 });
+    sparks(p, 6, 7, col);
+  }
   // turn a held sprite (rocket, shell) along a direction of flight; it gets shorter when it flies towards or away from the camera
   function aim(p, dx, dy, dz) { const n = Math.hypot(dx, dy, dz) || 1, [a, l] = sdir(dx / n, dy / n, dz / n); p.rot = a; p.sx = Math.max(0.45, Math.min(1.2, l / 1.1)); }
   function clear() { for (const p of parts) p.life = 0; for (const b of beams) b.life = 0; update(0); }
 
   return { T, useRes, spawn, update, beam, clear, aim, count: () => parts.length + beams.length, smoke, sparks, ember, debris, ring, scorch, dust, trail, muzzleFlash, impact, explosion, airburst,
-    flameJet, groundFire, fireOn, chargeIn, energyHit, implosion, gravBlast };
+    flameJet, groundFire, fireOn, chargeIn, energyHit, implosion, gravBlast, plasmaCharge, plasmaFlash, plasmaHit, magmaFlash, magmaHit, gunFlash, bulletHit, slash, bladeHit, ballHit };
 };

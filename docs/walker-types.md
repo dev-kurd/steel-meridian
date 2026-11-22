@@ -28,7 +28,7 @@ an armoured cab with an engine pack, and big shoulder blocks that carry the weap
 | # | Walker | Weapon (manual) | Range (manual) | Good against (manual) | Can't hit |
 |---|---|---|---|---|---|
 | 1 | **Kodiak** | Double plasma cannon | **Long** | Ground units, turrets, buildings | Air |
-| 2 | **Cougar** | Four rapid-firing magma cannons | **Medium** | Everything on the ground. "Very powerful weapons" | Air |
+| 2 | **Cougar** | Four rapid-firing cannons (in the demo: red laser balls, the longest range; see `walkers/walker-fx-design.md`) | **Medium** (design); long in the demo | Everything on the ground. "Very powerful weapons" | Air |
 | 3 | **Gatling** | Twin rotary machine guns (Teflon-jacketed high-calibre bullets) | **Long** | Turrets ("the best robot for shredding enemy turrets"), facilities, distant targets | Air |
 | 4 | **A.A. Avenger** | Four ground-to-air rockets | Not stated (proposal: long) | Aircraft and Advancers ("heavy damage") | **All ground units** |
 | 5 | **Achilles** | Close-combat only (weapon not named) | **Melee**: "no ranged combat capability" | Ground units: destroys any it gets close to "in a matter of moments" | Air, anything it can't reach |
@@ -73,4 +73,5 @@ Range in steps: Melee 1 · Short 2 · Medium 3 · Long 4. On this scale the Panz
 ## Still open
 1. Walker Factory model (round ringed pad in the icon). It is a separate building task.
 2. Whether Walkers need Research Points, and the speed values. These are game-balance decisions.
-3. Firing effects, Gatling spin frames, the Achilles strike, a spinning radar.
+3. ~~Firing effects~~: approved 2026-11-22, see [`walkers/walker-fx-design.md`](walkers/walker-fx-design.md). Gatling spin frames, the Achilles strike
+   animation and a spinning radar were not made; effects stand in for them.

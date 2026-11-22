@@ -126,6 +126,19 @@ tb = os.path.join(SRC, 'tables.json')
 if os.path.exists(tb):
     t = json.load(open(tb)); manifest['walk'] = {'frames': t['walk_frames'], 'travelGameUnitsPerFrame': round(t['travel_game_units'], 4),
         'travelModelUnitsPerFrame': round(t['travel_model_units'], 4), 'upperOffset1x': t['upper_offset_1x']}
+# Where each walker's shots start (2026-11-22, for the approved effects): metres in the upper body's own frame (x forward, y to
+# the side, z up from the ground), read off walker_lib.py (w_kodiak ... w_achilles, plus the 0.23 m lift of the upper body).
+# Kodiak, Cougar, Gatling: the muzzles. Avenger: the front of each missile on its rack. Achilles: the fists.
+# Drawn size (owner, 2026-11-22): the walkers are drawn 1.5 times their design size, so they stand taller next to the tanks.
+# The sprites are not re-rendered: the game scales them when it draws, and scales everything measured on a walker with them
+# (shot points, upper-body offsets, step length, footprints, body radius).
+manifest['drawScale'] = 1.5
+manifest['shotPoints'] = {
+    'kodiak': [[1.75, 1.14, 2.3], [1.75, -1.14, 2.3]],
+    'cougar': [[1.7, 1.14, 2.45], [1.7, -1.14, 2.45], [1.7, 1.14, 2.15], [1.7, -1.14, 2.15]],
+    'gatling': [[1.5, 1.14, 2.3], [1.5, -1.14, 2.3]],
+    'avenger': [[0.62, 1.275, 3.8], [0.62, -1.005, 3.8], [0.62, 1.005, 3.8], [0.62, -1.275, 3.8]],
+    'achilles': [[1.3, 1.16, 2.25], [1.3, -1.16, 2.25]]}
 for r, k in RES.items(): manifest['resolutions'][r] = {'scale': 4 // k, 'frame': FRAME // k, 'anchor': [ANCHOR[0] / k, ANCHOR[1] / k]}
 json.dump(manifest, open(os.path.join(OUT, 'walkers.json'), 'w'), separators=(',', ':'))
 print('total %.1f MB in %d sheets; manifest %.0f KB' % (total / 1e6, sum(len(v) for v in manifest['sheets'].values()), os.path.getsize(os.path.join(OUT, 'walkers.json')) / 1024))
