@@ -31,7 +31,7 @@ That is too slow. The game is moving to this plan:
   green, at 20% brightness). Mask = (B − A) / 0.2 in linear light; the part above 1.0 (paint highlights) goes into the base sprite.
   The tanks and the walkers are both baked this way (the walkers were re-baked on 2026-11-22; `maskGain` 0.2 in `walkers.json`).
 - **Tank effects and sounds (approved 2026-11-21):** how each of the 15 tanks shoots, what its shot, hit, damage and destruction
-  look and sound like: `docs/tanks/tank-fx-design.md`, shown working in the tank demo (`docs/tanks/demo/`).
+  look and sound like: `docs/tanks/tank-fx-design.md`, shown working in the demo (`docs/demo/`).
   The tank sounds stay in code for now (owner, 2026-11-21): mixed from the recordings in `sounds/` plus synthesised layers when
   they play, no WAV file per tank sound.
   Decided by the owner on 2026-11-21: **Anti-Air never hits ground targets**; **screen shake stays**, and the game gets an option
@@ -97,27 +97,30 @@ Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and 
 Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Gatling spin, Achilles strike, spinning radar · for the tank effects (approved, see `docs/tanks/tank-fx-design.md`): the real ranges, reload times and damage, how strong the screen shake is, and which effects need a second look (all decided inside the game, once everything is in it) · the full list of structures to model · how mockups
 are shown when a session cannot publish to a design canvas (pictures or a page in the session, or do the mockup in claude.ai).
 
-## Current order of work (owner, 2026-11-21)
+## Current order of work (owner, 2026-11-21 and 2026-11-22)
 Done: the 15 tanks (modelled, baked, packed, checked; sheets in `docs/tanks/source/sheets/`) and the tank effects and sounds
-(approved 2026-11-21, `fx` sheet baked, shown in the tank demo). See `docs/tanks/README.md`.
+(approved 2026-11-21, `fx` sheet baked, shown in the demo). See `docs/tanks/README.md`.
 Done too: **the walker re-bake** (2026-11-22, no new models): new mask method, the tank damage style, a 12-frame walk instead
 of 8 (owner, 2026-11-21, chosen from the mockup https://claude.ai/artifact/Xc7WQ415pYMC6XLZi4YRDD); sheets in
 `docs/walkers/source/sheets/`. See `docs/walkers/README.md`.
 
-Next, in this order (each step: mockup first, then model, then bake, then docs):
-1. **Structures:** model the Factory, Command Center, Advancer (Vanguard), turrets and the others (the full list is not set yet: ask).
-2. **The map:** a detailed map with professional map detail.
-3. **Only then** move the tank effects and sounds, and the rest, into the game (`game.js`).
+Next, in this order (each step: mockup first, then model, then bake, then docs; each finished part is added to the demo):
+1. **Walker effects and sounds** (owner, 2026-11-22): how each walker shoots, and its sounds, shown in the demo.
+2. **Structures:** model the Factory, Command Center, Advancer (Vanguard), turrets and the others (the full list is not set yet: ask).
+3. **The map:** a detailed map with professional map detail.
+4. **Only then** move the tank effects and sounds, and the rest, into the game (`game.js`).
 
 ## References
 In this repo:
+- `docs/demo/`: **the one demo for every finished part** (owner, 2026-11-22): one battlefield, with a setting that chooses
+  tanks, walkers, structures or all. Each part is added to it when it is built. Tanks and walkers are in; see its `README.md`.
 - `docs/tank-types.md`: the 15 tanks (sizes, the 5 weapon types, what each looks like).
 - `docs/walker-types.md`: the 5 walkers (weapons, ranges, roles, modules as built).
 - `docs/walkers/`: the walker 3D models (`source/walker_lib.py`, `.blend` scenes, build, bake, pack and check tools), renders, the
   packed sheets (`source/sheets/`, described in `walkers.json`) and the re-bake mockup (`source/mockup/`). The bake frames are not
   in the repo.
 - `docs/tanks/`: the 3D tanks (`README.md` with status and next steps, the design note `tanks-3d-model.md`, `source/` with the
-  model, bake, pack, check and mockup tools, `.blend` scenes), the packed sheets (`source/sheets/`), the demo page (`demo/`) and
+  model, bake, pack, check and mockup tools, `.blend` scenes), the packed sheets (`source/sheets/`) and
   the approved effects and sounds design (`tank-fx-design.md`). The bake frames are not in the repo.
 - `docs/tanks/vector-viewer/`: the tanks viewer page (all 15 approved vector tanks, 2:1 view): the design reference for the 3D tanks.
 - `tools/sprite-pipeline/`: the sprite pipeline prototype (bake, team-colour shader, fx, PixiJS test map, encrypted packs,

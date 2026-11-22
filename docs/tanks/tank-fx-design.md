@@ -4,8 +4,8 @@
 section 4. History: first review by the owner on 2026-11-21:
 three changes asked for and made (Anti-Air rockets, Artillery shell, Graviton beam), marked "owner" below.
 Second review the same day: a new Panzer gun sound (three versions to compare in the demo), a smaller and faster artillery shell
-with motion blur, a heavier red Graviton beam with the ball kept cyan, and a reworked ground fire for the Flamer. The mockup is the tank demo page
-(`demo/`, start it with `demo/run_demo.bat`): every effect and sound below can be seen and heard there. The numbers (ranges,
+with motion blur, a heavier red Graviton beam with the ball kept cyan, and a reworked ground fire for the Flamer. The mockup is the demo page
+(`../demo/`, start it with `../demo/run_demo.bat`; until 2026-11-22 it was the tank demo in `demo/`): every effect and sound below can be seen and heard there. The numbers (ranges,
 reload times, damage) are **demo values chosen to show the effects, not game balance**.
 
 Based on: `../tank-types.md` (what each tank is and how it shoots), `../../CLAUDE.md` (the approved effects plan: an `fx` sheet
@@ -133,7 +133,7 @@ answered by the approval; the Panzer, Graviton and rocket sounds are decided, se
    `sounds/` and synthesised when they play; there is no WAV file per tank sound. This can change later.
    **Download managers (2026-11-22):** Internet Download Manager and similar tools take over every `.wav` request, so the page gets
    no recording and plays only its synthesised layers (it sounds as if the sounds were reset). The demo server therefore hands the
-   recordings out as `/snd/<name>`: no `.wav` in the address, sent as plain data (`demo/serve.cjs`, `demo/sfx.js`). **The web game
+   recordings out as `/snd/<name>`: no `.wav` in the address, sent as plain data (`../demo/serve.cjs`, `../demo/sfx.js`). **The web game
    needs the same** when the sounds move into it. The demo must be opened through `serve.cjs` (`run_demo.bat`).
 4. ~~Artillery shell shape~~: decided 2026-11-21, the **Bullet**.
 5. **Screen shake:** decided 2026-11-21, **keep it**; the game gets an option to switch it off. How strong is decided inside the game.
