@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Steel Meridian - tank demo</title>
+<title>Steel Meridian - demo</title>
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #14171d; color: #e6e9ee; font: 13px/1.4 system-ui, "Segoe UI", sans-serif; }
   canvas { display: block; }
@@ -25,47 +25,55 @@
 </head>
 <body>
 <div id="hud">
-  <h1>Tanks: sprite demo</h1>
-  <div class="row" id="weapons"><span class="l">Weapon</span></div>
+  <h1>Steel Meridian: demo</h1>
+  <div class="row" id="demo"><span class="l">Demo: what is on the battlefield</span></div>
+  <div class="row" id="weapons"><span class="l">Tank weapon</span></div>
   <div class="row" id="teams"><span class="l">Team colour</span></div>
   <div class="row" id="states"><span class="l">Damage state</span></div>
-  <div class="row" id="counts"><span class="l">Tanks</span></div>
-  <div class="row"><input id="custom" type="number" min="1" max="1000" value="50" style="width:64px" title="Any number of tanks, 1 to 1000">
-    <select id="ttype" title="Which tank: all 15 mixed, or one type" style="font:inherit;color:#e6e9ee;background:#232831;border:1px solid #39414d;border-radius:5px;padding:2px 4px;flex:1;min-width:0"></select>
+  <div class="row" id="counts"><span class="l">Units</span></div>
+  <div class="row"><input id="custom" type="number" min="1" max="1000" value="50" style="width:64px" title="Any number of units, 1 to 1000">
+    <select id="ttype" title="Which unit: all mixed, or one type" style="font:inherit;color:#e6e9ee;background:#232831;border:1px solid #39414d;border-radius:5px;padding:2px 4px;flex:1;min-width:0"></select>
     <button id="customGo">Set</button></div>
   <div class="row"><span class="l">Zoom</span>
     <input id="zoom" type="range" min="0.5" max="4" step="0.05" value="2" style="flex:1">
   </div>
   <div class="row">
     <label><input id="patrol" type="checkbox" checked> Patrol on their own</label>
-    <label><input id="aim" type="checkbox" checked> Turrets aim at the mouse</label>
+    <label><input id="aim" type="checkbox" checked> Turrets and walker bodies aim at the mouse</label>
   </div>
-  <div class="row" id="fire"><span class="l">Firing (effects mockup)</span></div>
-  <div class="row"><button id="kill">Destroy one tank</button></div>
+  <div class="row" id="fire"><span class="l">Firing (tanks; walkers have no weapon effects yet)</span></div>
+  <div class="row"><button id="kill">Destroy one unit</button></div>
   <div class="row">
     <label><input id="snd" type="checkbox" checked> Sound</label>
     <input id="vol" type="range" min="0" max="1" step="0.05" value="0.7" style="flex:1" title="Volume">
     <label><input id="shake" type="checkbox" checked> Screen shake</label>
   </div>
   <div id="stats"></div>
-  <div id="help">Click: send the tanks there (the first click also switches the sound on). Wheel: zoom. Right-drag: move the view.<br>
+  <div id="help">Click: send the units there (the first click also switches the sound on). Wheel: zoom. Right-drag: move the view.<br>
     At the mouse: tanks in range fire at the pointer (Anti-Air fires above it). Battle: the teams fight, health sets the damage state, Anti-Air shoots the grey target drones.</div>
 </div>
-<div id="msg">Loading the tank sheets...</div>
+<div id="msg">Loading the sheets...</div>
 
 <script src="https://cdn.jsdelivr.net/npm/pixi.js@8.23.0/dist/pixi.min.js"></script>
 <script src="fx.js"></script>
 <script src="sfx.js"></script>
 <script>
 'use strict';
-/* Tank demo: draws the packed sheets (docs/tanks/source/sheets) the way the game will. All five weapon types on the three hulls.
+/* The unified demo: one battlefield for every part of the game that is built (see README.md in this folder). Parts so far:
+ * the 15 tanks with their effects and sounds, and the 5 walkers (they walk, turn and take damage; no weapon effects yet).
+ * It draws the packed sheets (docs/tanks/source/sheets, docs/walkers/source/sheets) the way the game will.
  * - PixiJS (WebGL). Tank sprites of every team go into one mesh = one draw call for up to 16 sheets; the sheet slot is a vertex
  *   value. When a picture needs more than 16 sheets, the next tanks (they are sorted far to near) go into a second mesh.
  * - Sheets load on demand: a sheet is fetched the first time a tank needs it (weapon, damage state, resolution).
  * - Team colour in linear light: out = toSRGB(toLinear(base) + toLinear(mask.r) * toLinear(paint) + toLinear(mask.g) * toLinear(light)).
  * - Draw order per tank: ground shadows (hull + turret, blended with "max"), hull frame 0, track overlay, turret.
+ * - Draw order per walker: shadows (legs + upper body), legs, upper body moved by its walk offset. Walk frame from distance walked.
  * - Game view: 2:1 dimetric; x and y are on the ground in metres, screen = (x - y, (x + y) / 2) * pixels per metre. */
-const SHEETS = '../source/sheets/';
+const SHEETS = '../tanks/source/sheets/', WALKER_SHEETS = '../walkers/source/sheets/';
+const WALKER_LABELS = { kodiak: 'Kodiak', cougar: 'Cougar', gatling: 'Gatling', avenger: 'A.A. Avenger', achilles: 'Achilles' };
+/* Walkers: demo values, not game balance (their speeds are not decided). speed in metres per second, turn rates in radians per
+ * second, r = collision radius in metres, body = rough size in metres (used where the tank code asks for the hull size). */
+const WALKER = { speed: 2.0, turn: 1.7, torsoTurn: 2.2, r: 1.45, hp: 260, aimZ: 2.2, body: { hull_length: 2.8, hull_width: 3.0, hull_height: 3.3 } };
 const TEAMS = { green: '#33d17a', blue: '#3b82f6', red: '#e5484d', orange: '#f5a524', purple: '#a855f7', cyan: '#22d3ee' };
 const TEAM_NAMES = Object.keys(TEAMS);
 const WEAPON_LABELS = { panzer: 'Panzer', artillery: 'Artillery', antiair: 'Anti-Air', flamer: 'Flamer', special: 'Special' };
@@ -225,7 +233,17 @@ class Batcher {
   if (!window.PIXI) return fail('PixiJS could not be loaded (it comes from cdn.jsdelivr.net, so this page needs the internet).');
   let M;
   try { M = await (await fetch(SHEETS + 'tanks.json')).json(); }
-  catch (e) { return fail('The packed sheets were not found at docs/tanks/source/sheets.\nPack them first (python tools/pack_tanks.py bake sheets) and open this page through run_demo.bat.'); }
+  catch (e) { return fail('The packed tank sheets were not found at docs/tanks/source/sheets.\nPack them first (python tools/pack_tanks.py bake sheets) and open this page through docs/demo/run_demo.bat.'); }
+  let WM = null;                                                         // walkers.json; without it the demo runs with the tanks only
+  try { const r = await fetch(WALKER_SHEETS + 'walkers.json'); if (r.ok) WM = await r.json(); } catch (e) { WM = null; }
+  for (const r of Object.keys(M.sheets)) {
+    for (const s of M.sheets[r]) s.file = SHEETS + s.file;
+    if (!WM || !WM.sheets[r]) continue;
+    const off = M.sheets[r].length;
+    for (const s of WM.sheets[r]) M.sheets[r].push(Object.assign({}, s, { file: WALKER_SHEETS + s.file }));
+    for (const [k, fr] of Object.entries(WM.frames[r])) M.frames[r]['w:' + k] = [fr[0] + off, fr[1], fr[2], fr[3], fr[4], fr[5], fr[6]];
+  }
+  const KINDS = WM ? WM.kinds : [], WALK = WM ? WM.walk.frames : 1;
 
   const app = new PIXI.Application();
   await app.init({ resizeTo: window, preference: 'webgl', antialias: false, background: '#7e7462', resolution: window.devicePixelRatio || 1, autoDensity: true });
@@ -235,6 +253,7 @@ class Batcher {
   const m0 = M.models.heavy_panzer;
   const PPM = m0.turretGround1x[0][0] / m0.data.turret_pivot[0];          // screen pixels per metre at @1x
   const TRAVEL = M.track.travelModelUnitsPerFrame / m0.data.model_units_per_metre;   // metres driven per track frame
+  const WTRAVEL = WM ? WM.walk.travelModelUnitsPerFrame / m0.data.model_units_per_metre : 1;   // metres walked per walk frame
   const toScreen = (x, y) => [PPM * (x - y), PPM * (x + y) / 2];
   const toGround = (sx, sy) => [(sx / PPM + 2 * sy / PPM) / 2, (2 * sy / PPM - sx / PPM) / 2];
 
@@ -244,7 +263,7 @@ class Batcher {
   function loadSheet(r, i) {
     if (!loading[r][i]) {
       sheetsLoading++;
-      loading[r][i] = PIXI.Assets.load(SHEETS + M.sheets[r][i].file).then((t) => { t.source.scaleMode = 'linear'; loaded[r][i] = t.source; sheetsLoaded++; sheetsLoading--; })
+      loading[r][i] = PIXI.Assets.load(M.sheets[r][i].file).then((t) => { t.source.scaleMode = 'linear'; loaded[r][i] = t.source; sheetsLoaded++; sheetsLoading--; })
         .catch((e) => { failed = true; fail('A sheet could not be loaded: ' + M.sheets[r][i].file + '\n' + e); });
     }
     return loading[r][i];
@@ -285,21 +304,35 @@ class Batcher {
   const sfx = createSfx('../snd/');                                               // the game's recordings (repo root sounds/), served by serve.cjs as /snd/<name>
   // ---- tanks
   const tanksMesh = new Batcher(top, false), shadowMesh = new Batcher(shadowWorld, true);
-  let tanks = [], teamMode = 'mixed', stateMode = 0, weaponMode = 'mixed', tankType = null;   // tankType: null = all 15 mixed, or [size, weapon]
+  // tanks = every unit on the field, tanks and walkers (a walker has walker: true and a kind)
+  let tanks = [], teamMode = 'mixed', stateMode = 0, weaponMode = 'mixed';
+  let demoMode = WM ? 'all' : 'tanks', unitType = null;                  // unitType: null = all mixed, or ['tank', size, weapon] or ['walker', kind]
+  function roster() {                                                    // the unit types the field is filled with, in order
+    if (unitType) return [unitType];
+    const tk = []; for (let j = 0; j < M.sizes.length * WEAPONS.length; j++) tk.push(['tank', M.sizes[j % M.sizes.length], WEAPONS[j % WEAPONS.length]]);
+    const wk = KINDS.map((k) => ['walker', k]);
+    if (demoMode === 'tanks') return tk;
+    if (demoMode === 'walkers') return wk;
+    const all = []; let w = 0;                                           // all: a walker after every three tanks
+    tk.forEach((u, j) => { all.push(u); if (j % 3 === 2 && wk.length) all.push(wk[w++ % wk.length]); });
+    return all;
+  }
   const rnd = (a, b) => a + Math.random() * (b - a);
   function setCount(n) {
     clearCombat(); tanks = []; FIELD = Math.max(26, Math.round(Math.sqrt(n) * 3.2)); drawGround();
-    const side = Math.ceil(Math.sqrt(n)), gap = Math.min(5.2, (FIELD * 2 - 6) / side);
+    const side = Math.ceil(Math.sqrt(n)), gap = Math.min(5.2, (FIELD * 2 - 6) / side), list = roster();
     for (let i = 0; i < n; i++) {
-      const size = tankType ? tankType[0] : M.sizes[i % M.sizes.length], d = M.models[size + '_panzer'].data, h = rnd(0, TAU);   // the hull is the same for every weapon
+      const u = list[i % list.length], isW = u[0] === 'walker', size = isW ? 'heavy' : u[1], h = rnd(0, TAU);
+      const d = isW ? WALKER.body : M.models[size + '_panzer'].data;      // the hull is the same for every weapon
       const x = ((i % side) - (side - 1) / 2) * gap + rnd(-0.4, 0.4), y = (Math.floor(i / side) - (side - 1) / 2) * gap + rnd(-0.4, 0.4);
-      tanks.push({ size, d, weapon: tankType ? tankType[1] : WEAPONS[i % WEAPONS.length], team: TEAM_NAMES[Math.floor(i / M.sizes.length) % 6], x, y, h, tur: h, tx: x, ty: y,
-        phase: 0, state: 0, wait: rnd(0, 2.5), r: d.hull_length * 0.5,
-        hp: HP[SI[size]], max: HP[SI[size]], aimZ: d.hull_height * 0.7, cool: rnd(0, 1.5), q: [], kick: 0, charge: 0, barrel: 0, flames: [], deadT: 0, tgt: null, scan: rnd(0, 0.3), fireT: 0, dustD: 0, hold: 0, holdT: 0 });
+      const hp = isW ? WALKER.hp : HP[SI[size]];
+      tanks.push({ walker: isW, kind: isW ? u[1] : null, moving: false, size, d, weapon: isW ? 'walker' : u[2], team: TEAM_NAMES[Math.floor(i / 3) % 6], x, y, h, tur: h, tx: x, ty: y,
+        phase: 0, state: 0, wait: rnd(0, 2.5), r: isW ? WALKER.r : d.hull_length * 0.5,
+        hp, max: hp, aimZ: isW ? WALKER.aimZ : d.hull_height * 0.7, cool: rnd(0, 1.5), q: [], kick: 0, charge: 0, barrel: 0, flames: [], deadT: 0, tgt: null, scan: rnd(0, 0.3), fireT: 0, dustD: 0, hold: 0, holdT: 0 });
     }
     tanksMesh.reset(n * 3); shadowMesh.reset(n * 2);
   }
-  const weaponOf = (t) => (weaponMode === 'mixed' ? t.weapon : weaponMode);
+  const weaponOf = (t) => (t.walker ? 'walker' : weaponMode === 'mixed' ? t.weapon : weaponMode);
   function order(gx, gy) {                                               // send every tank to a place in a block around the point
     const live = tanks.filter((t) => stateOf(t) < 3), side = Math.ceil(Math.sqrt(live.length)), gap = Math.min(5, (FIELD * 2) / side);
     live.forEach((t, i) => {
@@ -353,6 +386,7 @@ class Batcher {
     t.hp = t.max; t.x = Math.max(-e, Math.min(e, Math.cos(a) * FIELD * 1.4)); t.y = Math.max(-e, Math.min(e, Math.sin(a) * FIELD * 1.4)); t.tx = t.x; t.ty = t.y; t.wait = 0.5; t.cool = 1;
   }
   function pickTarget(t) {
+    if (t.walker) return null;                                           // walkers have no weapons in the demo yet
     const w = weaponOf(t);
     if (fireMode === 'mouse') return mouse.on ? (w === 'antiair' ? mouseAir : mouseGround) : null;
     if (fireMode !== 'battle') return null;
@@ -368,12 +402,18 @@ class Batcher {
     const vis = onScreen(t.x, t.y);
     if ((st !== 2 || !vis) && t.flames.length) { for (const f of t.flames) if (f) f.life = 0; t.flames.length = 0; }
     if (!vis || st === 0) return;
-    const fp = M.models[t.size + '_' + weaponOf(t)].firePoints1x[dirOf(t.h)], k = [0.8, 1, 1.25][SI[t.size]];
-    const at = (i) => { const [gx, gy] = toGround(fp[i][0], fp[i][1]); return [t.x + gx, t.y + gy, 0]; };
+    const fp = t.walker ? null : M.models[t.size + '_' + weaponOf(t)].firePoints1x[dirOf(t.h)], k = t.walker ? 1.15 : [0.8, 1, 1.25][SI[t.size]];
+    const at = (i) => {
+      if (t.walker) {                                                    // a walker: the roof and the two shoulders (a wreck lies low)
+        const a = t.tur + [0, 1.9, -1.9][i % 3], rr = i % 3 ? 0.9 : 0.2;
+        return [t.x + Math.cos(a) * rr, t.y + Math.sin(a) * rr, st === 3 ? 1.1 : [3.1, 2.6, 2.6][i % 3]];
+      }
+      const [gx, gy] = toGround(fp[i][0], fp[i][1]); return [t.x + gx, t.y + gy, 0];
+    };
     if (st === 1) { if (Math.random() < 4 * dt) fx.smoke(at(0), k * 0.8, 0x7d7870, 0.36); }                    // damaged: grey smoke
     else if (st === 2) {                                                 // burning: two small flames, a lot of black smoke, a few embers
       while (t.flames.length < 2) t.flames.push(fx.fireOn(k * rnd(0.75, 1)));
-      t.flames.forEach((f, i) => { const p = at(i); f.x = p[0]; f.y = p[1]; });
+      t.flames.forEach((f, i) => { const p = at(i + (t.walker ? 1 : 0)); f.x = p[0]; f.y = p[1]; f.z = p[2]; });
       if (Math.random() < 9 * dt) fx.smoke(at((Math.random() * 3) | 0), k * 1.15, 0x1b1917, 0.6);
       if (Math.random() < 1.5 * dt) fx.ember(at(0));
     } else if (Math.random() < 1.4 * dt) fx.smoke(at(0), k * 0.7, 0x24211f, 0.34);                            // wreck: a thin dark thread
@@ -541,19 +581,21 @@ class Batcher {
       if (t.holdT > 0) t.holdT -= dt;
       const held = t.hold > 0 || t.holdT > 0;                             // a Special with its beam, lance or ball out: no driving, no turning
       if (held) { /* stands still */ } else if (dist > 0.25) {
-        const diff = wrap(Math.atan2(dy, dx) - t.h), turn = Math.max(-TURN[t.size] * dt, Math.min(TURN[t.size] * dt, diff));
+        const tr = (t.walker ? WALKER.turn : TURN[t.size]) * dt, diff = wrap(Math.atan2(dy, dx) - t.h), turn = Math.max(-tr, Math.min(tr, diff));
         t.h = wrap(t.h + turn);
         const go = Math.abs(diff) < 1.0 ? Math.cos(diff) ** 2 : 0;       // turn towards the goal first, then drive
-        const v = SPEED[t.size] * (st === 2 ? 0.65 : 1) * go * Math.min(1, 0.25 + dist / 2.5);
+        const v = (t.walker ? WALKER.speed : SPEED[t.size]) * (st === 2 ? 0.65 : 1) * go * Math.min(1, 0.25 + dist / 2.5);
         t.x += Math.cos(t.h) * v * dt; t.y += Math.sin(t.h) * v * dt;
-        travel = v * dt + Math.abs(turn) * t.d.hull_width * 0.3;         // the tracks also run while the tank turns on the spot
+        travel = v * dt + Math.abs(turn) * (t.walker ? 0.45 : t.d.hull_width * 0.3);   // the tracks also run (and a walker steps) while the unit turns on the spot
       } else if (patrol) {
         t.wait -= dt;
         if (t.wait <= 0) { t.tx = rnd(-FIELD, FIELD); t.ty = rnd(-FIELD, FIELD); t.wait = rnd(1, 5); }
       }
       // track frame from distance driven; at most 0.45 frame per picture so fast tanks do not seem to run backwards
-      t.phase = (t.phase + Math.min(0.45, travel / TRAVEL)) % M.track.frames;
-      if (travel > 0.004 && onScreen(t.x, t.y)) {                         // engine sound, and dust behind the tracks
+      if (t.walker) {                                                    // walk frame from distance walked; standing pose when it stops
+        t.moving = travel > 0.0005; if (t.moving) t.phase = (t.phase + Math.min(0.9, travel / WTRAVEL)) % WALK;
+      } else t.phase = (t.phase + Math.min(0.45, travel / TRAVEL)) % M.track.frames;
+      if (!t.walker && travel > 0.004 && onScreen(t.x, t.y)) {            // engine sound, and dust behind the tracks
         nMove++; t.dustD += travel;
         if (t.dustD > 0.8) { t.dustD = 0; const s = Math.random() < 0.5 ? 1 : -1, b = t.d.hull_length * 0.5, wd = t.d.hull_width * 0.4;
           fx.dust([t.x - Math.cos(t.h) * b - Math.sin(t.h) * wd * s, t.y - Math.sin(t.h) * b + Math.cos(t.h) * wd * s, 0], 0.9); }
@@ -561,8 +603,9 @@ class Batcher {
       t.scan -= dt; if (t.scan <= 0) { t.scan = rnd(0.2, 0.35); t.tgt = pickTarget(t); }
       const tg = t.tgt && !(t.tgt.deadT > 0) ? t.tgt : null;             // a tank with a target aims at it
       const want = tg ? Math.atan2(tg.y - t.y, tg.x - t.x) : aim ? Math.atan2(mouse.gy - t.y, mouse.gx - t.x) : t.h, td = wrap(want - t.tur);
-      if (!held) t.tur = wrap(t.tur + Math.max(-TURRET_TURN * dt, Math.min(TURRET_TURN * dt, td)));
-      if (combat(t, tg, dt) && onScreen(t.x, t.y)) nFlame++;
+      const tt = (t.walker ? WALKER.torsoTurn : TURRET_TURN) * dt;
+      if (!held) t.tur = wrap(t.tur + Math.max(-tt, Math.min(tt, td)));
+      if (!t.walker && combat(t, tg, dt) && onScreen(t.x, t.y)) nFlame++;
     }
     updateShots(dt);
     sfx.loop('flame', nFlame / 2); sfx.loop('engine', nMove ? 0.35 + 0.65 * Math.min(1, nMove / 8) : 0);
@@ -578,6 +621,14 @@ class Batcher {
   // the sprites of one tank, in draw order: [shadow?, key, x offset, y offset, team coloured?]
   function parts(t) {
     const st = stateOf(t), w = weaponOf(t), hd = dirOf(t.h), td = dirOf(t.tur), dd = String(hd).padStart(2, '0'), tt = String(td).padStart(2, '0');
+    if (t.walker) {                                                      // shadows, legs, then the upper body moved by its walk offset
+      if (st === 3) return [[false, `w:wreck/${t.kind}/d${String(hd - (hd % 4)).padStart(2, '0')}`, 0, 0, false]];
+      const pose = t.moving ? String(Math.floor(t.phase) % WALK) : 's', off = pose === 's' ? [0, 0] : WM.walk.upperOffset1x[hd][+pose];
+      const list = pose === 's' && hd === td ? [[true, `w:shadow/${t.kind}/d${dd}`, 0, 0, false]]
+        : [[true, `w:shadow/legs/d${dd}/${pose}`, 0, 0, false], [true, `w:shadow_upper/${t.kind}/d${tt}`, off[0], off[1], false]];
+      list.push([false, `w:legs/s${st}/d${dd}/${pose}`, 0, 0, true], [false, `w:${t.kind}/s${st}/d${tt}`, off[0], off[1], true]);
+      return list;
+    }
     if (st === 3) return [[false, `wreck/${t.size}/${w}/d${String(hd - (hd % 2)).padStart(2, '0')}`, 0, 0, false]];
     const md = M.models[t.size + '_' + w], tg = md.turretGround1x[hd], tp = md.turretPivot1x[hd], frame = Math.floor(t.phase) % M.track.frames;
     // recoil: the turret jumps back along its barrel, the hull follows a little
@@ -619,7 +670,7 @@ class Batcher {
   }
 
   // ---- controls
-  setCount(15);
+  setCount(WM ? 20 : 15);
   const group = (id, items, get, set) => {
     const el = document.getElementById(id), btns = [];
     for (const [value, label, colour] of items) {
@@ -643,17 +694,32 @@ class Batcher {
   document.getElementById('vol').oninput = (e) => sfx.setVolume(+e.target.value);
   for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, () => sfx.unlock());
   const applyCount = (v) => { setCount(v); if (stateMode === 'mixed') tanks.forEach((t, i) => { t.state = [0, 0, 1, 2, 0, 1, 3, 2][i % 8]; }); };
-  group('counts', [[15, '15'], [30, '30'], [90, '90'], [300, '300']], () => tanks.length, applyCount);
+  group('counts', [[20, '20'], [40, '40'], [100, '100'], [300, '300']], () => tanks.length, applyCount);
   const customEl = document.getElementById('custom');                  // any number of tanks, 1 to 1000
   const customGo = () => { const n = Math.max(1, Math.min(1000, Math.round(+customEl.value) || 1)); customEl.value = n; applyCount(n);
     for (const b of document.querySelectorAll('#counts button')) b.classList.toggle('on', +b.title === n); };
-  const typeEl = document.getElementById('ttype');                     // which tank the field is filled with: all 15 mixed, or one of them
-  typeEl.add(new Option('Mixed (all 15)', ''));
-  for (const size of M.sizes) for (const w of WEAPONS) typeEl.add(new Option(size[0].toUpperCase() + size.slice(1) + ' ' + WEAPON_LABELS[w], size + '/' + w));
+  const typeEl = document.getElementById('ttype');                     // which unit the field is filled with: all mixed, or one type
+  function fillTypes() {
+    typeEl.length = 0; typeEl.add(new Option('Mixed (all ' + roster().length + ')', ''));
+    if (demoMode !== 'walkers') for (const size of M.sizes) for (const w of WEAPONS) typeEl.add(new Option(size[0].toUpperCase() + size.slice(1) + ' ' + WEAPON_LABELS[w], 'tank/' + size + '/' + w));
+    if (demoMode !== 'tanks') for (const k of KINDS) typeEl.add(new Option('Walker: ' + WALKER_LABELS[k], 'walker/' + k));
+  }
   typeEl.onchange = () => {
-    tankType = typeEl.value ? typeEl.value.split('/') : null; applyCount(tanks.length);
-    if (tankType && weaponMode !== 'mixed') document.querySelector('#weapons button').click();     // the Weapon row would hide the chosen type: back to Mixed
+    unitType = typeEl.value ? typeEl.value.split('/') : null; applyCount(tanks.length);
+    if (unitType && unitType[0] === 'tank' && weaponMode !== 'mixed') document.querySelector('#weapons button').click();     // the Weapon row would hide the chosen type: back to Mixed
   };
+  // which parts are on the battlefield: tanks, walkers, structures (not built yet) or all of them
+  function setDemo(v) {
+    if (v === 'structures' || (v !== 'tanks' && !WM)) return;
+    demoMode = v; unitType = null; fillTypes(); document.getElementById('weapons').style.display = v === 'walkers' ? 'none' : '';
+    applyCount(tanks.length);
+  }
+  group('demo', [['tanks', 'Tanks'], ['walkers', 'Walkers'], ['structures', 'Structures'], ['all', 'All']], () => demoMode, setDemo);
+  for (const b of document.querySelectorAll('#demo button')) {
+    if (b.title === 'Structures') { b.disabled = true; b.style.opacity = 0.45; b.title = 'Structures: not built yet'; }
+    else if (!WM && b.title !== 'Tanks') { b.disabled = true; b.style.opacity = 0.45; b.title += ': the walker sheets are missing (docs/walkers/source/sheets)'; }
+  }
+  fillTypes();
   document.getElementById('customGo').onclick = customGo; customEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') customGo(); });
   const zoomEl = document.getElementById('zoom');
   function setZoom(z, sx, sy) {
@@ -681,7 +747,7 @@ class Batcher {
   while (!failed && !resReady(res)) await Promise.all(loading[res].filter(Boolean));     // the sheets the first picture needs
   if (failed) return;
   msg.classList.add('hide');
-  window.tankDemo = { step: (n = 1, dt = 1 / 60) => { for (let i = 0; i < n; i++) update(dt); draw(); return tanks.map((t) => [t.size, weaponOf(t), +t.x.toFixed(1), +t.y.toFixed(1)]); }, setZoom,
+  window.demo = window.tankDemo = { setDemo, step: (n = 1, dt = 1 / 60) => { for (let i = 0; i < n; i++) update(dt); draw(); return tanks.map((t) => [t.size, weaponOf(t), +t.x.toFixed(1), +t.y.toFixed(1)]); }, setZoom,
     info: () => ({ res, waiting, sprites, calls: [tanksMesh.calls, shadowMesh.calls], sheetsLoaded, sheetsLoading, fx: fx.count(), shots: shots.length, sound: sfx.ready(), samples: sfx.samples() }),
     // for testing the effects: point the "mouse" at a place on the ground, set the firing mode, run frames with effects
     mouseAt: (gx, gy) => { mouse.on = true; mouse.gx = mouseGround.x = mouseAir.x = gx; mouse.gy = mouseGround.y = mouseAir.y = gy; }, setFire: (v) => { fireMode = v; },
@@ -706,7 +772,7 @@ class Batcher {
     fps += (1000 / tk.deltaMS - fps) * 0.05; statT += dt;
     if (statT > 0.25) {
       statT = 0;
-      stats.textContent = `zoom ${cam.zoom.toFixed(2)}x  screen density ${(window.devicePixelRatio || 1).toFixed(2)}\nsheets in use @${res}${want === res ? '' : '  (loading @' + want + ')'}\nsheets loaded ${sheetsLoaded} of ${Object.values(M.sheets).reduce((a, l) => a + l.length, 0)}${sheetsLoading ? '  (loading ' + sheetsLoading + ')' : ''}\n${tanks.length} tanks  ${sprites} sprites${waiting ? '  (' + waiting + ' waiting)' : ''}\ndraw calls: tanks ${tanksMesh.calls}, shadows ${shadowMesh.calls}\neffects: ${fx.count()} particles, ${shots.length} shots  sound ${sfx.ready() ? 'on' : 'waits for a click'}\n${fps.toFixed(0)} pictures per second`;
+      stats.textContent = `zoom ${cam.zoom.toFixed(2)}x  screen density ${(window.devicePixelRatio || 1).toFixed(2)}\nsheets in use @${res}${want === res ? '' : '  (loading @' + want + ')'}\nsheets loaded ${sheetsLoaded} of ${Object.values(M.sheets).reduce((a, l) => a + l.length, 0)}${sheetsLoading ? '  (loading ' + sheetsLoading + ')' : ''}\n${tanks.length} units  ${sprites} sprites${waiting ? '  (' + waiting + ' waiting)' : ''}\ndraw calls: units ${tanksMesh.calls}, shadows ${shadowMesh.calls}\neffects: ${fx.count()} particles, ${shots.length} shots  sound ${sfx.ready() ? 'on' : 'waits for a click'}\n${fps.toFixed(0)} pictures per second`;
     }
   });
 })().catch((e) => fail('The demo stopped: ' + (e && e.stack || e)));

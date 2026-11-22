@@ -150,10 +150,11 @@ from the command line (`blender -b --python ...`), so the bridge is kept only fo
 (kernel build). The library also runs in a cloud workspace (`pip install bpy==5.3.0`, CPU only, about 20× slower) for build checks.
 
 ## Open
-1. **Game side:** a `TeamSprite` shader variant that adds in linear light, a walker unit class (legs + upper + shadows, walk frames
-   tied to distance travelled), and a viewer/demo. Walkers must appear at their true design scale and walk smoothly. This comes
+1. **In the demo since 2026-11-22** (`../demo/`): the walkers walk, turn, take damage and are destroyed on the same battlefield as
+   the tanks, drawn with the linear-light team shader. **Game side, still open:** the same shader and a walker unit class (legs +
+   upper + shadows, walk frames tied to distance travelled) in `game.js`. Walkers must appear at their true design scale and walk smoothly. This comes
    after the structures and the map (order of work in `CLAUDE.md`).
-2. Not made yet: firing effects, Gatling spin frames, the Achilles strike, a spinning radar.
+2. Not made yet: firing effects and sounds (**next step**, owner 2026-11-22), Gatling spin frames, the Achilles strike, a spinning radar.
 3. Known rough spots: at game size "damaged" is hard to tell from intact (needs the fx smoke); **the upper body casts no shade on the
    legs** (the layers are lit one at a time). The tanks solve the same thing with a plain stand-in for the turret; doing that here
    means baking the legs again (2,496 renders). **Owner, 2026-11-22: keep it as it is.**
