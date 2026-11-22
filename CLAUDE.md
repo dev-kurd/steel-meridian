@@ -37,6 +37,21 @@ That is too slow. The game is moving to this plan:
   Decided by the owner on 2026-11-21: **Anti-Air never hits ground targets**; **screen shake stays**, and the game gets an option
   to switch it off; **effects that sit on a tank (hull flames, the source of its damage smoke) are sorted with that tank**, so a
   nearer tank covers them, while effects in the air (rising smoke, explosions, beams, shells) stay on top.
+- **Walker effects and sounds (approved 2026-11-22, "as it is"):** how each of the 5 walkers shoots and sounds:
+  `docs/walkers/walker-fx-design.md`, shown working in the demo. Gatling: spin-up, then tracer streams; A.A. Avenger: four
+  rockets, air targets only. Footsteps for all. Made with no new renders: effects stand in for the Gatling spin, the Achilles
+  strike and the spinning radar. The shot points are in `walkers.json` (`shotPoints`). The sounds stay in code, like the tank sounds.
+  **Round 2 (approved 2026-11-22)** changed three walkers. Kodiak: both arms at once, a long thick blue double bolt every 0.3 s.
+  Cougar: dense fire of red laser balls from four barrels, each barrel on its own timer (0.1 to 0.15 s), no trails, the longest
+  range of the walkers and more health (it was too like the Gatling). Achilles: it has to come close, then a lunge and blade arc
+  plus a large red laser ball with each blow; the hardest hit of all walkers.
+- **Weapon sounds are built from the recordings in `sounds/`** (owner, 2026-11-22): short synthesised tone sweeps were turned
+  down ("soap bubbles"). When a sound has to be chosen, put a few recording-based examples in the demo with buttons and let the
+  owner pick by ear, then remove the rest.
+- **Marks on the ground (approved 2026-11-22):** tank tracks and walker footprints use the method of `game.js` (`trackMark`): small
+  faint blocks stamped into the ground picture (tanks: one under each track every 0.625 m driven; walkers: a heel pad and two toes
+  where a foot lands). They never fade and build up into worn paths where units pass often. Not dark strips laid on top of the
+  ground (turned down: not in harmony with it). Shown in the demo; the strength is adjusted when the map exists.
 - **Effects** come from an `fx` sheet: flipbook flames, explosions and muzzle flash (additive), plus particle smoke and embers,
   muzzle smoke and a small recoil kick when a tank fires.
 
@@ -59,9 +74,12 @@ Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and 
   with a plain round stand-in for the turret so it is right for every turret direction; the barrels' shadow on the hull is not baked.
   Ground shadows are separate sprites (hull and turret). Details: `docs/tanks/README.md`.
 - **Walkers** (Kodiak, Cougar, Gatling, A.A. Avenger, Achilles): legs + upper body as separate sprites, split at the waist; 32
-  directions; 12-frame walk tied to distance travelled, feet planted. They must appear at their true design scale and walk smoothly.
+  directions; 12-frame walk tied to distance travelled, feet planted. They must appear at their chosen size (see Scale) and walk smoothly.
   Draw order: shadows → legs → upper body (+ per-frame offset from `walkers.json`). Blend a unit's shadows with "max".
-- **Scale:** tanks and walkers share one scale (28 model units per metre) so their sizes stay true to each other.
+- **Scale:** tanks and walkers are modelled and baked at one scale (28 model units per metre). **The walkers are drawn 1.5×
+  their design size** (owner, 2026-11-22, chosen with the size slider in the demo): the sprites are scaled when drawn, with no
+  re-bake, and everything measured on a walker is scaled with them (shot points, upper-body offsets, step length, footprints,
+  body radius). The factor is `drawScale` in `walkers.json`. Tanks stay at 1×.
 - **Damage states:** intact; damaged (≤ 60% HP: soot, dings, cracks, grey smoke); burning (≤ 30%: large black soot areas, cracked
   plates, a few embers, some parts lost, flames, black smoke, speed × 0.65); destroyed → explosion → charred wreck with every glow off
   and no team colour. Burning style: **few orange spots, more black and smoky areas, cracked plates.**
@@ -76,7 +94,7 @@ Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and 
   deeper). Units use a muted version (`unitPaint` = saturation × 0.5, lightness × 0.9); team lights = mix(paint, white, 0.5).
   Changing the team colour must visibly change the model.
 - Gunmetal for metal parts, a thin dark outline (`#0b0e13`), subtle seeded weathering, sloped armour, glowing team-colour light
-  strips and emblems. Fixed (non-team) glows only where they show what a weapon is (Flamer fire, Special energy cyan, walker plasma
+  strips and emblems. Fixed (non-team) glows only where they show what a weapon is (Flamer fire, Special energy cyan, the Cougar's and Achilles' red laser balls, walker plasma
   and magma); they go dark on a wreck.
 - **No hazard stripes on units.** On buildings only a thin band on blast doors.
 - **Buildings:** 4 fixed facings; beveled platform with a plain steel edge; health states intact / ≤ 50% / < 20%; uncaptured =
@@ -94,7 +112,7 @@ Unit roster, weapons, ranges and roles: **`docs/tank-types.md`** (15 tanks) and 
   missing. Pack extension (`.pak` or `.cab`) is **not decided yet**.
 
 ## Not decided yet (ask first)
-Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · Gatling spin, Achilles strike, spinning radar · for the tank effects (approved, see `docs/tanks/tank-fx-design.md`): the real ranges, reload times and damage, how strong the screen shake is, and which effects need a second look (all decided inside the game, once everything is in it) · the full list of structures to model · how mockups
+Pack extension · whether Walkers need Research Points and their speeds · the Walker Factory building · real frames for the Gatling spin, the Achilles strike and the spinning radar (not asked for; effects stand in, see `docs/walkers/walker-fx-design.md`) · for the tank and walker effects (approved, see `docs/tanks/tank-fx-design.md` and `docs/walkers/walker-fx-design.md`): the real ranges, reload times and damage, how strong the screen shake is, and which effects need a second look (all decided inside the game, once everything is in it) · the full list of structures to model · how mockups
 are shown when a session cannot publish to a design canvas (pictures or a page in the session, or do the mockup in claude.ai).
 
 ## Current order of work (owner, 2026-11-21 and 2026-11-22)
@@ -103,12 +121,12 @@ Done: the 15 tanks (modelled, baked, packed, checked; sheets in `docs/tanks/sour
 Done too: **the walker re-bake** (2026-11-22, no new models): new mask method, the tank damage style, a 12-frame walk instead
 of 8 (owner, 2026-11-21, chosen from the mockup https://claude.ai/artifact/Xc7WQ415pYMC6XLZi4YRDD); sheets in
 `docs/walkers/source/sheets/`. See `docs/walkers/README.md`.
+Done too: **the walker effects and sounds** (approved 2026-11-22, shown in the demo). See `docs/walkers/walker-fx-design.md`.
 
 Next, in this order (each step: mockup first, then model, then bake, then docs; each finished part is added to the demo):
-1. **Walker effects and sounds** (owner, 2026-11-22): how each walker shoots, and its sounds, shown in the demo.
-2. **Structures:** model the Factory, Command Center, Advancer (Vanguard), turrets and the others (the full list is not set yet: ask).
-3. **The map:** a detailed map with professional map detail.
-4. **Only then** move the tank effects and sounds, and the rest, into the game (`game.js`).
+1. **Structures:** model the Factory, Command Center, Advancer (Vanguard), turrets and the others (the full list is not set yet: ask).
+2. **The map:** a detailed map with professional map detail.
+3. **Only then** move the tank and walker effects and sounds, and the rest, into the game (`game.js`).
 
 ## References
 In this repo:

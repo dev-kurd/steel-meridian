@@ -7,7 +7,7 @@
  * - Every sound gets a stereo position and a loudness from where it happens on the screen. */
 window.createSfx = function (base) {
   const FILES = { shell: ['shell_1.wav', 'shell_2.wav', 'shell_3.wav'], arty: ['arty_1.wav', 'arty_2.wav'], boom: ['boom_1.wav', 'boom_2.wav', 'boom_3.wav'],
-    bigboom: ['bigboom_1.wav', 'bigboom_2.wav'], laser: ['laser_1.wav'],
+    bigboom: ['bigboom_1.wav', 'bigboom_2.wav'], laser: ['laser_1.wav'], flak: ['flak_1.wav', 'flak_2.wav'], bullet: ['bullet_1.wav', 'bullet_2.wav', 'bullet_3.wav'],
     missile: ['rocket_1.wav'] };                           // the Anti-Air rocket launch (owner, 2026-11-21). A very quiet recording, so it is played about three times louder
   const PITCH = [1.22, 1, 0.82];                             // light, medium, heavy
   const rnd = (a, b) => a + Math.random() * (b - a);
@@ -30,6 +30,7 @@ window.createSfx = function (base) {
     makeLoops();
   }
   const shape = (param, t, dur, g, att = 0.004) => { param.setValueAtTime(0.0001, t); param.linearRampToValueAtTime(g, t + att); param.exponentialRampToValueAtTime(0.0001, t + Math.max(dur, att + 0.01)); };
+  const SAT = new Float32Array(1024).map((_, i) => Math.tanh(2.6 * (i / 511.5 - 1)) / Math.tanh(2.6));   // soft overdrive: adds grit and loudness
   function noise(dst, t, dur, o) {                           // filtered noise: o = { type, f0, f1, q, g, att }
     const s = ctx.createBufferSource(); s.buffer = noiseBuf; s.loop = true;
     const f = ctx.createBiquadFilter(); f.type = o.type || 'lowpass'; f.Q.value = o.q || 0.7; f.frequency.setValueAtTime(o.f0, t);
@@ -116,6 +117,62 @@ window.createSfx = function (base) {
       noise(d, t, 0.46, { type: 'bandpass', q: 1.5, f0: 180, f1: 3400, g: 0.55, att: 0.42 }); tone(d, t, 0.46, { f0: 60, f1: 420, g: 0.4, att: 0.42 });
       const b = t + 0.45; tone(d, b, 1.3, { f0: 95, f1: 22, g: 1 }); noise(d, b, 1.1, { f0: 800, f1: 60, g: 0.8 }); tone(d, b, 0.5, { type: 'sawtooth', f0: 600, f1: 70, g: 0.25 });
     },
+    // ---- walkers (approved 2026-11-22)
+    // Kodiak (round 2: a double bolt every 0.4 s). Short and tight so the shots do not run into each other: two energy zaps a
+    // hair apart (one per arm), a falling whine, a short deep punch, the crack of the discharge and a little fizz after it.
+    plasma(d, t) {
+      const k = rnd(0.94, 1.06);
+      for (const [dt, r, g] of [[0, 0.85, 0.42], [0.028, 0.96, 0.3]])
+        if (!sample(d, t + dt, 'laser', { rate: r * k, g, cut: 0.3 })) tone(d, t + dt, 0.22, { type: 'sawtooth', f0: 1100 * r * k, f1: 180, g: g * 0.6 });
+      tone(d, t, 0.26, { type: 'square', f0: 1500 * k, f1: 240, g: 0.07 }); tone(d, t, 0.2, { f0: 150, f1: 42, g: 0.85 });
+      noise(d, t, 0.16, { type: 'bandpass', q: 1.6, f0: 2600, f1: 500, g: 0.3 }); noise(d, t + 0.05, 0.22, { type: 'highpass', f0: 4200, g: 0.06, att: 0.03 });
+    },
+    plasmacharge(d, t) { tone(d, t, 0.24, { f0: 260, f1: 1000, g: 0.09, att: 0.2 }); tone(d, t, 0.24, { type: 'triangle', f0: 520, f1: 2000, g: 0.04, att: 0.2 }); },   // quieter: it is heard before every shot
+    plasmahit(d, t) {                                        // a short burst with an electric crackle
+      if (!sample(d, t, 'boom', { rate: 1.5, g: 0.4, cut: 0.35 })) noise(d, t, 0.3, { f0: 900, f1: 90, g: 0.6 });
+      tone(d, t, 0.22, { type: 'sawtooth', f0: 620, f1: 80, g: 0.18 }); tone(d, t, 0.26, { f0: 105, f1: 38, g: 0.55 });
+      for (let i = 0; i < 3; i++) noise(d, t + 0.03 + i * 0.045, 0.03, { type: 'highpass', f0: rnd(2500, 4500), g: 0.12, att: 0.002 });
+    },
+    // Cougar (round 2, dense fire: about 30 balls a second). Each shot is very short. It is built on the game's laser recording,
+    // played fast and cut after a tenth of a second, with a small knock under it and a bright tick on top. Each of the four
+    // barrels has its own pitch (o.size = the barrel), so the row sounds like four guns working, not one buzz.
+    // Cougar (round 2, dense fire: about 30 balls a second). Chosen by the owner by ear on 2026-11-22 ("heavy cannon"): the tank
+    // shell recording played faster and cut short, with the flak crack on top, through a soft overdrive. Each of the four barrels
+    // has its own pitch (o.size = the barrel). Built on recordings because short synthesised tone sweeps sounded like soap bubbles.
+    ball(d, t, o) {
+      const k = [0.92, 1, 1.08, 1.17][(o.size | 0) % 4];
+      const ws = ctx.createWaveShaper(); ws.curve = SAT; const og = ctx.createGain(); og.gain.value = 0.75; ws.connect(og); og.connect(d);
+      const ok = sample(ws, t, 'shell', { rate: 1.5 * k, g: 0.6, cut: 0.12 }); sample(ws, t, 'flak', { rate: 1 * k, g: 0.4, cut: 0.05 });
+      if (!ok) noise(ws, t, 0.07, { type: 'bandpass', q: 0.8, f0: 2400, f1: 500, g: 0.6, att: 0.001 });       // the recordings are not loaded
+    },
+    // the ball lands: a small part of an explosion recording, played high and cut short, with a short sizzle
+    ballhit(d, t) {
+      if (!sample(d, t, 'boom', { rate: 2.4, g: 0.22, cut: 0.1 })) noise(d, t, 0.1, { f0: 1600, f1: 300, g: 0.3 });
+      noise(d, t + 0.01, 0.12, { type: 'bandpass', q: 2, f0: rnd(3200, 4400), g: 0.1, att: 0.005 });
+    },
+    magma(d, t) {                                            // Cougar: a short heavy thud with a hiss, played in a quick row
+      tone(d, t, 0.13, { f0: rnd(150, 175), f1: 55, g: 0.8 }); noise(d, t, 0.1, { f0: 1100, f1: 200, g: 0.5 });
+      noise(d, t + 0.02, 0.16, { type: 'highpass', f0: 3200, g: 0.14, att: 0.02 });
+    },
+    magmahit(d, t) { noise(d, t, 0.3, { type: 'bandpass', q: 1.2, f0: 3600, f1: 900, g: 0.22, att: 0.01 }); tone(d, t, 0.1, { f0: 110, f1: 50, g: 0.3 }); },
+    mg(d, t) {                                               // Gatling: the bullet recordings played fast and cut short, with a click
+      if (!sample(d, t, 'bullet', { rate: 1.35, g: 0.55, cut: 0.13 })) { noise(d, t, 0.06, { f0: 2400, f1: 500, g: 0.6 }); tone(d, t, 0.05, { f0: 190, f1: 80, g: 0.4 }); }
+      noise(d, t, 0.012, { type: 'highpass', f0: 2600, g: 0.3, att: 0.001 });
+    },
+    ricochet(d, t) { tone(d, t, 0.14, { type: 'triangle', f0: rnd(1800, 3200), f1: rnd(600, 1100), g: 0.1 }); noise(d, t, 0.03, { type: 'bandpass', q: 3, f0: 3000, g: 0.2 }); },
+    // Achilles' laser ball. Chosen by the owner by ear on 2026-11-22 ("laser hum"): the game's laser recording as it is, from its
+    // start, half a second, over a short thump from the tank shell recording (the thump goes through the soft overdrive).
+    aball(d, t) {
+      const ws = ctx.createWaveShaper(); ws.curve = SAT; const og = ctx.createGain(); og.gain.value = 0.8; ws.connect(og); og.connect(d);
+      const k = rnd(0.96, 1.04), ok = sample(d, t, 'laser', { rate: 1 * k, g: 0.55, cut: 0.5 }); sample(ws, t, 'shell', { rate: 1.3 * k, g: 0.4, cut: 0.1 });
+      if (!ok) noise(ws, t, 0.2, { type: 'bandpass', q: 0.8, f0: 1800, f1: 300, g: 0.6, att: 0.001 });        // the recordings are not loaded
+    },
+    slash(d, t) {                                            // Achilles: a whoosh, then metal on metal and a heavy thud
+      noise(d, t, 0.13, { type: 'bandpass', q: 1.4, f0: 700, f1: 4200, g: 0.4, att: 0.09 });
+      const h = t + 0.1; for (const f of [1750, 2650, 3900]) noise(d, h, 0.28, { type: 'bandpass', q: 14, f0: f * rnd(0.95, 1.05), g: 0.5, att: 0.002 });
+      noise(d, h, 0.05, { type: 'highpass', f0: 2500, g: 0.5, att: 0.001 }); tone(d, h, 0.28, { f0: 95, f1: 36, g: 0.9 });
+    },
+    step(d, t) { tone(d, t, 0.16, { f0: 72, f1: 34, g: 0.7, att: 0.006 }); noise(d, t, 0.09, { f0: 380, f1: 120, g: 0.35 }); noise(d, t + 0.03, 0.05, { type: 'bandpass', q: 6, f0: 1300, g: 0.05 }); },   // a walker's foot lands
     crackle(d, t) { noise(d, t, rnd(0.015, 0.04), { type: 'highpass', f0: rnd(1500, 4000), g: rnd(0.15, 0.4) }); },
   };
   // o: pan -1..1, gain 0..1, size 0..2, dur. At most ~28 sounds at once and the same sound at most every 35 ms.
@@ -142,8 +199,17 @@ window.createSfx = function (base) {
     const en = out(0.2), lp = filt('lowpass', 210);
     for (const f of [41, 61.5, 82.6]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.connect(lp); o.start(); }
     const rum = filt('lowpass', 95), rg = ctx.createGain(); rg.gain.value = 2.2; src().connect(rum); rum.connect(rg); rg.connect(lp); lp.connect(en.g); loops.engine = en;
+    // the Gatling's motor: a whirr whose pitch rises as the guns spin up (level 0..1 = how fast they spin)
+    const wh = out(0.16), wb = filt('bandpass', 900, 1.2), wo = ctx.createOscillator(), wo2 = ctx.createOscillator(), wn = ctx.createGain();
+    wo.type = 'sawtooth'; wo.frequency.value = 60; wo2.type = 'square'; wo2.frequency.value = 121; wn.gain.value = 0.25;
+    wo.connect(wb); wo2.connect(wb); src().connect(wn); wn.connect(wb); wb.connect(wh.g); wo.start(); wo2.start();
+    wh.pitch = (v) => { wo.frequency.setTargetAtTime(60 + 150 * v, ctx.currentTime, 0.06); wo2.frequency.setTargetAtTime(121 + 300 * v, ctx.currentTime, 0.06); wb.frequency.setTargetAtTime(500 + 1100 * v, ctx.currentTime, 0.06); };
+    loops.whirr = wh;
   }
-  function loop(name, level) { const l = loops[name]; if (ctx && l) l.g.gain.setTargetAtTime(Math.max(0, Math.min(1, level)) * l.max, ctx.currentTime, 0.09); }
+  function loop(name, level) {
+    const l = loops[name]; if (!ctx || !l) return; const v = Math.max(0, Math.min(1, level));
+    l.g.gain.setTargetAtTime(v * l.max, ctx.currentTime, 0.09); if (l.pitch) l.pitch(v);
+  }
   function setOn(v) { on = v; if (master) master.gain.setTargetAtTime(on ? vol : 0, ctx.currentTime, 0.03); }
   function setVolume(v) { vol = v; if (master && on) master.gain.setTargetAtTime(vol, ctx.currentTime, 0.03); }
   return { unlock, play, loop, setOn, setVolume, ready: () => !!ctx && ctx.state === 'running', samples: () => Object.values(smp).reduce((a, l) => a + l.length, 0) };

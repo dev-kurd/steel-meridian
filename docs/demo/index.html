@@ -37,11 +37,14 @@
   <div class="row"><span class="l">Zoom</span>
     <input id="zoom" type="range" min="0.5" max="4" step="0.05" value="2" style="flex:1">
   </div>
+  <div class="row" title="How large the walkers are drawn. 1.5 is the chosen size (owner, 2026-11-22); 1.00 is the design size, the same scale as the tanks"><span class="l">Walker size</span>
+    <input id="wsize" type="range" min="1" max="2" step="0.05" value="1.5" style="flex:1"><span id="wsizeV" style="width:38px;text-align:right">1.5×</span>
+  </div>
   <div class="row">
     <label><input id="patrol" type="checkbox" checked> Patrol on their own</label>
     <label><input id="aim" type="checkbox" checked> Turrets and walker bodies aim at the mouse</label>
   </div>
-  <div class="row" id="fire"><span class="l">Firing (tanks; walkers have no weapon effects yet)</span></div>
+  <div class="row" id="fire"><span class="l">Firing (tanks and walkers)</span></div>
   <div class="row"><button id="kill">Destroy one unit</button></div>
   <div class="row">
     <label><input id="snd" type="checkbox" checked> Sound</label>
@@ -60,7 +63,7 @@
 <script>
 'use strict';
 /* The unified demo: one battlefield for every part of the game that is built (see README.md in this folder). Parts so far:
- * the 15 tanks with their effects and sounds, and the 5 walkers (they walk, turn and take damage; no weapon effects yet).
+ * the 15 tanks with their effects and sounds, and the 5 walkers (walk, turn, damage, and their weapon effects and sounds).
  * It draws the packed sheets (docs/tanks/source/sheets, docs/walkers/source/sheets) the way the game will.
  * - PixiJS (WebGL). Tank sprites of every team go into one mesh = one draw call for up to 16 sheets; the sheet slot is a vertex
  *   value. When a picture needs more than 16 sheets, the next tanks (they are sorted far to near) go into a second mesh.
@@ -74,6 +77,16 @@ const WALKER_LABELS = { kodiak: 'Kodiak', cougar: 'Cougar', gatling: 'Gatling', 
 /* Walkers: demo values, not game balance (their speeds are not decided). speed in metres per second, turn rates in radians per
  * second, r = collision radius in metres, body = rough size in metres (used where the tank code asks for the hull size). */
 const WALKER = { speed: 2.0, turn: 1.7, torsoTurn: 2.2, r: 1.45, hp: 260, aimZ: 2.2, body: { hull_length: 2.8, hull_width: 3.0, hull_height: 3.3 } };
+/* Walker weapons (approved 2026-11-22, ../walkers/walker-fx-design.md; demo values, not game balance). Where each shot starts
+ * comes from walkers.json (shotPoints: metres in the upper body's own frame, x forward, y to the side, z up).
+ * range/min/chase in metres, reload/charge/gap/spin in seconds, v in metres per second. */
+const WWPN = {
+  kodiak:   { range: 24, reload: 0.3, charge: 0.24, dmg: 38, v: 46, kick: 0.16, tol: 0.08 },             // two plasma cannons, both at once: a double bolt (dmg is per bolt)
+  cougar:   { range: 34, reload: [0.1, 0.15], gap: 0.015, dmg: 2, v: 40, kick: 0.03, tol: 0.08, hp: 420 },   // four barrels, dense fire: each barrel fires again after 0.1 to 0.15 s (picked anew each time), the barrels out of step with a small gap between them; the longest reach of the walkers; more health
+  gatling:  { range: 24, reload: 0.045, dmg: 2.2, v: 150, kick: 0.02, tol: 0.12, spin: 0.45, spread: 0.7 },   // two rotary guns: they spin up, then two streams of tracers
+  avenger:  { range: 30, min: 4, reload: 4, burst: 4, gap: 0.18, dmg: 16, elev: 0.593, tol: 0.2 },       // four rockets, air targets only
+  achilles: { range: 1.5, reload: 0.6, dmg: 110, ball: 70, kick: -0.4, tol: 0.35, chase: 45 },            // melee, the hardest hit of all walkers: it has to stand against its target (reach beyond the two bodies); each blow also throws a laser ball
+};
 const TEAMS = { green: '#33d17a', blue: '#3b82f6', red: '#e5484d', orange: '#f5a524', purple: '#a855f7', cyan: '#22d3ee' };
 const TEAM_NAMES = Object.keys(TEAMS);
 const WEAPON_LABELS = { panzer: 'Panzer', artillery: 'Artillery', antiair: 'Anti-Air', flamer: 'Flamer', special: 'Special' };
@@ -244,6 +257,7 @@ class Batcher {
     for (const [k, fr] of Object.entries(WM.frames[r])) M.frames[r]['w:' + k] = [fr[0] + off, fr[1], fr[2], fr[3], fr[4], fr[5], fr[6]];
   }
   const KINDS = WM ? WM.kinds : [], WALK = WM ? WM.walk.frames : 1;
+  const WMUZ = WM ? WM.shotPoints : {};                                  // where each walker's shots start
 
   const app = new PIXI.Application();
   await app.init({ resizeTo: window, preference: 'webgl', antialias: false, background: '#7e7462', resolution: window.devicePixelRatio || 1, autoDensity: true });
@@ -269,7 +283,11 @@ class Batcher {
     return loading[r][i];
   }
   const WEAPONS = Object.keys(WEAPON_LABELS).filter((w) => M.weapons.includes(w));
-  const wantRes = () => { const need = cam.zoom * (window.devicePixelRatio || 1); return need <= 1.05 ? '1x' : need <= 2.1 ? '2x' : '4x'; };
+  // Walker size: the walkers are drawn WS times their design size (walkers.json drawScale: 1.5, chosen by the owner on
+  // 2026-11-22 with the slider in this demo). The sprites are scaled when drawn, and everything that belongs to a walker follows:
+  // shadows, the upper body's walk offset, shot points, step length, footprints, body radius, smoke points.
+  let WS = (WM && WM.drawScale) || 1;
+  const wantRes = () => { const need = cam.zoom * (window.devicePixelRatio || 1) * WS; return need <= 1.05 ? '1x' : need <= 2.1 ? '2x' : '4x'; };
 
   // ---- scene
   const cam = { x: 0, y: 0, zoom: 2 };
@@ -290,7 +308,31 @@ class Batcher {
   }
   makeRT(); app.renderer.on('resize', makeRT);
   let res = null;
-  const decalC = new PIXI.Container(); world.addChild(ground, decalC, marks);     // decals: scorch marks, under the shadows
+  // What units leave on the ground: tank tracks and walker footprints (approved 2026-11-22). The method is the game's own
+  // (game.js, trackMark): every MARK_STEP metres a tank has driven, two small faint blocks are stamped into the ground picture,
+  // one under each track. They are never redrawn and never fade: the ground keeps them, and where units pass again and again
+  // the marks build up into a worn path. A walker stamps a faint footprint where a foot lands (the game leaves none for bots).
+  // The ground picture is one render texture as big as the field; a frame's new stamps are drawn into it in one go.
+  const MARK_STEP = 0.625, MARK_LEN = 0.45, MARK_ALPHA = 0.08, FOOT_ALPHA = 0.09, MARK_COL = 0x1e1810;   // game: every 7 units, 5 x 3 units, rgba(30,24,16,.06)
+  const stamps = new PIXI.Graphics(), stampC = new PIXI.Container(), groundSpr = new PIXI.Sprite(); stampC.addChild(stamps);
+  let groundRT = null, stampN = 0;
+  function makeGroundRT() {                                              // a new, clean ground picture (the field changed size)
+    const n = FIELD + 8, W = Math.ceil(4 * n * PPM), H = Math.ceil(2 * n * PPM);
+    if (groundRT) groundRT.destroy(true);
+    groundRT = PIXI.RenderTexture.create({ width: W, height: H, resolution: Math.min(2, 4096 / W) });
+    groundSpr.texture = groundRT; groundSpr.position.set(-W / 2, -H / 2); stampC.position.set(W / 2, H / 2);
+    stamps.clear(); stampN = 0; app.renderer.render({ container: stampC, target: groundRT, clear: true, clearColor: [0, 0, 0, 0] });
+  }
+  function flushStamps() {                                               // this frame's new marks go into the ground picture
+    if (!stampN) return;
+    app.renderer.render({ container: stampC, target: groundRT, clear: false }); stamps.clear(); stampN = 0;
+  }
+  // a block on the ground: centre (cx, cy), half length hl along angle a, half width hw
+  function stamp(cx, cy, a, hl, hw, alpha) {
+    const ca = Math.cos(a), sa = Math.sin(a), p = (l, w) => toScreen(cx + ca * l - sa * w, cy + sa * l + ca * w);
+    stamps.poly([...p(-hl, -hw), ...p(hl, -hw), ...p(hl, hw), ...p(-hl, hw)]).fill({ color: MARK_COL, alpha }); stampN++;
+  }
+  const decalC = new PIXI.Container(); world.addChild(ground, groundSpr, decalC, marks);     // decals: scorch marks, under the shadows
   app.stage.addChild(world, shadowSprite);
   const top = new PIXI.Container(); app.stage.addChild(top);            // the tank mesh: same camera as the world, drawn above the shadows
   // effects: target drones, then smoke (normal blend), then everything that glows (additive), all above the tanks
@@ -319,16 +361,16 @@ class Batcher {
   }
   const rnd = (a, b) => a + Math.random() * (b - a);
   function setCount(n) {
-    clearCombat(); tanks = []; FIELD = Math.max(26, Math.round(Math.sqrt(n) * 3.2)); drawGround();
+    clearCombat(); tanks = []; FIELD = Math.max(26, Math.round(Math.sqrt(n) * 3.2)); drawGround(); makeGroundRT();
     const side = Math.ceil(Math.sqrt(n)), gap = Math.min(5.2, (FIELD * 2 - 6) / side), list = roster();
     for (let i = 0; i < n; i++) {
       const u = list[i % list.length], isW = u[0] === 'walker', size = isW ? 'heavy' : u[1], h = rnd(0, TAU);
       const d = isW ? WALKER.body : M.models[size + '_panzer'].data;      // the hull is the same for every weapon
       const x = ((i % side) - (side - 1) / 2) * gap + rnd(-0.4, 0.4), y = (Math.floor(i / side) - (side - 1) / 2) * gap + rnd(-0.4, 0.4);
-      const hp = isW ? WALKER.hp : HP[SI[size]];
+      const hp = isW ? WWPN[u[1]].hp || WALKER.hp : HP[SI[size]];
       tanks.push({ walker: isW, kind: isW ? u[1] : null, moving: false, size, d, weapon: isW ? 'walker' : u[2], team: TEAM_NAMES[Math.floor(i / 3) % 6], x, y, h, tur: h, tx: x, ty: y,
-        phase: 0, state: 0, wait: rnd(0, 2.5), r: isW ? WALKER.r : d.hull_length * 0.5,
-        hp, max: hp, aimZ: isW ? WALKER.aimZ : d.hull_height * 0.7, cool: rnd(0, 1.5), q: [], kick: 0, charge: 0, barrel: 0, flames: [], deadT: 0, tgt: null, scan: rnd(0, 0.3), fireT: 0, dustD: 0, hold: 0, holdT: 0 });
+        phase: 0, state: 0, wait: rnd(0, 2.5), r: isW ? WALKER.r * WS : d.hull_length * 0.5,
+        hp, max: hp, aimZ: isW ? WALKER.aimZ * WS : d.hull_height * 0.7, cool: rnd(0, 1.5), q: [], kick: 0, charge: 0, barrel: 0, flames: [], deadT: 0, tgt: null, scan: rnd(0, 0.3), fireT: 0, dustD: 0, hold: 0, holdT: 0, spin: 0 });
     }
     tanksMesh.reset(n * 3); shadowMesh.reset(n * 2);
   }
@@ -375,9 +417,9 @@ class Batcher {
   }
   function kill(o) {
     if (o.drone) { o.deadT = 5; fx.airburst([o.x, o.y, o.z], 1.5); fx.debris([o.x, o.y, o.z], 5, 4); snd('flak', o.x, o.y, { gain: 1 }); return; }
-    const si = SI[o.size], k = [1, 1.25, 1.55][si];
-    o.deadT = fireMode === 'battle' ? 14 : 8; o.q.length = 0; o.charge = 0; o.tgt = null; o.tx = o.x; o.ty = o.y;
-    fx.explosion([o.x, o.y, 0.6], k); snd('death', o.x, o.y, { size: si }); addShake(0.5 + si * 0.25, o.x, o.y);
+    const si = SI[o.size], k = o.walker ? 1.8 : [1, 1.25, 1.55][si];      // a walker goes up in a bigger explosion than a Heavy tank
+    o.deadT = fireMode === 'battle' ? 14 : 8; o.q.length = 0; o.charge = 0; o.tgt = null; o.tx = o.x; o.ty = o.y; o.spin = 0;
+    fx.explosion([o.x, o.y, o.walker ? 1.4 : 0.6], k); snd('death', o.x, o.y, { size: si }); addShake(0.5 + si * 0.25 + (o.walker ? 0.15 : 0), o.x, o.y);
     later.push({ t: 0.18, fn: () => { fx.impact([o.x + rnd(-1, 1), o.y + rnd(-1, 1), 0.5], 1); } });   // a second, smaller blast
   }
   function revive(t) {                                                   // battle: a new tank drives in from the edge
@@ -386,8 +428,18 @@ class Batcher {
     t.hp = t.max; t.x = Math.max(-e, Math.min(e, Math.cos(a) * FIELD * 1.4)); t.y = Math.max(-e, Math.min(e, Math.sin(a) * FIELD * 1.4)); t.tx = t.x; t.ty = t.y; t.wait = 0.5; t.cool = 1;
   }
   function pickTarget(t) {
-    if (t.walker) return null;                                           // walkers have no weapons in the demo yet
     const w = weaponOf(t);
+    if (t.walker) {                                                      // the Avenger fires at air targets only; the Achilles looks further, because it has to walk up to its target
+      const W = WWPN[t.kind], air = t.kind === 'avenger';
+      if (fireMode === 'mouse') return mouse.on ? (air ? mouseAir : mouseGround) : null;
+      if (fireMode !== 'battle') return null;
+      let best = null, bd = (W.chase || W.range) ** 2; const near = (W.min || 0) ** 2;
+      for (const o of (air ? drones : tanks)) {
+        if (o === t || o.team === t.team || o.deadT > 0) continue;
+        const d2 = (o.x - t.x) ** 2 + (o.y - t.y) ** 2; if (d2 >= near && d2 < bd) { bd = d2; best = o; }
+      }
+      return best;
+    }
     if (fireMode === 'mouse') return mouse.on ? (w === 'antiair' ? mouseAir : mouseGround) : null;
     if (fireMode !== 'battle') return null;
     let best = null, bd = WPN[w].range[SI[t.size]] ** 2; const near = WPN[w].min[SI[t.size]] ** 2;   // a target closer than the minimum range is ignored
@@ -397,6 +449,23 @@ class Batcher {
     }
     return best;
   }
+  // ---- marks on the ground (the game's method, see MARK_STEP above)
+  // a tank: every MARK_STEP metres its centre has moved, one block under each track, turned the way the tank faces
+  function layTracks(t) {
+    if (t.mkx === undefined) { t.mkx = t.x; t.mky = t.y; return; }
+    const d = Math.hypot(t.x - t.mkx, t.y - t.mky);
+    if (d < MARK_STEP) return;
+    t.mkx = t.x; t.mky = t.y;
+    if (d > 3) return;                                                   // the tank was moved (a new one drove in): no mark
+    const wd = t.d.hull_width * 0.39, hw = t.d.hull_width * 0.065, ca = Math.cos(t.h), sa = Math.sin(t.h);
+    for (const sd of [-1, 1]) stamp(t.x - sa * wd * sd, t.y + ca * wd * sd, t.h, MARK_LEN / 2, hw, MARK_ALPHA);
+  }
+  // a walker's foot has landed with its ankle at (px, py): a heel pad and two toes under the foot
+  function layFoot(px, py, h) {
+    const k = WS, ca = Math.cos(h), sa = Math.sin(h), at = (l, w) => [px + (ca * l - sa * w) * k, py + (sa * l + ca * w) * k];
+    stamp(...at(-0.02, 0), h, 0.27 * k, 0.25 * k, FOOT_ALPHA);
+    for (const sd of [-1, 1]) stamp(...at(0.55, 0.155 * sd), h, 0.3 * k, 0.11 * k, FOOT_ALPHA);
+  }
   // smoke, flames and dust that belong to a tank's state
   function tankFx(t, st, dt) {
     const vis = onScreen(t.x, t.y);
@@ -405,8 +474,8 @@ class Batcher {
     const fp = t.walker ? null : M.models[t.size + '_' + weaponOf(t)].firePoints1x[dirOf(t.h)], k = t.walker ? 1.15 : [0.8, 1, 1.25][SI[t.size]];
     const at = (i) => {
       if (t.walker) {                                                    // a walker: the roof and the two shoulders (a wreck lies low)
-        const a = t.tur + [0, 1.9, -1.9][i % 3], rr = i % 3 ? 0.9 : 0.2;
-        return [t.x + Math.cos(a) * rr, t.y + Math.sin(a) * rr, st === 3 ? 1.1 : [3.1, 2.6, 2.6][i % 3]];
+        const a = t.tur + [0, 1.9, -1.9][i % 3], rr = (i % 3 ? 0.9 : 0.2) * WS;
+        return [t.x + Math.cos(a) * rr, t.y + Math.sin(a) * rr, (st === 3 ? 1.1 : [3.1, 2.6, 2.6][i % 3]) * WS];
       }
       const [gx, gy] = toGround(fp[i][0], fp[i][1]); return [t.x + gx, t.y + gy, 0];
     };
@@ -511,11 +580,119 @@ class Batcher {
     for (let i = 0; i < W.burst[si]; i++) t.q.push({ d: i * W.gap, b: t.barrel++, tg });
     return false;
   }
+  // ---- walker weapons (approved 2026-11-22: one shot idea per walker; no new renders, so the Gatling's barrels, the Achilles'
+  // arms and the Avenger's radar stay still and the effects stand in for them)
+  function wMuzzle(t, b) {                                               // shot point b of a walker in the world; it turns with the upper body
+    const pts = WMUZ[t.kind], p = pts[b % pts.length], a = snapA(t.tur), fx0 = (p[0] - t.kick) * WS, fy0 = -p[1] * WS;
+    return [t.x + fx0 * Math.cos(a) - fy0 * Math.sin(a), t.y + fx0 * Math.sin(a) + fy0 * Math.cos(a), p[2] * WS];
+  }
+  // a straight glowing shot from m to (px, py, pz). o: v, col, core, len, glow, team, dmg, rad, hit(point).
+  // thick: the streak is that many times wider at the same length. ball: a glowing ball of that size (metres) instead of a
+  // streak; it leaves a fading trail (trail: how long each trail puff lasts, in seconds, 0 = no trail; trailGap: metres between puffs) and its glow can throb (pulse: 0..1).
+  function bolt(m, px, py, pz, o) {
+    const d = Math.hypot(px - m[0], py - m[1], pz - m[2]) || 1, u = [(px - m[0]) / d, (py - m[1]) / d, (pz - m[2]) / d];
+    const mk = (tex, s0, c0, a0 = 1) => fx.spawn('add', { tex, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0, c0, a0 });
+    const s = { type: 'bolt', x: m[0], y: m[1], z: m[2], ux: u[0], uy: u[1], uz: u[2], left: d, v: o.v, team: o.team, dmg: o.dmg, rad: o.rad || 0.5, hit: o.hit, ball: o.ball || 0, col: o.col, tr: 0, trail: o.trail == null ? 0.24 : o.trail, trailGap: o.trailGap || 0.45, pulse: o.pulse || 0, age: Math.random() };
+    if (o.ball) { s.h = mk(fx.T.glow, o.ball * 2.2, o.col); s.fl = mk(fx.T.glow, o.ball, o.core || 0xffffff); s.gl = mk(fx.T.glow, o.ball * 4, o.col, 0.45); }
+    else {
+      const w = o.thick || 1;
+      s.h = mk(fx.T.spark, o.len * w, o.col); fx.aim(s.h, ...u); s.h.sx /= w;
+      if (o.core) { s.fl = mk(fx.T.spark, o.len * 0.6 * w, o.core); fx.aim(s.fl, ...u); s.fl.sx /= w; }
+      if (o.glow) s.gl = mk(fx.T.glow, o.glow, o.col, 0.8);
+    }
+    shots.push(s);
+  }
+  function wshoot(t, q) {                                                // one shot leaves point q.b (Kodiak, Cougar, Avenger)
+    const k = t.kind, W = WWPN[k], tg = q.tg, m = wMuzzle(t, q.b), ta = snapA(t.tur), tz = zOf(tg);
+    if (k === 'kodiak') {                                                // a thick blue bolt with a white core, one from each arm at the same moment
+      t.kick = W.kick; fx.plasmaFlash(m, ta, 1.3); if (!q.quiet) snd('plasma', t.x, t.y);
+      bolt(m, tg.x + rnd(-0.3, 0.3), tg.y + rnd(-0.3, 0.3), tz, { v: W.v, col: 0x4a90ff, core: 0xffffff, len: 8, thick: 1.125, glow: 3, team: t.team, dmg: W.dmg, rad: 0.9,
+        hit: (p) => { fx.plasmaHit(p, 1.25); if (!q.quiet) { snd('plasmahit', p[0], p[1], { gain: 0.9 }); addShake(0.12, p[0], p[1]); } } });
+    } else if (k === 'cougar') {                                         // an orange laser ball with a pale heart; it bursts and splashes glowing drops
+      t.kick = W.kick; fx.magmaFlash(m, ta, 1.3); snd('ball', t.x, t.y, { gain: 0.6, size: q.b });   // size = which barrel: each has its own pitch
+      fx.spawn('add', { tex: fx.T.glow, x: m[0], y: m[1], z: m[2], life: 0.08, s0: 1.4, s1: 1.9, c0: 0xff3a26, a0: 0.8, tout: 0.3 });      // a red glow at the muzzle
+      // dense fire: many balls are in the air at once, so each is a little smaller, has no trail (owner, 2026-11-22) and a lighter hit
+      bolt(m, tg.x + rnd(-0.8, 0.8), tg.y + rnd(-0.8, 0.8), tz, { v: W.v, col: 0xff3a26, core: 0xffe6dc, ball: 0.8, pulse: 0.3, trail: 0, team: t.team, dmg: W.dmg, rad: 0.9,
+        hit: (p) => { fx.ballHit(p, 1.1, 0xff3a26); if (Math.random() < 0.3) { fx.ring([p[0], p[1], 0], 1.6, 0xff5a3a, 0.3); fx.magmaHit(p, 1.1); } snd('ballhit', p[0], p[1], { gain: 0.5 }); } });
+    } else if (k === 'avenger') {                                        // the tank Anti-Air rocket, bigger: it leaves its rack along the rack's angle
+      const el = W.elev, d = [Math.cos(ta) * Math.cos(el), Math.sin(ta) * Math.cos(el), Math.sin(el)], len = 1.25;
+      fx.muzzleFlash(m, ta, el, 0.75, 'rocket'); snd('rocket', t.x, t.y, { size: 2, gain: 0.8 });
+      shots.push({ type: 'rocket', x: m[0], y: m[1], z: m[2], ux: d[0], uy: d[1], uz: d[2], v: 8, age: 0, tr: 0, tg, si: 2, dmg: W.dmg, len,
+        h: fx.spawn('smoke', { tex: fx.T.rocket, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: len }),
+        fl: fx.spawn('add', { tex: fx.T.spark, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: len * 1.5, c0: 0xffb45a }),
+        gl: fx.spawn('add', { tex: fx.T.glow, held: true, life: Infinity, must: true, x: m[0], y: m[1], z: m[2], s0: len * 0.8, c0: 0xffc880, a0: 0.8 }) });
+    }
+  }
+  // a walker's weapon for one frame
+  function wcombat(t, tg, dt) {
+    const k = t.kind, W = WWPN[k];
+    t.cool -= dt; t.kick *= Math.exp(-(k === 'achilles' ? 7 : 12) * dt);
+    for (let i = t.q.length - 1; i >= 0; i--) { const q = t.q[i]; q.d -= dt; if (q.d <= 0) { t.q.splice(i, 1); if (!(q.tg.deadT > 0)) wshoot(t, q); } }
+    let ok = false, dist = 0, reach = k === 'achilles' ? W.range * WS : W.range;
+    if (tg) {
+      const dx = tg.x - t.x, dy = tg.y - t.y, aimed = Math.abs(wrap(Math.atan2(dy, dx) - t.tur)) <= W.tol;
+      dist = Math.hypot(dx, dy); if (k === 'achilles') reach += t.r + (tg.r || 0);
+      ok = aimed && dist <= reach && dist >= (W.min || 0);
+      if (k === 'achilles') {
+        if (fireMode === 'mouse') ok = aimed && dist <= reach + 0.5;      // at the mouse: it strikes only when the pointer is right in front of it
+        else if (dist > reach - 0.5) { t.tx = tg.x; t.ty = tg.y; } else { t.tx = t.x; t.ty = t.y; }   // battle: it walks up to its target and stays on it
+      }
+    }
+    if (k === 'gatling') {                                               // the guns spin up before the first round and run down after the last
+      t.spin = Math.max(0, Math.min(1, t.spin + (ok ? dt / W.spin : -dt / 0.8)));
+      if (!ok || t.spin < 1 || t.cool > 0) return;
+      t.cool = W.reload; t.kick = W.kick;
+      const m = wMuzzle(t, t.barrel++), ta = snapA(t.tur);
+      fx.gunFlash(m, ta, 1); snd('mg', t.x, t.y, { gain: 0.7 });
+      bolt(m, tg.x + rnd(-W.spread, W.spread), tg.y + rnd(-W.spread, W.spread), zOf(tg), { v: W.v, col: 0xffe9a0, len: 2.4, team: t.team, dmg: W.dmg, rad: 0.8,
+        hit: (p) => { fx.bulletHit(p); if (Math.random() < 0.12) snd('ricochet', p[0], p[1], { gain: 0.6 }); } });
+      return;
+    }
+    if (k === 'cougar') {                                                // every barrel keeps its own time, so the four shots come one by one, unevenly
+      if (!t.gc) t.gc = [0, 1, 2, 3].map((i) => i * 0.03 + rnd(0, 0.1));
+      for (let i = 0; i < 4; i++) t.gc[i] = Math.max(-0.05, t.gc[i] - dt);
+      if (!ok || t.cool > 0) return;
+      for (let i = 0; i < 4; i++) if (t.gc[i] <= 0) { t.gc[i] = rnd(W.reload[0], W.reload[1]); t.cool = W.gap; wshoot(t, { b: i, tg }); break; }
+      return;
+    }
+    if (!ok || t.cool > 0 || t.q.length) return;
+    if (k === 'kodiak') {                                                // a short glow builds at the muzzle, then the bolt
+      t.cool = W.reload * rnd(0.92, 1.08); snd('plasmacharge', t.x, t.y, { gain: 0.6 });
+      for (const b of [0, 1]) { fx.plasmaCharge(wMuzzle(t, b), W.charge, 1.3); t.q.push({ d: W.charge, b, tg, quiet: b === 1 }); }   // both arms: a double bolt, one sound
+    }
+    else if (k === 'avenger') { t.cool = W.reload * rnd(0.92, 1.08); for (let i = 0; i < W.burst; i++) t.q.push({ d: i * W.gap, b: t.barrel++, tg }); }
+    else {                                                               // Achilles: a lunge and a blow, the arms in turn. The arms do not move (no strike frames yet): a bright arc shows the blade
+      t.cool = W.reload; t.kick = W.kick;
+      const b = t.barrel++ % 2, side = -Math.sign(WMUZ.achilles[b][1]), a = snapA(t.tur), r = 2.9 * WS, live = fireMode === 'battle';
+      fx.slash([t.x, t.y], a, side, r, 2.0 * WS); snd('slash', t.x, t.y);
+      const fist = wMuzzle(t, b);                                        // a red glow gathers at the striking fist, then the ball leaves with the blow
+      fx.spawn('add', { tex: fx.T.glow, x: fist[0], y: fist[1], z: fist[2], life: 0.12, s0: 0.5, s1: 2.8, c0: 0xff3a48, a0: 0.9, tin: 0.4, tout: 0.9, must: true });
+      later.push({ t: 0.1, fn: () => {
+        if (!(t.deadT > 0) && !(live && tg.deadT > 0)) {                  // the small laser ball: from the fist to the target (at the mouse: a few metres ahead at most)
+          const L = Math.min(Math.max(dist, r), r + 5), q = live ? [tg.x, tg.y, zOf(tg)] : [t.x + Math.cos(a) * L, t.y + Math.sin(a) * L, 1.2 * WS];
+          snd('aball', t.x, t.y, { gain: 0.9 });
+          bolt(wMuzzle(t, b), q[0], q[1], q[2], { v: 30, col: 0xff3a48, core: 0xffe6e6, ball: 0.95, pulse: 0.25, team: t.team, dmg: W.ball, rad: 0.9,
+            hit: (p) => { fx.ballHit(p, 1.9, 0xff3a48); fx.ring([p[0], p[1], 0], 2.4, 0xff5a5a, 0.35); addShake(0.12, p[0], p[1]); } });
+        }
+        if (live && tg.deadT > 0) return;
+        const p = live ? [tg.x + rnd(-0.3, 0.3), tg.y + rnd(-0.3, 0.3), zOf(tg)] : [t.x + Math.cos(a) * r, t.y + Math.sin(a) * r, 1.2 * WS];
+        fx.bladeHit(p); addShake(0.1, p[0], p[1]); hurt(tg, W.dmg);
+      } });
+    }
+  }
   function updateShots(dt) {
     for (let i = later.length - 1; i >= 0; i--) { later[i].t -= dt; if (later[i].t <= 0) { const l = later[i]; later.splice(i, 1); l.fn(); } }
     for (let i = shots.length - 1; i >= 0; i--) {
       const s = shots[i]; let done = false;
-      if (s.type === 'shell') {                                          // a fast straight shell with a short bright streak
+      if (s.type === 'bolt') {                                           // a walker's bolt or bullet: straight, glowing
+        const step = Math.min(s.left, s.v * dt); s.x += s.ux * step; s.y += s.uy * step; s.z += s.uz * step; s.left -= step;
+        for (const f of [s.fl, s.gl]) if (f) { f.x = s.x; f.y = s.y; f.z = s.z; }
+        if (s.ball) {                                                    // a ball: trail puffs behind it, and its glow throbs
+          if (s.trail) s.tr -= step; if (s.trail && s.tr <= 0) { s.tr = s.trailGap; fx.spawn('add', { tex: fx.T.glow, x: s.x, y: s.y, z: s.z, life: s.trail, s0: s.ball * 1.7, s1: s.ball * 0.4, c0: s.col, a0: 0.5, tout: 0.6 }); }
+          if (s.pulse) { s.age += dt; const k = 1 + s.pulse * Math.sin(s.age * 38); s.gl.s0 = s.gl.s1 = s.ball * 4 * k; s.h.s0 = s.h.s1 = s.ball * 2.2 * (1 + (k - 1) * 0.4); }
+        }
+        if (s.left <= 0.001) { done = true; s.hit([s.x, s.y, s.z]); hurtAt(s.x, s.y, s.rad, s.dmg, s.team); }
+      } else if (s.type === 'shell') {                                   // a fast straight shell with a short bright streak
         const step = Math.min(s.left, 75 * dt); s.x += s.ux * step; s.y += s.uy * step; s.z += s.uz * step; s.left -= step;
         if (s.left <= 0.001) { done = true; fx.impact([s.x, s.y, s.z], [0.7, 0.85, 1][s.si]); snd('hit', s.x, s.y, { gain: 0.7 }); hurtAt(s.x, s.y, 0.5, s.dmg, s.team); }
       } else if (s.type === 'arty') {                                    // a shell on a high arc; its shadow runs along the ground
@@ -570,7 +747,7 @@ class Batcher {
   const mouse = { on: false, gx: 0, gy: 0 };
   function update(dt) {
     const patrol = document.getElementById('patrol').checked, aim = document.getElementById('aim').checked && mouse.on;
-    let nMove = 0, nFlame = 0, nBurn = 0;
+    let nMove = 0, nFlame = 0, nBurn = 0, nSpin = 0;
     for (const t of tanks) {
       if (t.deadT > 0) { t.deadT -= dt; if (t.deadT <= 0) revive(t); }
       const st = stateOf(t); tankFx(t, st, dt);
@@ -593,8 +770,16 @@ class Batcher {
       }
       // track frame from distance driven; at most 0.45 frame per picture so fast tanks do not seem to run backwards
       if (t.walker) {                                                    // walk frame from distance walked; standing pose when it stops
-        t.moving = travel > 0.0005; if (t.moving) t.phase = (t.phase + Math.min(0.9, travel / WTRAVEL)) % WALK;
-      } else t.phase = (t.phase + Math.min(0.45, travel / TRAVEL)) % M.track.frames;
+        t.moving = travel > 0.0005;
+        if (t.moving) {
+          const f0 = Math.floor(t.phase); t.phase = (t.phase + Math.min(0.9, travel / (WTRAVEL * WS))) % WALK; const f1 = Math.floor(t.phase);
+          if (f1 !== f0 && f1 % (WALK / 2) === 0) {                       // a foot lands (walk frames 0 and 6): a footprint, a dust puff and a thud
+            const s = f1 === 0 ? -1 : 1, ca = Math.cos(t.h), sa = Math.sin(t.h), p = [t.x + (0.36 * ca - 0.74 * s * sa) * WS, t.y + (0.36 * sa + 0.74 * s * ca) * WS, 0];
+            layFoot(p[0], p[1], t.h);
+            if (onScreen(t.x, t.y)) { fx.dust(p, 0.8); fx.dust([p[0] + rnd(-0.3, 0.3), p[1] + rnd(-0.3, 0.3), 0], 0.6); snd('step', t.x, t.y, { gain: 0.5 }); }
+          }
+        }
+      } else { t.phase = (t.phase + Math.min(0.45, travel / TRAVEL)) % M.track.frames; layTracks(t); }
       if (!t.walker && travel > 0.004 && onScreen(t.x, t.y)) {            // engine sound, and dust behind the tracks
         nMove++; t.dustD += travel;
         if (t.dustD > 0.8) { t.dustD = 0; const s = Math.random() < 0.5 ? 1 : -1, b = t.d.hull_length * 0.5, wd = t.d.hull_width * 0.4;
@@ -605,9 +790,10 @@ class Batcher {
       const want = tg ? Math.atan2(tg.y - t.y, tg.x - t.x) : aim ? Math.atan2(mouse.gy - t.y, mouse.gx - t.x) : t.h, td = wrap(want - t.tur);
       const tt = (t.walker ? WALKER.torsoTurn : TURRET_TURN) * dt;
       if (!held) t.tur = wrap(t.tur + Math.max(-tt, Math.min(tt, td)));
-      if (!t.walker && combat(t, tg, dt) && onScreen(t.x, t.y)) nFlame++;
+      if (t.walker) { wcombat(t, tg, dt); if (t.spin > nSpin && onScreen(t.x, t.y)) nSpin = t.spin; }
+      else if (combat(t, tg, dt) && onScreen(t.x, t.y)) nFlame++;
     }
-    updateShots(dt);
+    updateShots(dt); sfx.loop('whirr', nSpin);
     sfx.loop('flame', nFlame / 2); sfx.loop('engine', nMove ? 0.35 + 0.65 * Math.min(1, nMove / 8) : 0);
     if (nBurn && Math.random() < Math.min(1, nBurn / 4) * 16 * dt) sfx.play('crackle', { gain: 0.5, pan: rnd(-0.5, 0.5) });
     for (let i = 0; i < tanks.length; i++) for (let j = i + 1; j < tanks.length; j++) {    // circle collisions: push overlapping tanks apart
@@ -624,9 +810,11 @@ class Batcher {
     if (t.walker) {                                                      // shadows, legs, then the upper body moved by its walk offset
       if (st === 3) return [[false, `w:wreck/${t.kind}/d${String(hd - (hd % 4)).padStart(2, '0')}`, 0, 0, false]];
       const pose = t.moving ? String(Math.floor(t.phase) % WALK) : 's', off = pose === 's' ? [0, 0] : WM.walk.upperOffset1x[hd][+pose];
-      const list = pose === 's' && hd === td ? [[true, `w:shadow/${t.kind}/d${dd}`, 0, 0, false]]
-        : [[true, `w:shadow/legs/d${dd}/${pose}`, 0, 0, false], [true, `w:shadow_upper/${t.kind}/d${tt}`, off[0], off[1], false]];
-      list.push([false, `w:legs/s${st}/d${dd}/${pose}`, 0, 0, true], [false, `w:${t.kind}/s${st}/d${tt}`, off[0], off[1], true]);
+      // recoil or lunge: the upper body shifts along the way it faces (back for a gun, forward for the Achilles' blow)
+      const ka = td * TAU / 32, kk = Math.abs(t.kick) > 0.002 ? toScreen(-Math.cos(ka) * t.kick, -Math.sin(ka) * t.kick) : null, ux = off[0] + (kk ? kk[0] : 0), uy = off[1] + (kk ? kk[1] : 0);
+      const list = pose === 's' && hd === td && !kk ? [[true, `w:shadow/${t.kind}/d${dd}`, 0, 0, false]]
+        : [[true, `w:shadow/legs/d${dd}/${pose}`, 0, 0, false], [true, `w:shadow_upper/${t.kind}/d${tt}`, ux, uy, false]];
+      list.push([false, `w:legs/s${st}/d${dd}/${pose}`, 0, 0, true], [false, `w:${t.kind}/s${st}/d${tt}`, ux, uy, true]);
       return list;
     }
     if (st === 3) return [[false, `wreck/${t.size}/${w}/d${String(hd - (hd % 2)).padStart(2, '0')}`, 0, 0, false]];
@@ -649,21 +837,21 @@ class Batcher {
   let sprites = 0, waiting = 0;
   function draw() {
     const S = M.resolutions[res].scale, F = M.frames[res], SH = M.sheets[res], snap = cam.zoom * app.renderer.resolution;
-    const put = (mesh, key, px, py, team) => {
+    const put = (mesh, key, px, py, team, k) => {                        // k: drawn size (1, or the walker size)
       const f = F[key]; if (!f) return;
       const sh = SH[f[0]], c = team && sh.mask ? COLOURS[team] : null;
-      mesh.quad(f[0], loaded[res][f[0]], px - f[5] / S, py - f[6] / S, f[3] / S, f[4] / S, f[1] / sh.w, f[2] / sh.h, (f[1] + f[3]) / sh.w, (f[2] + f[4]) / sh.h,
+      mesh.quad(f[0], loaded[res][f[0]], px - f[5] / S * k, py - f[6] / S * k, f[3] / S * k, f[4] / S * k, f[1] / sh.w, f[2] / sh.h, (f[1] + f[3]) / sh.w, (f[2] + f[4]) / sh.h,
         sh.mask ? sh.maskOffsetY / sh.h : 0, c ? c.paint : 0, c ? c.light : 0);
     };
     tanks.sort((a, b) => (a.x + a.y) - (b.x + b.y));                      // far tanks first
     tanksMesh.begin(); shadowMesh.begin(); waiting = 0;
     for (const t of tanks) {
       let [px, py] = toScreen(t.x, t.y); px = Math.round(px * snap) / snap; py = Math.round(py * snap) / snap;   // whole screen pixels
-      const list = parts(t), team = teamMode === 'mixed' ? t.team : teamMode;
+      const list = parts(t), team = teamMode === 'mixed' ? t.team : teamMode, k = t.walker ? WS : 1;
       if (!ready(res, list)) { waiting++; continue; }                     // its sheets are still loading: drawn as soon as they arrive
-      for (const [shadow, key, ox, oy, coloured] of list) put(shadow ? shadowMesh : tanksMesh, key, px + ox, py + oy, coloured ? team : null);
+      for (const [shadow, key, ox, oy, coloured] of list) put(shadow ? shadowMesh : tanksMesh, key, px + ox * k, py + oy * k, coloured ? team : null, k);
     }
-    tanksMesh.end(); shadowMesh.end(); sprites = tanksMesh.n + shadowMesh.n;
+    tanksMesh.end(); shadowMesh.end(); flushStamps(); sprites = tanksMesh.n + shadowMesh.n;
     const sk = document.getElementById('shake').checked ? shake * 7 : 0, ox = rnd(-sk, sk), oy = rnd(-sk, sk);      // screen shake from big blasts
     for (const c of [world, shadowWorld, top, air, smokeC, addC]) { c.position.set(cam.x + ox, cam.y + oy); c.scale.set(cam.zoom); }
     app.renderer.render({ container: shadowWorld, target: rt, clear: true, clearColor: [0, 0, 0, 0] });
@@ -687,7 +875,7 @@ class Batcher {
     stateMode = v; if (v === 'mixed') tanks.forEach((t, i) => { t.state = [0, 0, 1, 2, 0, 1, 3, 2][i % 8]; });
   });
   group('fire', [['off', 'Off'], ['mouse', 'At the mouse'], ['battle', 'Battle']], () => fireMode, (v) => {
-    fireMode = v; for (const t of tanks) { t.hp = t.max; t.deadT = 0; t.tgt = null; t.q.length = 0; t.charge = 0; } for (const d of drones) { d.hp = d.max; d.deadT = 0; }
+    fireMode = v; for (const t of tanks) { t.hp = t.max; t.deadT = 0; t.tgt = null; t.q.length = 0; t.charge = 0; t.spin = 0; } for (const d of drones) { d.hp = d.max; d.deadT = 0; }
   });
   document.getElementById('kill').onclick = () => { const live = tanks.filter((t) => stateOf(t) < 3 && onScreen(t.x, t.y)); if (live.length) kill(live[(Math.random() * live.length) | 0]); };
   document.getElementById('snd').onchange = (e) => sfx.setOn(e.target.checked);
@@ -721,6 +909,12 @@ class Batcher {
   }
   fillTypes();
   document.getElementById('customGo').onclick = customGo; customEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') customGo(); });
+  const wsizeEl = document.getElementById('wsize');                     // walker size (the slider is for comparing sizes)
+  function setWalkerSize(v) {
+    WS = Math.max(1, Math.min(2, +v || 1)); wsizeEl.value = WS; document.getElementById('wsizeV').textContent = WS.toFixed(2) + '×';
+    for (const t of tanks) if (t.walker) { t.r = WALKER.r * WS; t.aimZ = WALKER.aimZ * WS; }
+  }
+  wsizeEl.oninput = () => setWalkerSize(wsizeEl.value); setWalkerSize(WS);
   const zoomEl = document.getElementById('zoom');
   function setZoom(z, sx, sy) {
     z = Math.max(0.5, Math.min(4, z)); sx ??= app.screen.width / 2; sy ??= app.screen.height / 2;
@@ -747,7 +941,7 @@ class Batcher {
   while (!failed && !resReady(res)) await Promise.all(loading[res].filter(Boolean));     // the sheets the first picture needs
   if (failed) return;
   msg.classList.add('hide');
-  window.demo = window.tankDemo = { setDemo, step: (n = 1, dt = 1 / 60) => { for (let i = 0; i < n; i++) update(dt); draw(); return tanks.map((t) => [t.size, weaponOf(t), +t.x.toFixed(1), +t.y.toFixed(1)]); }, setZoom,
+  window.demo = window.tankDemo = { setDemo, setWalkerSize, step: (n = 1, dt = 1 / 60) => { for (let i = 0; i < n; i++) update(dt); draw(); return tanks.map((t) => [t.size, weaponOf(t), +t.x.toFixed(1), +t.y.toFixed(1)]); }, setZoom,
     info: () => ({ res, waiting, sprites, calls: [tanksMesh.calls, shadowMesh.calls], sheetsLoaded, sheetsLoading, fx: fx.count(), shots: shots.length, sound: sfx.ready(), samples: sfx.samples() }),
     // for testing the effects: point the "mouse" at a place on the ground, set the firing mode, run frames with effects
     mouseAt: (gx, gy) => { mouse.on = true; mouse.gx = mouseGround.x = mouseAir.x = gx; mouse.gy = mouseGround.y = mouseAir.y = gy; }, setFire: (v) => { fireMode = v; },
